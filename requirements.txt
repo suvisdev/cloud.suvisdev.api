@@ -1,4 +1,9 @@
 fastapi
 uvicorn
+sqlalchemy[asyncio]
+# psycopg[binary] 와 동일 (Windows CMD 대괄호 글롭 회피)
+psycopg
+psycopg-binary
+python-dotenv
 pandas
 scikit-learn

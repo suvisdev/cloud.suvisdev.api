@@ -1,14 +1,27 @@
+import sys
+from pathlib import Path
+
+# 어디서 실행하든 `apps`가 모듈 루트로 잡히도록 (adapters, database, titanic 등)
+_APPS_ROOT = Path(__file__).resolve().parent
+if str(_APPS_ROOT) not in sys.path:
+    sys.path.insert(0, str(_APPS_ROOT))
+
 from fastapi import FastAPI
 
-from titanic.app.james_controller import JamesController
-
+from adapters.db_health_adapter import DbHealthAdapter
 from doro.app.doro_director import DoroDirector
+from titanic.app.james_controller import JamesController
 
 app = FastAPI(title="Suvisdev Main Page")
 
 @app.get("/")
 def read_root():
     return {"message": "FAST API 메인 페이지", "docs": "/docs"}
+
+
+@app.get("/db-check")
+async def check_db():
+    return await DbHealthAdapter.check_neon()
 
 @app.get("/titanic/data")
 def read_titanic_data():
