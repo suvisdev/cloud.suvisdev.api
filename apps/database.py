@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 _session_factory = None
+_engine = None
 _init_error: str | None = None
 
 Base = declarative_base()
@@ -18,7 +19,7 @@ Base = declarative_base()
 
 def ensure_database() -> tuple[bool, str | None]:
     """엔진을 한 번만 만들고, (성공 여부, 실패 시 메시지)를 돌려준다. import 시에는 호출되지 않는다."""
-    global _session_factory, _init_error
+    global _session_factory, _engine, _init_error
     if _session_factory is not None:
         return True, None
     url = os.getenv("DATABASE_URL", "").strip()
@@ -29,9 +30,9 @@ def ensure_database() -> tuple[bool, str | None]:
         )
         return False, _init_error
     try:
-        engine = create_async_engine(url, echo=True)
+        _engine = create_async_engine(url, echo=True)
         _session_factory = async_sessionmaker(
-            bind=engine,
+            bind=_engine,
             class_=AsyncSession,
             expire_on_commit=False,
         )
@@ -61,3 +62,13 @@ async def get_db():
             await session.rollback()
             logger.exception("DB 세션 처리 중 오류가 발생했습니다.")
             raise
+
+
+async def dispose_engine() -> None:
+    """앱 종료 시 비동기 엔진·세션 팩토리를 정리한다."""
+    global _session_factory, _engine, _init_error
+    if _engine is not None:
+        await _engine.dispose()
+    _session_factory = None
+    _engine = None
+    _init_error = None
