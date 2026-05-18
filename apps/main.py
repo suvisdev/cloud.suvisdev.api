@@ -1,7 +1,11 @@
+import logging
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:\t%(message)s")
+logger = logging.getLogger(__name__)
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -24,6 +28,8 @@ from matrix.app.weather_reader import (
     fetch_current_weather,
     fetch_weekly_forecast,
 )
+from secom.app.controllers.user_controller import UserController
+from secom.app.schemas.user_schema import UserSchema
 from titanic.app.james_controller import JamesController
 
 keymaker = get_keymaker()
@@ -62,6 +68,20 @@ class DailyForecast(BaseModel):
 class ForecastResponse(BaseModel):
     city: str
     days: list[DailyForecast]
+
+
+class SignupRequest(BaseModel):
+    username: str = Field(..., min_length=4, max_length=50, description="아이디")
+    password: str = Field(..., min_length=6, max_length=128, description="비밀번호")
+    nickname: str = Field(..., min_length=1, max_length=50, description="닉네임")
+    email: str = Field(..., min_length=3, max_length=255, description="이메일")
+
+
+class SignupResponse(BaseModel):
+    message: str
+    username: str
+    nickname: str
+    email: str
 
 
 @asynccontextmanager
@@ -205,6 +225,39 @@ async def read_weather_forecast(city: str | None = None) -> ForecastResponse:
     return ForecastResponse(**data)  # type: ignore[arg-type]
 
 
+@app.post("/auth/signup", response_model=SignupResponse, status_code=201)
+def signup(req: SignupRequest) -> SignupResponse:
+    """회원가입 JSON 수신 후 서버 로그에 기록한다."""
+    username = req.username.strip()
+    nickname = req.nickname.strip()
+    email = req.email.strip()
+
+    logger.info(
+        "회원가입 수신 — 아이디: %s | 비밀번호: %s | 닉네임: %s | 이메일: %s",
+        req.username,
+        req.password,
+        req.nickname,
+        req.email,
+    )
+# 프론트엔드에서 가져온 데이터를 스키마에 담아서 DB로 보내는 코드
+    user_schema = UserSchema(
+        username=req.username, 
+        password=req.password, 
+        nickname=req.nickname, 
+        email=req.email, 
+        role="user")
+
+    user_controller = UserController()
+    user_controller.save_user(user_schema)
+    
+    return SignupResponse(
+        message="회원가입 요청이 접수되었습니다.",
+        username=req.username,
+        nickname=req.nickname,
+        email=req.email,
+    )
+
+
 @app.get("/db-check")
 async def check_db(db: AsyncSession = Depends(get_db)):
     return await DbHealthAdapter.neon_time_check(db)
@@ -270,3 +323,5 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+
+# 회원가입

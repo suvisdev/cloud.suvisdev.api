@@ -64,6 +64,19 @@ async def get_db():
             raise
 
 
+async def create_tables() -> None:
+    """등록된 ORM 모델 기준으로 테이블을 생성한다."""
+    ok, err = ensure_database()
+    if not ok or _engine is None:
+        raise RuntimeError(err or "데이터베이스를 초기화할 수 없습니다.")
+    # metadata에 모델이 등록되도록 import
+    import secom.app.models  # noqa: F401
+
+    async with _engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    logger.info("DB 테이블 생성 완료")
+
+
 async def dispose_engine() -> None:
     """앱 종료 시 비동기 엔진·세션 팩토리를 정리한다."""
     global _session_factory, _engine, _init_error
