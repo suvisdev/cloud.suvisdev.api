@@ -20,7 +20,7 @@ if str(_APPS_ROOT) not in sys.path:
     sys.path.insert(0, str(_APPS_ROOT))
 
 from adapters.db_health_adapter import DbHealthAdapter
-from database import dispose_engine, get_db
+from database import create_tables, dispose_engine, ensure_database, get_db
 from doro.app.doro_director import DoroDirector
 from matrix.app.keymaker import get_keymaker
 from matrix.app.weather_reader import (
@@ -28,8 +28,13 @@ from matrix.app.weather_reader import (
     fetch_current_weather,
     fetch_weekly_forecast,
 )
+from mova.app.controllers.mova_chat_controller import MovaChatController
+from mova.app.controllers.title_controller import TitleController
+from mova.app.schemas.title_schema import MovaSearchItemSchema, MovaTitleDetailSchema
+from mova.app.seed import seed_mova_titles_if_empty
 from secom.app.controllers.user_controller import UserController
-from secom.app.schemas.user_schema import UserSchema
+from secom.app.repositories.user_repository import UserRepositoryError
+from secom.app.schemas.auth_schema import LoginSchema, UserSchema
 from titanic.app.james_controller import JamesController
 
 keymaker = get_keymaker()
@@ -47,6 +52,17 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
+
+
+class MovaChatHistoryItem(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(..., min_length=1)
+
+
+class MovaChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    history: list[MovaChatHistoryItem] = Field(default_factory=list)
+    model: Literal["flash", "flash15", "pro"] | None = None
 
 
 class WeatherResponse(BaseModel):
@@ -84,9 +100,31 @@ class SignupResponse(BaseModel):
     email: str
 
 
+class LoginRequest(BaseModel):
+    username: str = Field(..., min_length=1, max_length=50, description="아이디")
+    password: str = Field(..., min_length=1, max_length=128, description="비밀번호")
+
+
+class LoginResponse(BaseModel):
+    message: str
+    username: str
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
+        ok, err = ensure_database()
+        if ok:
+            await create_tables()
+            await seed_mova_titles_if_empty()
+            try:
+                from mova.app.repositories.search_stats_repository import SearchStatsRepository
+
+                await SearchStatsRepository().ensure_analytics_columns()
+            except RuntimeError:
+                pass
+        else:
+            logger.warning("DB 미연결 — 회원가입/로그인 DB 저장 비활성: %s", err)
         yield
     finally:
         await dispose_engine()
@@ -225,36 +263,112 @@ async def read_weather_forecast(city: str | None = None) -> ForecastResponse:
     return ForecastResponse(**data)  # type: ignore[arg-type]
 
 
+@app.get("/mova/search", response_model=list[MovaSearchItemSchema])
+async def mova_search(q: str, limit: int = 12) -> list[MovaSearchItemSchema]:
+    """작품·인물·키워드 검색 → Controller → Service → Repository → Neon DB."""
+    query = q.strip()
+    if not query:
+        return []
+    logger.info("[main] mova search 진입 — q=%r", query)
+    try:
+        return await TitleController().search(query, limit=limit)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+
+
+def _gemini_reply(prompt: str, model_key: Literal["flash", "flash15", "pro"] | None) -> str:
+    if not keymaker.is_gemini_ready():
+        raise HTTPException(
+            status_code=503,
+            detail="GEMINI_API_KEY가 설정되지 않았습니다. backend/.env 에 키를 넣어 주세요.",
+        )
+    gemini = keymaker.get_gemini_model(model_key)
+    if gemini is None:
+        raise HTTPException(status_code=503, detail="Gemini 모델을 초기화할 수 없습니다.")
+    try:
+        response = gemini.generate_content(prompt)
+    except Exception as e:
+        err = str(e)
+        if "429" in err or "quota" in err.lower() or "resource_exhausted" in err.lower():
+            raise HTTPException(
+                status_code=429,
+                detail="Gemini 사용 한도에 도달했습니다. 잠시 후 다시 시도해 주세요.",
+            ) from e
+        raise HTTPException(status_code=502, detail=f"Gemini 호출 실패: {e!s}") from e
+    try:
+        text = (response.text or "").strip()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"응답을 읽을 수 없습니다: {e!s}") from e
+    if not text:
+        raise HTTPException(status_code=502, detail="모델이 비어 있는 응답을 반환했습니다.")
+    return text
+
+
+@app.post("/mova/chat", response_model=ChatResponse)
+async def mova_chat(req: MovaChatRequest) -> ChatResponse:
+    """Mova AI 영화 추천 채팅 → Gemini + DB 카탈로그 컨텍스트."""
+    logger.info("[main] mova chat 진입 — message_len=%s", len(req.message))
+    history = [{"role": h.role, "content": h.content} for h in req.history]
+    prompt = await MovaChatController().build_prompt(history, req.message.strip())
+    reply = _gemini_reply(prompt, req.model)
+    return ChatResponse(reply=reply)
+
+
+@app.get("/mova/titles/{slug}", response_model=MovaTitleDetailSchema)
+async def mova_title_detail(slug: str) -> MovaTitleDetailSchema:
+    """작품 상세 → Controller → Service → Repository → Neon DB."""
+    logger.info("[main] mova title detail 진입 — slug=%s", slug)
+    try:
+        detail = await TitleController().get_detail(slug.strip())
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    if detail is None:
+        raise HTTPException(status_code=404, detail="작품을 찾을 수 없습니다.")
+    return detail
+
+
 @app.post("/auth/signup", response_model=SignupResponse, status_code=201)
-def signup(req: SignupRequest) -> SignupResponse:
-    """회원가입 JSON 수신 후 서버 로그에 기록한다."""
-    username = req.username.strip()
-    nickname = req.nickname.strip()
-    email = req.email.strip()
-
-    logger.info(
-        "회원가입 수신 — 아이디: %s | 비밀번호: %s | 닉네임: %s | 이메일: %s",
-        req.username,
-        req.password,
-        req.nickname,
-        req.email,
-    )
-# 프론트엔드에서 가져온 데이터를 스키마에 담아서 DB로 보내는 코드
+async def signup(req: SignupRequest) -> SignupResponse:
+    """회원가입 → Controller → Service → Repository → Neon DB."""
     user_schema = UserSchema(
-        username=req.username, 
-        password=req.password, 
-        nickname=req.nickname, 
-        email=req.email, 
-        role="user")
+        username=req.username.strip(),
+        password=req.password,
+        nickname=req.nickname.strip(),
+        email=req.email.strip(),
+        role="user",
+    )
+    logger.info("[main] save_user 진입 — %s", user_schema.log_summary())
+    try:
+        await UserController().save_user(user_schema)
+    except UserRepositoryError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message) from e
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
 
-    user_controller = UserController()
-    user_controller.save_user(user_schema)
-    
     return SignupResponse(
-        message="회원가입 요청이 접수되었습니다.",
-        username=req.username,
-        nickname=req.nickname,
-        email=req.email,
+        message="회원가입이 완료되었습니다.",
+        username=user_schema.username,
+        nickname=user_schema.nickname,
+        email=user_schema.email,
+    )
+
+
+@app.post("/auth/login", response_model=LoginResponse)
+async def login(req: LoginRequest) -> LoginResponse:
+    """로그인 → Controller → Service → Repository → Neon DB."""
+    username = req.username.strip()
+    login_schema = LoginSchema(username=username, password=req.password)
+    logger.info("[main] login_user 진입 — %s", login_schema.log_summary())
+    try:
+        await UserController().login_user(login_schema)
+    except UserRepositoryError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message) from e
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+
+    return LoginResponse(
+        message="로그인에 성공했습니다.",
+        username=username,
     )
 
 

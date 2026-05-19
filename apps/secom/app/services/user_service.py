@@ -1,21 +1,19 @@
 import logging
 
 from secom.app.repositories.user_repository import UserRepository
-from secom.app.schemas.user_schema import UserSchema
+from secom.app.schemas.auth_schema import LoginSchema, UserSchema
 
 logger = logging.getLogger(__name__)
-_LAYER = "UserService"
 
 
 class UserService:
     def __init__(self) -> None:
-        pass
+        self.user_repository = UserRepository()
 
-    def save_user(self, user_schema: UserSchema) -> None:
-        payload = user_schema.model_dump()
-        logger.info("[%s] save_user 진입 — values=%s", _LAYER, payload)
+    async def save_user(self, user_schema: UserSchema) -> None:
+        logger.info("[UserService] save_user 진입 — %s", user_schema.log_summary())
+        await self.user_repository.save_user(user_schema)
 
-        user_repository = UserRepository()
-        user_repository.save_user(user_schema)
-
-        logger.info("[%s] save_user 완료 — username=%s", _LAYER, payload.get("username"))
+    async def login_user(self, login_schema: LoginSchema) -> None:
+        logger.info("[UserService] login_user 진입 — %s", login_schema.log_summary())
+        await self.user_repository.login_user(login_schema)
