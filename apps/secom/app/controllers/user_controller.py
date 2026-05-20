@@ -10,10 +10,10 @@ class UserController:
     def __init__(self) -> None:
         self.user_service = UserService()
 
-    async def save_user(self, user_schema: UserSchema) -> None:
+    async def save_user(self, user_schema: UserSchema) -> int:
         logger.info("[UserController] save_user 진입 — %s", user_schema.log_summary())
-        await self.user_service.save_user(user_schema)
+        return await self.user_service.save_user(user_schema)
 
-    async def login_user(self, login_schema: LoginSchema) -> None:
+    async def login_user(self, login_schema: LoginSchema) -> int:
         logger.info("[UserController] login_user 진입 — %s", login_schema.log_summary())
-        await self.user_service.login_user(login_schema)
+        return await self.user_service.login_user(login_schema)

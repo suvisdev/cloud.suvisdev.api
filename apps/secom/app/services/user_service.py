@@ -10,10 +10,10 @@ class UserService:
     def __init__(self) -> None:
         self.user_repository = UserRepository()
 
-    async def save_user(self, user_schema: UserSchema) -> None:
+    async def save_user(self, user_schema: UserSchema) -> int:
         logger.info("[UserService] save_user 진입 — %s", user_schema.log_summary())
-        await self.user_repository.save_user(user_schema)
+        return await self.user_repository.save_user(user_schema)
 
-    async def login_user(self, login_schema: LoginSchema) -> None:
+    async def login_user(self, login_schema: LoginSchema) -> int:
         logger.info("[UserService] login_user 진입 — %s", login_schema.log_summary())
-        await self.user_repository.login_user(login_schema)
+        return await self.user_repository.login_user(login_schema)

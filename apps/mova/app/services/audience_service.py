@@ -1,0 +1,90 @@
+import logging
+
+from mova.app.models.audience_model import MovaChatIntent
+from mova.app.services.mova_chat_reply_service import MovaChatReplyService
+
+logger = logging.getLogger(__name__)
+
+MOVA_SYSTEM_PROMPT = """당신은 영화·시리즈 추천 AI 'Mova'입니다.
+사용자 요청에 맞춰 **정확히 3편** 추천하세요.
+
+규칙:
+- intro는 1~2문장으로 짧게 (인사·취향 요약).
+- picks는 3개, 각 항목에 영화 제목(title)과 hook(한 줄 추천 이유, 40자 이내).
+- JSON만 출력, 다른 텍스트 금지.
+
+출력 형식:
+{{"intro": "짧은 소개 문장", "picks": [{{"title": "영화 제목", "hook": "한 줄 이유"}}, ...]}}
+
+{intent_section}
+{past_intents_section}
+{user_preferences_section}
+"""
+
+
+class MovaChatService:
+    def __init__(self) -> None:
+        self.reply_service = MovaChatReplyService()
+
+    def format_intent_section(self, refined_query: str, keywords: list[str]) -> str:
+        if not refined_query:
+            return ""
+        kw = ", ".join(keywords) if keywords else "(없음)"
+        return (
+            f"\n[이번 질문 검색 의도]\n"
+            f"정제: {refined_query} | 키워드: {kw}\n"
+        )
+
+    def format_user_preferences_section(
+        self,
+        nickname: str | None,
+        preferred_genres: list[str] | None,
+    ) -> str:
+        genres = [g.strip() for g in (preferred_genres or []) if str(g).strip()]
+        if not genres:
+            return ""
+        name = (nickname or "회원").strip()
+        joined = ", ".join(genres)
+        return f"\n[사용자 취향 프로필 — {name}]\n선호 장르: {joined}\n위 장르를 우선 반영해 추천하세요.\n"
+
+    def format_past_intents_section(self, intents: list[MovaChatIntent]) -> str:
+        if not intents:
+            return ""
+        lines = ["\n[자주 찾았던 취향]"]
+        for item in intents:
+            lines.append(f"- {item.refined_query}")
+        return "\n".join(lines)
+
+    def build_prompt(
+        self,
+        history: list[dict[str, str]],
+        message: str,
+        *,
+        refined_query: str = "",
+        keywords: list[str] | None = None,
+        past_intents: list[MovaChatIntent] | None = None,
+        user_nickname: str | None = None,
+        preferred_genres: list[str] | None = None,
+    ) -> str:
+        parts = [
+            MOVA_SYSTEM_PROMPT.format(
+                intent_section=self.format_intent_section(refined_query, keywords or []),
+                past_intents_section=self.format_past_intents_section(past_intents or []),
+                user_preferences_section=self.format_user_preferences_section(
+                    user_nickname,
+                    preferred_genres,
+                ),
+            ),
+            "",
+            "[대화]",
+        ]
+        for item in history[-6:]:
+            role = item.get("role", "user")
+            label = "사용자" if role == "user" else "Mova"
+            parts.append(f"{label}: {item.get('content', '')}")
+        parts.append(f"사용자: {message}")
+        parts.append("JSON:")
+        return "\n".join(parts)
+
+    def parse_structured_reply(self, raw: str):
+        return self.reply_service.parse_gemini_reply(raw)

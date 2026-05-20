@@ -46,13 +46,15 @@ class Keymaker:
 
     def __init__(self, *, env_path: Path | None = None) -> None:
         self.env_path = Path(env_path) if env_path else _default_env_path()
-        load_dotenv(self.env_path)
+        load_dotenv(self.env_path, override=True)
 
         self.gemini_api_key: str = (os.getenv("GEMINI_API_KEY") or "").strip()
         self.openweather_api_key: str = (
             os.getenv("OPENWEATHERMAP_API_KEY") or os.getenv("OPENWEATHER_API_KEY") or ""
         ).strip()
         self.openweather_city: str = (os.getenv("OPENWEATHER_CITY") or "Seoul").strip()
+        self.tmdb_api_key: str = (os.getenv("TMDB_API_KEY") or "").strip()
+        self.kofic_api_key: str = (os.getenv("KOFIC_API_KEY") or "").strip()
         self._gemini_models: dict[str, object] = {}
 
         if self.gemini_api_key:
@@ -102,6 +104,8 @@ class Keymaker:
             os.getenv("OPENWEATHERMAP_API_KEY") or os.getenv("OPENWEATHER_API_KEY") or ""
         ).strip()
         self.openweather_city = (os.getenv("OPENWEATHER_CITY") or "Seoul").strip()
+        self.tmdb_api_key = (os.getenv("TMDB_API_KEY") or "").strip()
+        self.kofic_api_key = (os.getenv("KOFIC_API_KEY") or "").strip()
 
     @property
     def database_url(self) -> str:
