@@ -3,57 +3,74 @@
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import ensure_database, get_session_factory
+from database import (
+    ensure_mova_database,
+    ensure_secom_database,
+    get_mova_session_factory,
+    get_secom_session_factory,
+)
 
-# Mova 도메인 테이블 (접두어 mova_ 제거)
-DOMAIN_TABLE_CHECKS: tuple[tuple[str, str], ...] = (
-    ("mova", "movies"),
-    ("mova", "actors"),
-    ("mova", "movie_characters"),
-    ("mova", "tags"),
-    ("mova", "movie_tags"),
-    ("mova", "rankings"),
-    ("mova", "chat_intents"),
-    ("mova", "users"),
-    ("mova", "interactions"),
-    ("mova", "reviews"),
+MOVA_TABLE_CHECKS: tuple[str, ...] = (
+    "movies",
+    "actors",
+    "characters",
+    "tags",
+    "rankings",
+    "chat",
+    "reviews",
+)
+
+SECOM_TABLE_CHECKS: tuple[str, ...] = (
+    "user_groups",
+    "users",
 )
 
 
 class DbHealthAdapter:
     @staticmethod
     async def neon_time_check(db: AsyncSession) -> dict:
-        """FastAPI `Depends(get_db)` 로 주입된 세션으로 시각을 조회한다."""
         return await DbHealthAdapter._run_now(db)
 
     @staticmethod
     async def check_neon() -> dict:
-        ok, err = ensure_database()
+        ok, err = ensure_mova_database()
         if not ok:
             return {"status": "error", "message": err or "데이터베이스를 사용할 수 없습니다."}
 
-        factory = get_session_factory()
+        factory = get_mova_session_factory()
         async with factory() as session:
             return await DbHealthAdapter._run_now(session)
 
     @staticmethod
+    async def _count_table(session: AsyncSession, table: str) -> dict:
+        try:
+            result = await session.execute(text(f"SELECT COUNT(*) FROM {table}"))
+            return {"status": "ok", "count": result.scalar_one()}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    @staticmethod
     async def check_all_domains(db: AsyncSession) -> dict:
-        """Neon DB 내 Mova 테이블 접근 확인."""
+        """Mova·Secom DB 테이블 접근 확인."""
         ping = await DbHealthAdapter._run_now(db)
         if ping.get("status") != "success":
             return ping
 
-        domains: dict[str, dict] = {}
-        for domain, table in DOMAIN_TABLE_CHECKS:
-            try:
-                result = await db.execute(text(f"SELECT COUNT(*) FROM {table}"))
-                count = result.scalar_one()
-                domains.setdefault(domain, {})[table] = {"status": "ok", "count": count}
-            except Exception as e:
-                domains.setdefault(domain, {})[table] = {
-                    "status": "error",
-                    "message": str(e),
-                }
+        domains: dict[str, dict] = {"mova": {}, "secom": {}}
+
+        for table in MOVA_TABLE_CHECKS:
+            domains["mova"][table] = await DbHealthAdapter._count_table(db, table)
+
+        ok_secom, err_secom = ensure_secom_database()
+        if ok_secom:
+            async with get_secom_session_factory() as secom_session:
+                for table in SECOM_TABLE_CHECKS:
+                    domains["secom"][table] = await DbHealthAdapter._count_table(
+                        secom_session,
+                        table,
+                    )
+        else:
+            domains["secom"]["_connection"] = {"status": "error", "message": err_secom}
 
         failed = [
             f"{domain}.{table}"
@@ -70,12 +87,11 @@ class DbHealthAdapter:
 
     @staticmethod
     async def check_all_domains_standalone() -> dict:
-        ok, err = ensure_database()
+        ok, err = ensure_mova_database()
         if not ok:
             return {"status": "error", "message": err or "데이터베이스를 사용할 수 없습니다."}
 
-        factory = get_session_factory()
-        async with factory() as session:
+        async with get_mova_session_factory() as session:
             return await DbHealthAdapter.check_all_domains(session)
 
     @staticmethod

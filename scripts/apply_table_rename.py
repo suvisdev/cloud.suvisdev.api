@@ -18,12 +18,12 @@ sys.path.insert(0, str(APPS))
 RENAME_PAIRS: tuple[tuple[str, str], ...] = (
     ("mova_movies", "movies"),
     ("mova_actors", "actors"),
-    ("mova_movie_characters", "movie_characters"),
+    ("mova_movie_characters", "characters"),
     ("mova_tags", "tags"),
-    ("mova_movie_tags", "movie_tags"),
+    ("mova_movie_tags", "tags"),
     ("mova_rankings", "rankings"),
-    ("mova_chat_intents", "chat_intents"),
-    ("mova_interactions", "interactions"),
+    ("mova_chat_intents", "chat"),
+    ("mova_interactions", "reviews"),
     ("mova_reviews", "reviews"),
     ("mova_users", "users"),
 )

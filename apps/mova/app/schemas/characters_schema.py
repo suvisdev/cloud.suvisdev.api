@@ -1,18 +1,18 @@
 from pydantic import BaseModel, Field
 
 
-class MovieCharacterLinkCreateSchema(BaseModel):
+class CharacterLinkCreateSchema(BaseModel):
     movie_id: int = Field(..., gt=0, description="영화 ID (`movies.id`)")
     actor_id: int = Field(..., gt=0, description="인물 ID (`actors.id`)")
 
 
-class MovieCharacterLinkSchema(BaseModel):
+class CharacterLinkSchema(BaseModel):
     id: int
     movie_id: int
     actor_id: int
 
 
-class MovieCharacterWithActorSchema(BaseModel):
+class CharacterWithActorSchema(BaseModel):
     id: int
     movie_id: int
     actor_id: int
@@ -21,7 +21,7 @@ class MovieCharacterWithActorSchema(BaseModel):
     profile_photo: str
 
 
-class MovieCharacterWithMovieSchema(BaseModel):
+class CharacterWithMovieSchema(BaseModel):
     id: int
     movie_id: int
     actor_id: int

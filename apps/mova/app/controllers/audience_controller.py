@@ -1,11 +1,12 @@
 import logging
 
-from mova.app.repositories.audience_repository import ChatIntentRepository
+from mova.app.repositories.chat_repository import ChatRepository
 from mova.app.schemas.audience_schema import MovaChatResponseSchema
 from mova.app.services.audience_service import MovaChatService
 from mova.app.services.intent_extraction_service import IntentExtractionService
 from mova.app.services.movies_service import MoviesService
-from mova.app.services.users_service import UsersService
+from mova.app.services.search_service import SearchService
+from secom.app.user_lookup import get_secom_user_profile
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +15,8 @@ class MovaChatController:
     def __init__(self) -> None:
         self.mova_chat_service = MovaChatService()
         self.intent_extraction_service = IntentExtractionService()
-        self.chat_intent_repository = ChatIntentRepository()
+        self.chat_repository = ChatRepository()
         self.movies_service = MoviesService()
-        self.users_service = UsersService()
 
     async def prepare_chat_context(
         self,
@@ -38,31 +38,37 @@ class MovaChatController:
             refined = message.strip()[:255]
 
         past_intents: list = []
+        tag_catalog: list = []
         try:
-            await self.chat_intent_repository.upsert(
+            await self.chat_repository.upsert(
                 raw_message=message,
                 refined_query=refined,
                 keywords=keywords,
+                user_id=user_id,
             )
-            past_all = await self.chat_intent_repository.get_top_for_context(limit=8)
+            past_all = await self.chat_repository.get_top_for_context(
+                limit=8,
+                user_id=user_id,
+            )
             past_intents = [
                 p
                 for p in past_all
                 if p.refined_query.strip().lower() != refined.lower()
             ][:6]
+            tag_catalog = await self._search_movies_by_intent(refined, keywords)
         except Exception:
             logger.warning(
-                "[MovaChatController] DB 미연결 — 의도 저장·과거 취향 조회 생략, Gemini 추천만 진행",
+                "[MovaChatController] DB 미연결 — 의도 저장·태그 검색·과거 취향 생략, Gemini 추천만 진행",
                 exc_info=True,
             )
 
         mova_user = None
         if user_id is not None:
             try:
-                mova_user = await self.users_service.get_user(user_id)
+                mova_user = await get_secom_user_profile(user_id)
             except Exception:
                 logger.warning(
-                    "[MovaChatController] user_id=%s 프로필 로드 실패 — 취향 미반영",
+                    "[MovaChatController] user_id=%s Secom 프로필 로드 실패 — 취향 미반영",
                     user_id,
                 )
 
@@ -70,8 +76,44 @@ class MovaChatController:
             "refined_query": refined,
             "keywords": keywords,
             "past_intents": past_intents,
+            "tag_catalog": tag_catalog,
             "mova_user": mova_user,
         }
+
+    async def _search_movies_by_intent(
+        self,
+        refined_query: str,
+        keywords: list[str],
+    ) -> list:
+        """chat 의도 → GET /mova/search 와 동일: tags.label 등으로 movies 조회."""
+        search = SearchService()
+        seen: set[str] = set()
+        hits = []
+        queries: list[str] = []
+        if refined_query.strip():
+            queries.append(refined_query.strip())
+        for kw in keywords:
+            if kw.strip() and kw.strip() not in queries:
+                queries.append(kw.strip())
+        for q in queries[:5]:
+            try:
+                batch = await search.search(q, limit=8)
+            except Exception:
+                logger.warning("[MovaChatController] intent search failed — q=%r", q, exc_info=True)
+                continue
+            for item in batch:
+                if item.id in seen:
+                    continue
+                seen.add(item.id)
+                hits.append(item)
+                if len(hits) >= 12:
+                    return hits
+        logger.info(
+            "[MovaChatController] tag_catalog — queries=%s hits=%s",
+            queries,
+            len(hits),
+        )
+        return hits
 
     async def build_prompt(
         self,
@@ -89,8 +131,9 @@ class MovaChatController:
             refined_query=context["refined_query"],
             keywords=context["keywords"],
             past_intents=context["past_intents"],
-            user_nickname=user.nickname if user else None,
-            preferred_genres=user.preferred_genres if user else None,
+            tag_catalog=context.get("tag_catalog") or [],
+            user_nickname=user.get("nickname") if user else None,
+            preferred_genres=user.get("preferred_genres") if user else None,
         )
 
     async def build_response(

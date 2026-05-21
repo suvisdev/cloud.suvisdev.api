@@ -2,7 +2,7 @@ import logging
 
 from sqlalchemy import select
 
-from database import get_session_factory
+from database import get_secom_session_factory
 from secom.app.models.role import UserRole
 from secom.app.models.user_group_model import UserGroup
 from secom.app.models.user_model import User
@@ -18,7 +18,7 @@ DEFAULT_GROUPS: list[tuple[str, str]] = [
 
 async def seed_secom_if_empty() -> None:
     """권한 그룹·기본 admin/user 계정이 없으면 생성."""
-    factory = get_session_factory()
+    factory = get_secom_session_factory()
     async with factory() as session:
         result = await session.execute(select(UserGroup.id).limit(1))
         if result.scalar_one_or_none() is not None:

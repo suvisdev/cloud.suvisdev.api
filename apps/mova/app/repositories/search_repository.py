@@ -6,8 +6,8 @@ from sqlalchemy import String, cast, or_, select
 
 from database import get_session_factory
 from mova.app.models.actors_model import MovaActor
-from mova.app.models.movie_characters_model import MovaMovieCharacter
-from mova.app.models.movie_tags_model import MovaMovieTag, MovaTag
+from mova.app.models.characters_model import MovaCharacter
+from mova.app.models.tags_model import MovaTag
 from mova.app.models.movies_model import MovaMovie
 
 logger = logging.getLogger(__name__)
@@ -60,8 +60,8 @@ class SearchRepository:
 
             person_rows = await session.execute(
                 select(MovaMovie)
-                .join(MovaMovieCharacter, MovaMovieCharacter.movie_id == MovaMovie.id)
-                .join(MovaActor, MovaActor.id == MovaMovieCharacter.actor_id)
+                .join(MovaCharacter, MovaCharacter.movie_id == MovaMovie.id)
+                .join(MovaActor, MovaActor.id == MovaCharacter.actor_id)
                 .where(MovaActor.name.ilike(pattern))
                 .order_by(MovaMovie.rating.desc(), MovaMovie.id.desc())
                 .limit(cap),
@@ -71,8 +71,7 @@ class SearchRepository:
 
             tag_rows = await session.execute(
                 select(MovaMovie)
-                .join(MovaMovieTag, MovaMovieTag.movie_id == MovaMovie.id)
-                .join(MovaTag, MovaTag.id == MovaMovieTag.tag_id)
+                .join(MovaTag, MovaTag.movie_id == MovaMovie.id)
                 .where(
                     or_(
                         MovaTag.label.ilike(pattern),

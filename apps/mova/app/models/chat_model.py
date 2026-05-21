@@ -1,3 +1,5 @@
+"""@see docs/DevOps/Backend/ENTITY_RULE.md — Mova AI 채팅 검색·취향 의도 로그."""
+
 from datetime import datetime
 
 from sqlalchemy import DateTime, Integer, String, Text, func
@@ -7,11 +9,17 @@ from sqlalchemy.orm import Mapped, mapped_column
 from mova.app.models.base import MovaModel
 
 
-class MovaChatIntent(MovaModel):
-    """Mova 채팅에서 추출한 취향·검색 의도 (정제 문구). PK `id`."""
+class MovaChat(MovaModel):
+    """Mova 채팅에서 추출한 취향·검색 의도. PK `id`."""
 
-    __tablename__ = "chat_intents"
+    __tablename__ = "chat"
 
+    user_id: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        index=True,
+        comment="Secom users.id (별도 DB — FK 없음, 비로그인은 NULL)",
+    )
     raw_message: Mapped[str] = mapped_column(Text, nullable=False)
     refined_query: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     keywords: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)

@@ -1,26 +1,38 @@
-"""@see docs/DevOps/Backend/ENTITY_RULE.md — 영화 리뷰·별점."""
+"""@see docs/DevOps/Backend/ENTITY_RULE.md — 사용자↔영화 반응·별점 리뷰(단일 테이블 `reviews`)."""
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from mova.app.models.base import MovaModel
 
+ACTION_FAVORITE = "favorite"
+ACTION_WATCHED = "watched"
+ACTION_CLICK = "click"
+ACTION_NOT_INTERESTED = "not_interested"
+ACTION_REVIEW = "review"
+
+EVENT_ACTION_TYPES = frozenset(
+    {
+        ACTION_FAVORITE,
+        ACTION_WATCHED,
+        ACTION_CLICK,
+        ACTION_NOT_INTERESTED,
+    },
+)
+
 
 class MovaReview(MovaModel):
-    """사용자 영화 리뷰. PK `id` — 사용자·영화당 1건(UNIQUE)."""
+    """사용자의 영화 반응·리뷰. PK `id` — 이벤트는 중복 허용, 별점 리뷰는 user+movie당 1건."""
 
     __tablename__ = "reviews"
-    __table_args__ = (
-        UniqueConstraint("user_id", "movie_id", name="uq_reviews_user_movie"),
-    )
 
     user_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
+        comment="Secom users.id (별도 DB — FK 없음)",
     )
     movie_id: Mapped[int] = mapped_column(
         Integer,
@@ -28,11 +40,12 @@ class MovaReview(MovaModel):
         nullable=False,
         index=True,
     )
-    rating: Mapped[float] = mapped_column(Float, nullable=False)
-    body: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    created_at: Mapped[datetime] = mapped_column(
+    action_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    action_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
         index=True,
     )
+    rating: Mapped[float | None] = mapped_column(Float, nullable=True)
+    body: Mapped[str | None] = mapped_column(Text, nullable=True)

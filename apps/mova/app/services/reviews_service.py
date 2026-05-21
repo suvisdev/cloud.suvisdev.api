@@ -1,8 +1,14 @@
 import logging
 
-from mova.app.repositories.reviews_repository import ReviewsRepository, ReviewsRepositoryError
+from mova.app.repositories.reviews_repository import (
+    ReviewsRepository,
+    ReviewsRepositoryError,
+)
 from mova.app.schemas.reviews_schema import (
     MovieRatingSummarySchema,
+    ReviewActivityCreateSchema,
+    ReviewActivitySchema,
+    ReviewActivityWithMovieSchema,
     ReviewCreateSchema,
     ReviewSchema,
     ReviewUpdateSchema,
@@ -16,81 +22,154 @@ class ReviewsService:
     def __init__(self) -> None:
         self.repository = ReviewsRepository()
 
-    def _to_schema(self, row) -> ReviewSchema:
+    def _activity_schema(self, row) -> ReviewActivitySchema:
+        return ReviewActivitySchema(
+            id=row.id,
+            user_id=row.user_id,
+            movie_id=row.movie_id,
+            action_type=row.action_type,
+            action_at=row.action_at,
+            rating=row.rating,
+            body=row.body,
+        )
+
+    def _rating_review_schema(self, row) -> ReviewSchema:
         return ReviewSchema(
             id=row.id,
             user_id=row.user_id,
             movie_id=row.movie_id,
-            rating=row.rating,
+            rating=float(row.rating or 0),
             body=row.body or "",
-            created_at=row.created_at,
+            created_at=row.action_at,
         )
 
-    async def save_review(self, payload: ReviewCreateSchema) -> ReviewSchema:
+    async def record_activity(
+        self,
+        payload: ReviewActivityCreateSchema,
+    ) -> ReviewActivitySchema:
         logger.info(
-            "[ReviewsService] save_review — user=%s movie=%s",
+            "[ReviewsService] record_activity — user=%s movie=%s %s",
+            payload.user_id,
+            payload.movie_id,
+            payload.action_type,
+        )
+        row = await self.repository.record_activity(
+            user_id=payload.user_id,
+            movie_id=payload.movie_id,
+            action_type=payload.action_type,
+        )
+        return self._activity_schema(row)
+
+    async def save_rating_review(self, payload: ReviewCreateSchema) -> ReviewSchema:
+        logger.info(
+            "[ReviewsService] save_rating_review — user=%s movie=%s",
             payload.user_id,
             payload.movie_id,
         )
-        row, _avg, _count = await self.repository.upsert_review(
+        row, _, _ = await self.repository.upsert_rating_review(
             user_id=payload.user_id,
             movie_id=payload.movie_id,
             rating=payload.rating,
             body=payload.body,
         )
-        return self._to_schema(row)
+        return self._rating_review_schema(row)
 
-    async def update_review(
+    async def update_rating_review(
         self,
         review_id: int,
         payload: ReviewUpdateSchema,
     ) -> ReviewSchema:
-        row = await self.repository.get_by_id(review_id)
+        row = await self.repository.get_rating_review_by_id(review_id)
         if row is None:
             raise ReviewsRepositoryError(
                 f"리뷰 ID {review_id}를 찾을 수 없습니다.",
                 status_code=404,
             )
-        rating = payload.rating if payload.rating is not None else row.rating
-        body = payload.body if payload.body is not None else row.body
-        updated, _, _ = await self.repository.upsert_review(
+        rating = payload.rating if payload.rating is not None else float(row.rating or 0)
+        body = payload.body if payload.body is not None else (row.body or "")
+        updated, _, _ = await self.repository.upsert_rating_review(
             user_id=row.user_id,
             movie_id=row.movie_id,
             rating=rating,
             body=body,
         )
-        return self._to_schema(updated)
+        return self._rating_review_schema(updated)
 
-    async def list_reviews_by_movie(
+    async def list_activities_by_user(
+        self,
+        user_id: int,
+        *,
+        action_type: str | None = None,
+        limit: int = 100,
+    ) -> list[ReviewActivitySchema]:
+        rows = await self.repository.list_activities_by_user(
+            user_id,
+            action_type=action_type,
+            limit=limit,
+        )
+        return [self._activity_schema(r) for r in rows]
+
+    async def list_activities_by_user_with_movies(
+        self,
+        user_id: int,
+        *,
+        action_type: str | None = None,
+        limit: int = 100,
+    ) -> list[ReviewActivityWithMovieSchema]:
+        rows = await self.repository.list_activities_by_user_with_movies(
+            user_id,
+            action_type=action_type,
+            limit=limit,
+        )
+        return [
+            ReviewActivityWithMovieSchema(
+                id=row.id,
+                user_id=row.user_id,
+                movie_id=row.movie_id,
+                action_type=row.action_type,
+                action_at=row.action_at,
+                movie_title=movie.title,
+                movie_slug=movie.slug,
+                rating=row.rating,
+                body=row.body,
+            )
+            for row, movie in rows
+        ]
+
+    async def list_rating_reviews_by_movie(
         self,
         movie_id: int,
         limit: int = 50,
     ) -> list[ReviewSchema]:
-        rows = await self.repository.list_by_movie(movie_id, limit=limit)
-        return [self._to_schema(review) for review, _user in rows]
+        rows = await self.repository.list_rating_reviews_by_movie(movie_id, limit=limit)
+        return [self._rating_review_schema(review) for review, _nickname in rows]
 
-    async def list_by_movie(
+    async def list_rating_reviews_by_user(
+        self,
+        user_id: int,
+        limit: int = 50,
+    ) -> list[ReviewSchema]:
+        rows = await self.repository.list_rating_reviews_by_user(user_id, limit=limit)
+        return [self._rating_review_schema(r) for r in rows]
+
+    async def list_rating_reviews_by_movie_with_users(
         self,
         movie_id: int,
         limit: int = 50,
     ) -> list[ReviewWithUserSchema]:
-        rows = await self.repository.list_by_movie(movie_id, limit=limit)
+        rows = await self.repository.list_rating_reviews_by_movie(movie_id, limit=limit)
         return [
             ReviewWithUserSchema(
                 id=review.id,
                 user_id=review.user_id,
-                nickname=user.nickname,
+                nickname=nickname,
                 movie_id=review.movie_id,
-                rating=review.rating,
+                rating=float(review.rating or 0),
                 body=review.body or "",
-                created_at=review.created_at,
+                created_at=review.action_at,
             )
-            for review, user in rows
+            for review, nickname in rows
         ]
-
-    async def list_by_user(self, user_id: int, limit: int = 50) -> list[ReviewSchema]:
-        rows = await self.repository.list_by_user(user_id, limit=limit)
-        return [self._to_schema(r) for r in rows]
 
     async def get_movie_rating_summary(self, movie_id: int) -> MovieRatingSummarySchema:
         average, count = await self.repository.get_movie_rating_summary(movie_id)

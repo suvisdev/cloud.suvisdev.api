@@ -31,14 +31,12 @@ from matrix.app.weather_reader import (
 from mova.app.controllers.actors_controller import ActorsController
 from mova.app.controllers.audience_controller import MovaChatController
 from mova.app.controllers.movies_controller import MoviesController
-from mova.app.controllers.movie_characters_controller import MovieCharactersController
-from mova.app.controllers.movie_tags_controller import MovieTagsController
+from mova.app.controllers.characters_controller import CharactersController
+from mova.app.controllers.tags_controller import TagsController
 from mova.app.controllers.rankings_controller import RankingsController
 from mova.app.controllers.search_controller import SearchController
 from mova.app.controllers.movie_import_controller import MovieImportController
-from mova.app.controllers.interactions_controller import InteractionsController
 from mova.app.controllers.reviews_controller import ReviewsController
-from mova.app.controllers.users_controller import UsersController
 from mova.app.repositories.actors_repository import ActorsRepositoryError
 from mova.app.repositories.movies_repository import MoviesRepositoryError
 from mova.app.schemas.actors_schema import ActorCreateSchema, ActorSchema
@@ -54,41 +52,40 @@ from mova.app.schemas.search_schema import MovaSearchItemSchema
 from mova.app.schemas.movie_import_schema import MovieImportResultSchema
 from mova.app.adapters.kofic_adapter import KoficAdapter, KoficAdapterError
 from mova.app.adapters.tmdb_adapter import TmdbAdapterError
-from mova.app.repositories.movie_characters_repository import MovieCharactersRepositoryError
-from mova.app.repositories.movie_tags_repository import MovieTagsRepositoryError
+from mova.app.repositories.characters_repository import CharactersRepositoryError
+from mova.app.repositories.tags_repository import TagsRepositoryError
 from mova.app.repositories.rankings_repository import RankingsRepositoryError
-from mova.app.schemas.movie_characters_schema import (
-    MovieCharacterLinkCreateSchema,
-    MovieCharacterLinkSchema,
-    MovieCharacterWithActorSchema,
-    MovieCharacterWithMovieSchema,
+from mova.app.schemas.characters_schema import (
+    CharacterLinkCreateSchema,
+    CharacterLinkSchema,
+    CharacterWithActorSchema,
+    CharacterWithMovieSchema,
 )
-from mova.app.schemas.movie_tags_schema import (
-    MovieTagLinkCreateSchema,
-    MovieTagLinkSchema,
-    MovieWithTagSchema,
+from mova.app.schemas.tags_schema import (
+    MoviesByTagSchema,
+    TagCatalogSchema,
     TagCreateSchema,
     TagSchema,
-    TagWithMovieSchema,
 )
-from mova.app.repositories.interactions_repository import InteractionsRepositoryError
 from mova.app.repositories.reviews_repository import ReviewsRepositoryError
-from mova.app.repositories.users_repository import UsersRepositoryError
 from mova.app.schemas.rankings_schema import HotRankingDisplaySchema, RankingBulkSchema
-from mova.app.schemas.interactions_schema import (
-    InteractionCreateSchema,
-    InteractionSchema,
-    InteractionWithMovieSchema,
-)
 from mova.app.schemas.reviews_schema import (
     MovieRatingSummarySchema,
+    ReviewActivityCreateSchema,
+    ReviewActivitySchema,
+    ReviewActivityWithMovieSchema,
     ReviewCreateSchema,
     ReviewSchema,
     ReviewUpdateSchema,
     ReviewWithUserSchema,
 )
-from mova.app.schemas.users_schema import MovaUserCreateSchema, MovaUserSchema, MovaUserUpdateSchema
-from titanic.app.james_controller import JamesController
+from secom.app.seed import seed_secom_if_empty
+from secom.app.controllers.user_controller import UserController
+from secom.app.repositories.user_repository import UserRepositoryError
+from secom.app.models.role import UserRole
+from secom.app.schemas.auth_schema import LoginSchema, UserSchema
+from titanic.app.controllers.james_controller import JamesController
+from titanic.app.schemas.caledon_validation import TitanicPredictInput, TitanicPredictOutput
 
 keymaker = get_keymaker()
 
@@ -181,6 +178,7 @@ async def lifespan(app: FastAPI):
         if ok:
             try:
                 await create_tables()
+                await seed_secom_if_empty()
                 try:
                     from mova.app.services.movie_import_service import MovieImportService
 
@@ -367,112 +365,62 @@ def _gemini_reply(prompt: str, model_key: Literal["flash", "flash15", "pro"] | N
     return text
 
 
-@app.post("/mova/users", response_model=MovaUserSchema, status_code=201)
-async def mova_save_user(req: MovaUserCreateSchema) -> MovaUserSchema:
-    """Mova 취향 분석용 사용자 저장 (`users`, 이메일 기준 upsert)."""
-    logger.info("[main] mova save user — %s", req.email)
-    try:
-        return await UsersController().save_user(req)
-    except UsersRepositoryError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-
-
-@app.get("/mova/users", response_model=list[MovaUserSchema])
-async def mova_list_users(limit: int = 100) -> list[MovaUserSchema]:
-    try:
-        return await UsersController().list_users(limit=limit)
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-
-
-@app.get("/mova/users/by-email", response_model=MovaUserSchema)
-async def mova_get_user_by_email(email: str) -> MovaUserSchema:
-    try:
-        return await UsersController().get_user_by_email(email)
-    except UsersRepositoryError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-
-
-@app.get("/mova/users/{user_id}", response_model=MovaUserSchema)
-async def mova_get_user(user_id: int) -> MovaUserSchema:
-    try:
-        return await UsersController().get_user(user_id)
-    except UsersRepositoryError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-
-
-@app.patch("/mova/users/{user_id}", response_model=MovaUserSchema)
-async def mova_update_user(user_id: int, req: MovaUserUpdateSchema) -> MovaUserSchema:
-    """닉네임·선호 장르 수정."""
-    try:
-        return await UsersController().update_user(user_id, req)
-    except UsersRepositoryError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-
-
-@app.post("/mova/interactions", response_model=InteractionSchema, status_code=201)
-async def mova_record_interaction(req: InteractionCreateSchema) -> InteractionSchema:
-    """사용자 영화 반응 기록 (`interactions`) — 찜/시청/클릭/관심없음."""
+@app.post("/mova/reviews/activity", response_model=ReviewActivitySchema, status_code=201)
+async def mova_record_review_activity(
+    req: ReviewActivityCreateSchema,
+) -> ReviewActivitySchema:
+    """사용자 영화 반응 (`reviews` 테이블) — 찜/시청/클릭/관심없음. 별점 리뷰는 POST /mova/reviews."""
     logger.info(
-        "[main] mova interaction — user=%s movie=%s %s",
+        "[main] mova review activity — user=%s movie=%s %s",
         req.user_id,
         req.movie_id,
         req.action_type,
     )
     try:
-        return await InteractionsController().record(req)
-    except InteractionsRepositoryError as e:
+        return await ReviewsController().record_activity(req)
+    except ReviewsRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
 
 
-@app.get("/mova/interactions", response_model=list[InteractionSchema])
-async def mova_list_interactions(
+@app.get("/mova/reviews/activity", response_model=list[ReviewActivitySchema])
+async def mova_list_review_activities(
     user_id: int,
     action_type: str | None = None,
     limit: int = 100,
-) -> list[InteractionSchema]:
-    """사용자 상호작용 이력."""
+) -> list[ReviewActivitySchema]:
+    """사용자 반응 이력 (별점 리뷰 제외)."""
     try:
-        return await InteractionsController().list_by_user(
+        return await ReviewsController().list_activities_by_user(
             user_id,
             action_type=action_type,
             limit=limit,
         )
-    except InteractionsRepositoryError as e:
+    except ReviewsRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
 
 
 @app.get(
-    "/mova/users/{user_id}/interactions",
-    response_model=list[InteractionWithMovieSchema],
+    "/mova/users/{user_id}/reviews/activity",
+    response_model=list[ReviewActivityWithMovieSchema],
 )
-async def mova_list_user_interactions(
+async def mova_list_user_review_activities(
     user_id: int,
     action_type: str | None = None,
     limit: int = 100,
-) -> list[InteractionWithMovieSchema]:
+) -> list[ReviewActivityWithMovieSchema]:
     """사용자 반응 + 영화 제목 (취향 분석·대시보드용)."""
     try:
-        result = await InteractionsController().list_by_user(
+        return await ReviewsController().list_activities_by_user(
             user_id,
             action_type=action_type,
             limit=limit,
             with_movies=True,
         )
-        return result
-    except InteractionsRepositoryError as e:
+    except ReviewsRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
@@ -480,10 +428,10 @@ async def mova_list_user_interactions(
 
 @app.post("/mova/reviews", response_model=ReviewSchema, status_code=201)
 async def mova_save_review(req: ReviewCreateSchema) -> ReviewSchema:
-    """영화 리뷰·별점 저장 (`reviews`) — 영화 평균 별점 자동 갱신."""
+    """영화 별점·감상평 (`reviews`, action_type=review) — 평균 별점 자동 갱신."""
     logger.info("[main] mova review — user=%s movie=%s", req.user_id, req.movie_id)
     try:
-        return await ReviewsController().save_review(req)
+        return await ReviewsController().save_rating_review(req)
     except ReviewsRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
@@ -493,7 +441,7 @@ async def mova_save_review(req: ReviewCreateSchema) -> ReviewSchema:
 @app.patch("/mova/reviews/{review_id}", response_model=ReviewSchema)
 async def mova_update_review(review_id: int, req: ReviewUpdateSchema) -> ReviewSchema:
     try:
-        return await ReviewsController().update_review(review_id, req)
+        return await ReviewsController().update_rating_review(review_id, req)
     except ReviewsRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
@@ -511,8 +459,14 @@ async def mova_list_reviews(
         raise HTTPException(status_code=400, detail="user_id 또는 movie_id가 필요합니다.")
     try:
         if user_id is not None:
-            return await ReviewsController().list_by_user(user_id, limit=limit)
-        return await ReviewsController().list_reviews_by_movie(movie_id, limit=limit)
+            return await ReviewsController().list_rating_reviews_by_user(
+                user_id,
+                limit=limit,
+            )
+        return await ReviewsController().list_rating_reviews_by_movie(
+            movie_id,
+            limit=limit,
+        )
     except ReviewsRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
@@ -529,7 +483,10 @@ async def mova_list_movie_reviews(
 ) -> list[ReviewWithUserSchema]:
     """영화 리뷰 목록 (닉네임 포함 — 커뮤니티 UI)."""
     try:
-        return await ReviewsController().list_by_movie(movie_id, limit=limit)
+        return await ReviewsController().list_rating_reviews_by_movie_with_users(
+            movie_id,
+            limit=limit,
+        )
     except ReviewsRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
@@ -708,40 +665,40 @@ async def mova_get_actor(actor_id: int) -> ActorSchema:
         raise HTTPException(status_code=503, detail=str(e)) from e
 
 
-@app.post("/mova/movie-characters", response_model=MovieCharacterLinkSchema, status_code=201)
-async def mova_link_movie_character(
-    req: MovieCharacterLinkCreateSchema,
-) -> MovieCharacterLinkSchema:
-    """영화–인물(배우) 다대다 연결 저장 (`movie_characters`)."""
-    logger.info("[main] mova link movie-character — movie_id=%s actor_id=%s", req.movie_id, req.actor_id)
+@app.post("/mova/characters", response_model=CharacterLinkSchema, status_code=201)
+async def mova_link_character(
+    req: CharacterLinkCreateSchema,
+) -> CharacterLinkSchema:
+    """영화–인물(배우) 연결 저장 (`characters`)."""
+    logger.info("[main] mova link character — movie_id=%s actor_id=%s", req.movie_id, req.actor_id)
     try:
-        return await MovieCharactersController().link(req)
-    except MovieCharactersRepositoryError as e:
+        return await CharactersController().link(req)
+    except CharactersRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
 
 
-@app.delete("/mova/movie-characters/{link_id}", status_code=204)
-async def mova_unlink_movie_character(link_id: int) -> None:
+@app.delete("/mova/characters/{link_id}", status_code=204)
+async def mova_unlink_character(link_id: int) -> None:
     """영화–인물 연결 삭제."""
     try:
-        await MovieCharactersController().unlink(link_id)
-    except MovieCharactersRepositoryError as e:
+        await CharactersController().unlink(link_id)
+    except CharactersRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
 
 
-@app.get("/mova/movie-characters", response_model=list[MovieCharacterLinkSchema])
-async def mova_list_movie_character_links(
+@app.get("/mova/characters", response_model=list[CharacterLinkSchema])
+async def mova_list_character_links(
     movie_id: int | None = None,
     actor_id: int | None = None,
     limit: int = 100,
-) -> list[MovieCharacterLinkSchema]:
+) -> list[CharacterLinkSchema]:
     """연결 목록 (movie_id 또는 actor_id로 필터 가능)."""
     try:
-        return await MovieCharactersController().list_links(
+        return await CharactersController().list_links(
             movie_id=movie_id,
             actor_id=actor_id,
             limit=limit,
@@ -752,16 +709,16 @@ async def mova_list_movie_character_links(
 
 @app.get(
     "/mova/movies/{movie_id}/characters",
-    response_model=list[MovieCharacterWithActorSchema],
+    response_model=list[CharacterWithActorSchema],
 )
 async def mova_list_characters_by_movie(
     movie_id: int,
     limit: int = 100,
-) -> list[MovieCharacterWithActorSchema]:
+) -> list[CharacterWithActorSchema]:
     """영화에 출연한 인물(배우) 목록."""
     try:
-        return await MovieCharactersController().list_actors_by_movie(movie_id, limit=limit)
-    except MovieCharactersRepositoryError as e:
+        return await CharactersController().list_actors_by_movie(movie_id, limit=limit)
+    except CharactersRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
@@ -769,58 +726,51 @@ async def mova_list_characters_by_movie(
 
 @app.get(
     "/mova/actors/{actor_id}/movies",
-    response_model=list[MovieCharacterWithMovieSchema],
+    response_model=list[CharacterWithMovieSchema],
 )
 async def mova_list_movies_by_actor(
     actor_id: int,
     limit: int = 100,
-) -> list[MovieCharacterWithMovieSchema]:
+) -> list[CharacterWithMovieSchema]:
     """인물(배우)가 출연한 영화 목록."""
     try:
-        return await MovieCharactersController().list_movies_by_actor(actor_id, limit=limit)
-    except MovieCharactersRepositoryError as e:
+        return await CharactersController().list_movies_by_actor(actor_id, limit=limit)
+    except CharactersRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
 
 
 @app.post("/mova/tags", response_model=TagSchema, status_code=201)
-async def mova_save_tag(req: TagCreateSchema) -> TagSchema:
-    """감성 태그 저장 (`tags`). 예: '우울할 때 위로되는 영화'."""
-    logger.info("[main] mova save tag — %r", req.label)
+async def mova_attach_tag(req: TagCreateSchema) -> TagSchema:
+    """영화에 감성 태그 붙이기 (`tags` 테이블)."""
+    logger.info(
+        "[main] mova attach tag — movie_id=%s %r",
+        req.movie_id,
+        req.label,
+    )
     try:
-        return await MovieTagsController().save_tag(req)
-    except MovieTagsRepositoryError as e:
+        return await TagsController().attach(req)
+    except TagsRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
 
 
-@app.get("/mova/tags", response_model=list[TagSchema])
-async def mova_list_tags(limit: int = 100) -> list[TagSchema]:
-    """감성 태그 목록 (채팅 추천 버튼 문구 등)."""
+@app.get("/mova/tags/catalog", response_model=list[TagCatalogSchema])
+async def mova_list_tag_catalog(limit: int = 100) -> list[TagCatalogSchema]:
+    """slug 기준 감성 태그 카탈로그 (채팅 버튼 등)."""
     try:
-        return await MovieTagsController().list_tags(limit=limit)
+        return await TagsController().list_catalog(limit=limit)
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
 
 
-@app.post("/mova/movie-tags", response_model=MovieTagLinkSchema, status_code=201)
-async def mova_link_movie_tag(req: MovieTagLinkCreateSchema) -> MovieTagLinkSchema:
-    """영화–감성 태그 연결 (`movie_tags`)."""
+@app.delete("/mova/tags/{link_id}", status_code=204)
+async def mova_unlink_tag(link_id: int) -> None:
     try:
-        return await MovieTagsController().link(req)
-    except MovieTagsRepositoryError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-
-
-@app.delete("/mova/movie-tags/{link_id}", status_code=204)
-async def mova_unlink_movie_tag(link_id: int) -> None:
-    try:
-        await MovieTagsController().unlink(link_id)
-    except MovieTagsRepositoryError as e:
+        await TagsController().unlink(link_id)
+    except TagsRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
@@ -828,21 +778,21 @@ async def mova_unlink_movie_tag(link_id: int) -> None:
 
 @app.get("/mova/movies/{movie_id}/tags", response_model=list[TagSchema])
 async def mova_list_tags_by_movie(movie_id: int, limit: int = 50) -> list[TagSchema]:
-    """영화에 연결된 감성 태그."""
+    """영화에 붙은 감성 태그."""
     try:
-        return await MovieTagsController().list_tags_by_movie(movie_id, limit=limit)
-    except MovieTagsRepositoryError as e:
+        return await TagsController().list_by_movie(movie_id, limit=limit)
+    except TagsRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
 
 
-@app.get("/mova/tags/{tag_id}/movies", response_model=list[MovieWithTagSchema])
-async def mova_list_movies_by_tag(tag_id: int, limit: int = 50) -> list[MovieWithTagSchema]:
-    """감성 태그에 해당하는 영화 목록."""
+@app.get("/mova/tags/{slug}/movies", response_model=list[MoviesByTagSchema])
+async def mova_list_movies_by_tag_slug(slug: str, limit: int = 50) -> list[MoviesByTagSchema]:
+    """slug에 해당하는 영화 목록."""
     try:
-        return await MovieTagsController().list_movies_by_tag(tag_id, limit=limit)
-    except MovieTagsRepositoryError as e:
+        return await TagsController().list_movies_by_slug(slug, limit=limit)
+    except TagsRepositoryError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
@@ -1061,7 +1011,7 @@ async def check_db(db: AsyncSession = Depends(get_db)):
 
 @app.get("/db-check/domains")
 async def check_db_domains(db: AsyncSession = Depends(get_db)):
-    """Mova 테이블 접근 확인 (Neon DB)."""
+    """Mova·Secom 테이블 접근 확인."""
     return await DbHealthAdapter.check_all_domains(db)
 
 
@@ -1112,6 +1062,19 @@ def read_titanic_model():
     controller = JamesController()
     model_name = controller.get_model_name_and_accuracy()
     return JSONResponse(content=jsonable_encoder(model_name))
+
+
+@app.post("/titanic/predict", response_model=TitanicPredictOutput)
+def predict_titanic_survival(payload: TitanicPredictInput):
+    controller = JamesController()
+    return controller.predict(payload)
+
+
+@app.get("/titanic/predict/dicaprio")
+def analyze_titanic_dicaprio():
+    controller = JamesController()
+    return controller.analyze_dicaprio_survival()
+
 
 
 @app.get("/doro/data")

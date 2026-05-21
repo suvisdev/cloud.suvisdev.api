@@ -2,10 +2,10 @@
 
 from sqlalchemy.orm import Mapped, mapped_column
 
-from database import Base
+from database import SecomBase
 
 
-class SecomModel(Base):
+class SecomModel(SecomBase):
     """모든 secom ORM 테이블의 추상 베이스 — PK: int 자동 증감 `id`."""
 
     __abstract__ = True

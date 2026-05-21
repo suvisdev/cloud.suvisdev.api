@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
-from database import get_session_factory
+from database import get_secom_session_factory
 from secom.app.models.role import UserRole
 from secom.app.models.user_group_model import UserGroup
 from secom.app.models.user_model import User
@@ -42,7 +42,7 @@ class UserRepository:
             "[UserRepository] save_user 진입 (Neon) — %s",
             user_schema.log_summary(),
         )
-        factory = get_session_factory()
+        factory = get_secom_session_factory()
         async with factory() as session:
             existing = await session.execute(
                 select(User.id).where(User.username == user_schema.username),
@@ -72,7 +72,7 @@ class UserRepository:
             "[UserRepository] login_user 진입 (Neon) — %s",
             login_schema.log_summary(),
         )
-        factory = get_session_factory()
+        factory = get_secom_session_factory()
         async with factory() as session:
             result = await session.execute(
                 select(User)

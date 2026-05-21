@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 from fastapi import HTTPException
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -16,163 +17,308 @@ logger = logging.getLogger(__name__)
 
 _BACKEND_ENV = Path(__file__).resolve().parent.parent / ".env"
 
-_session_factory: async_sessionmaker[AsyncSession] | None = None
-_engine = None
-_init_error: str | None = None
-_active_db_url: str | None = None
+_mova_session_factory: async_sessionmaker[AsyncSession] | None = None
+_secom_session_factory: async_sessionmaker[AsyncSession] | None = None
+_mova_engine = None
+_secom_engine = None
+_mova_init_error: str | None = None
+_secom_init_error: str | None = None
+_active_mova_url: str | None = None
+_active_secom_url: str | None = None
 
 
 def reload_env() -> None:
-    """`backend/.env` 변경을 반영한다. (기존 프로세스에 남은 옛 DATABASE_URL 덮어쓰기)"""
+    """`backend/.env` 변경을 반영한다."""
     load_dotenv(_BACKEND_ENV, override=True)
 
 
-class Base(DeclarativeBase):
-    """SQLAlchemy 2.0 DeclarativeBase — 모든 ORM 모델이 상속한다."""
+class MovaBase(DeclarativeBase):
+    """Mova ORM (movies, rankings, …)."""
 
     pass
 
 
+class SecomBase(DeclarativeBase):
+    """Secom ORM (user_groups, users — 회원가입·로그인)."""
+
+    pass
+
+
+# Mova 모델 호환
+Base = MovaBase
+
+
 def _normalize_database_url(url: str) -> str:
-    """Neon 등에서 받은 URL을 비동기 psycopg 드라이버 형식으로 맞춘다."""
     normalized = url.strip()
     if normalized.startswith("postgresql://") and "+psycopg" not in normalized:
         normalized = normalized.replace("postgresql://", "postgresql+psycopg://", 1)
-    # psycopg 비동기에서 channel_binding=require 가 연결 실패를 유발하는 경우가 있음
     normalized = normalized.replace("&channel_binding=require", "").replace(
         "?channel_binding=require&", "?",
     ).replace("?channel_binding=require", "")
     return normalized
 
 
-def ensure_database() -> tuple[bool, str | None]:
-    """엔진·세션 팩토리를 한 번만 생성한다. `.env`의 DATABASE_URL 변경 시 재생성."""
-    global _session_factory, _engine, _init_error, _active_db_url
+def _resolve_mova_url() -> str:
+    return _normalize_database_url(
+        (os.getenv("MOVA_DATABASE_URL") or os.getenv("DATABASE_URL") or "").strip(),
+    )
 
-    reload_env()
-    raw_url = os.getenv("DATABASE_URL", "").strip()
-    if not raw_url:
-        _init_error = (
-            "DATABASE_URL 환경 변수가 없거나 비어 있습니다. "
-            "backend/.env 에 Neon(PostgreSQL) 연결 문자열을 설정하세요. "
-            "예: postgresql+psycopg://USER:PASSWORD@HOST/DBNAME?sslmode=require"
-        )
-        return False, _init_error
 
-    url = _normalize_database_url(raw_url)
-    if _session_factory is not None and _active_db_url == url:
-        return True, None
+def _resolve_secom_url() -> str:
+    explicit = (os.getenv("SECOM_DATABASE_URL") or "").strip()
+    if explicit:
+        return _normalize_database_url(explicit)
+    return _resolve_mova_url()
 
-    if _engine is not None and _active_db_url != url:
-        logger.warning(
-            "DATABASE_URL 변경 감지 (%s → %s) — DB 엔진 재초기화",
-            urlparse(_active_db_url.replace("postgresql+psycopg://", "postgresql://")).username
-            if _active_db_url
-            else "?",
-            urlparse(url.replace("postgresql+psycopg://", "postgresql://")).username,
-        )
-        _session_factory = None
-        _engine = None
+
+def _init_engine(
+    *,
+    url: str,
+    label: str,
+    active_url: str | None,
+    engine,
+    factory: async_sessionmaker[AsyncSession] | None,
+) -> tuple[object | None, async_sessionmaker[AsyncSession] | None, str | None, str]:
+    if not url:
+        return None, None, (
+            f"{label} URL이 없습니다. backend/.env 에 "
+            f"{'SECOM_DATABASE_URL' if label == 'Secom' else 'MOVA_DATABASE_URL 또는 DATABASE_URL'} "
+            "을 설정하세요."
+        ), None
+
+    if factory is not None and active_url == url:
+        return engine, factory, None, url
+
+    if engine is not None and active_url != url:
+        logger.warning("%s DB URL 변경 — 엔진 재초기화", label)
 
     try:
         parsed = urlparse(url.replace("postgresql+psycopg://", "postgresql://"))
-        _engine = create_async_engine(url, echo=True)
-        _session_factory = async_sessionmaker(
-            bind=_engine,
+        new_engine = create_async_engine(url, echo=True)
+        new_factory = async_sessionmaker(
+            bind=new_engine,
             class_=AsyncSession,
             expire_on_commit=False,
         )
-        _active_db_url = url
-        _init_error = None
         logger.info(
-            "Neon(PostgreSQL) 비동기 엔진 초기화 — user=%s host=%s db=%s",
+            "%s DB 엔진 — user=%s host=%s db=%s",
+            label,
             parsed.username,
             parsed.hostname,
             (parsed.path or "").lstrip("/"),
         )
-        return True, None
+        return new_engine, new_factory, None, url
     except Exception as e:
-        _init_error = str(e)
-        _session_factory = None
-        _engine = None
-        _active_db_url = None
-        logger.exception("DB 엔진 생성 실패")
-        return False, _init_error
+        logger.exception("%s DB 엔진 생성 실패", label)
+        return None, None, str(e), None
 
 
-def get_engine():
-    ok, err = ensure_database()
-    if not ok or _engine is None:
-        raise RuntimeError(err or "데이터베이스를 초기화할 수 없습니다.")
-    return _engine
+def ensure_mova_database() -> tuple[bool, str | None]:
+    global _mova_session_factory, _mova_engine, _mova_init_error, _active_mova_url
+    reload_env()
+    engine, factory, err, active = _init_engine(
+        url=_resolve_mova_url(),
+        label="Mova",
+        active_url=_active_mova_url,
+        engine=_mova_engine,
+        factory=_mova_session_factory,
+    )
+    _mova_engine, _mova_session_factory, _mova_init_error, _active_mova_url = (
+        engine,
+        factory,
+        err,
+        active,
+    )
+    return factory is not None, err
+
+
+def ensure_secom_database() -> tuple[bool, str | None]:
+    global _secom_session_factory, _secom_engine, _secom_init_error, _active_secom_url
+    reload_env()
+    secom_url = _resolve_secom_url()
+    mova_url = _resolve_mova_url()
+    if secom_url == mova_url:
+        ok, err = ensure_mova_database()
+        if ok:
+            _secom_engine = _mova_engine
+            _secom_session_factory = _mova_session_factory
+            _secom_init_error = None
+            _active_secom_url = _active_mova_url
+        else:
+            _secom_init_error = err
+        return ok, err
+
+    engine, factory, err, active = _init_engine(
+        url=secom_url,
+        label="Secom",
+        active_url=_active_secom_url,
+        engine=_secom_engine,
+        factory=_secom_session_factory,
+    )
+    _secom_engine, _secom_session_factory, _secom_init_error, _active_secom_url = (
+        engine,
+        factory,
+        err,
+        active,
+    )
+    return factory is not None, err
+
+
+def ensure_database() -> tuple[bool, str | None]:
+    """Mova DB 연결 (기존 호환)."""
+    return ensure_mova_database()
+
+
+def get_mova_engine():
+    ok, err = ensure_mova_database()
+    if not ok or _mova_engine is None:
+        raise RuntimeError(err or "Mova DB를 초기화할 수 없습니다.")
+    return _mova_engine
+
+
+def get_secom_engine():
+    ok, err = ensure_secom_database()
+    if not ok or _secom_engine is None:
+        raise RuntimeError(err or "Secom DB를 초기화할 수 없습니다.")
+    return _secom_engine
+
+
+def get_mova_session_factory() -> async_sessionmaker[AsyncSession]:
+    ok, err = ensure_mova_database()
+    if not ok or _mova_session_factory is None:
+        raise RuntimeError(err or "Mova DB를 초기화할 수 없습니다.")
+    return _mova_session_factory
+
+
+def get_secom_session_factory() -> async_sessionmaker[AsyncSession]:
+    ok, err = ensure_secom_database()
+    if not ok or _secom_session_factory is None:
+        raise RuntimeError(err or "Secom DB를 초기화할 수 없습니다.")
+    return _secom_session_factory
 
 
 def get_session_factory() -> async_sessionmaker[AsyncSession]:
-    ok, err = ensure_database()
-    if not ok or _session_factory is None:
-        raise RuntimeError(err or "데이터베이스를 초기화할 수 없습니다.")
-    return _session_factory
+    """Mova 리포지토리용 (기존 호환)."""
+    return get_mova_session_factory()
 
 
-async def get_db():
-    """FastAPI Depends — 비동기 세션 yield."""
-    ok, err = ensure_database()
+def get_engine():
+    return get_mova_engine()
+
+
+async def get_mova_db():
+    ok, err = ensure_mova_database()
     if not ok:
-        raise HTTPException(
-            status_code=503,
-            detail=err or "데이터베이스를 사용할 수 없습니다.",
-        )
-    async with _session_factory() as session:
+        raise HTTPException(status_code=503, detail=err or "Mova DB를 사용할 수 없습니다.")
+    async with _mova_session_factory() as session:
         try:
             yield session
         except Exception:
             await session.rollback()
-            logger.exception("DB 세션 처리 중 오류가 발생했습니다.")
+            logger.exception("Mova DB 세션 오류")
             raise
 
 
-async def verify_connection() -> tuple[bool, str | None]:
-    """실제 DB 연결 가능 여부 확인. 실패 시 엔진 상태를 초기화한다."""
-    from sqlalchemy import text
-
-    ok, err = ensure_database()
+async def get_secom_db():
+    ok, err = ensure_secom_database()
     if not ok:
-        return False, err
+        raise HTTPException(status_code=503, detail=err or "Secom DB를 사용할 수 없습니다.")
+    async with _secom_session_factory() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            logger.exception("Secom DB 세션 오류")
+            raise
 
+
+async def get_db():
+    """FastAPI Depends — Mova 세션."""
+    async for session in get_mova_db():
+        yield session
+
+
+async def verify_connection() -> tuple[bool, str | None]:
+    from sqlalchemy import text as sql_text
+
+    ok_mova, err_mova = ensure_mova_database()
+    if not ok_mova:
+        return False, err_mova
     try:
-        factory = get_session_factory()
-        async with factory() as session:
-            await session.execute(text("SELECT 1"))
-        return True, None
+        async with _mova_session_factory() as session:
+            await session.execute(sql_text("SELECT 1"))
     except Exception as e:
         msg = str(e)
         if "password authentication failed" in msg:
-            msg = (
-                "Neon DB 비밀번호 인증 실패입니다. "
-                "Neon 콘솔에서 connection string을 복사해 backend/.env 의 "
-                "DATABASE_URL 을 전체 교체하세요."
-            )
-        logger.exception("DB 연결 확인 실패")
+            msg = "Mova DB 비밀번호 인증 실패 — MOVA_DATABASE_URL / DATABASE_URL 확인"
+        logger.exception("Mova DB 연결 확인 실패")
         await dispose_engine()
         return False, msg
 
+    ok_secom, err_secom = ensure_secom_database()
+    if not ok_secom:
+        return False, err_secom
+    try:
+        async with _secom_session_factory() as session:
+            await session.execute(sql_text("SELECT 1"))
+        return True, None
+    except Exception as e:
+        logger.exception("Secom DB 연결 확인 실패")
+        await dispose_engine()
+        return False, str(e)
+
+
+async def _drop_legacy_mova_users_table(conn) -> None:
+    """Mova 취향용 users( preferred_genres )가 남아 있으면 Secom users 생성을 막으므로 제거."""
+    result = await conn.execute(
+        text(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_schema = 'public' AND table_name = 'users'"
+        ),
+    )
+    columns = {row[0] for row in result.fetchall()}
+    if not columns:
+        return
+    if "user_group_id" in columns:
+        return
+    if "preferred_genres" in columns or "nickname" in columns:
+        logger.warning("레거시 Mova users 테이블 제거 — Secom users 로 교체")
+        await conn.execute(text('DROP TABLE IF EXISTS "users" CASCADE'))
+
 
 async def create_tables() -> None:
-    """등록된 ORM 모델 기준으로 Neon(PostgreSQL)에 테이블을 생성한다."""
-    engine = get_engine()
+    """Mova·Secom 각 DB에 해당 ORM 테이블만 생성."""
     import mova.app.models  # noqa: F401
+    import secom.app.models  # noqa: F401
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("DB 테이블 생성 완료 (Neon/PostgreSQL)")
+    mova_engine = get_mova_engine()
+    async with mova_engine.begin() as conn:
+        await conn.run_sync(MovaBase.metadata.create_all)
+    logger.info("Mova DB 테이블 생성 완료")
+
+    secom_engine = get_secom_engine()
+    async with secom_engine.begin() as conn:
+        await _drop_legacy_mova_users_table(conn)
+        await conn.run_sync(SecomBase.metadata.create_all)
+    logger.info("Secom DB 테이블 생성 완료 (users, user_groups)")
 
 
 async def dispose_engine() -> None:
-    """앱 종료 시 비동기 엔진·세션 팩토리를 정리한다."""
-    global _session_factory, _engine, _init_error, _active_db_url
-    if _engine is not None:
-        await _engine.dispose()
-    _session_factory = None
-    _engine = None
-    _init_error = None
-    _active_db_url = None
+    global _mova_session_factory, _mova_engine, _mova_init_error, _active_mova_url
+    global _secom_session_factory, _secom_engine, _secom_init_error, _active_secom_url
+    if _mova_engine is not None:
+        await _mova_engine.dispose()
+    if (
+        _secom_engine is not None
+        and _secom_engine is not _mova_engine
+        and _active_secom_url != _active_mova_url
+    ):
+        await _secom_engine.dispose()
+    _mova_session_factory = None
+    _mova_engine = None
+    _mova_init_error = None
+    _active_mova_url = None
+    _secom_session_factory = None
+    _secom_engine = None
+    _secom_init_error = None
+    _active_secom_url = None

@@ -1,6 +1,7 @@
 import logging
 
-from mova.app.models.audience_model import MovaChatIntent
+from mova.app.models.chat_model import MovaChat
+from mova.app.schemas.search_schema import MovaSearchItemSchema
 from mova.app.services.mova_chat_reply_service import MovaChatReplyService
 
 logger = logging.getLogger(__name__)
@@ -11,12 +12,14 @@ MOVA_SYSTEM_PROMPT = """당신은 영화·시리즈 추천 AI 'Mova'입니다.
 규칙:
 - intro는 1~2문장으로 짧게 (인사·취향 요약).
 - picks는 3개, 각 항목에 영화 제목(title)과 hook(한 줄 추천 이유, 40자 이내).
+- [태그·DB 카탈로그]에 작품이 있으면 그 목록에서 우선 골라 추천하세요 (tags 테이블 매칭).
 - JSON만 출력, 다른 텍스트 금지.
 
 출력 형식:
 {{"intro": "짧은 소개 문장", "picks": [{{"title": "영화 제목", "hook": "한 줄 이유"}}, ...]}}
 
 {intent_section}
+{tag_catalog_section}
 {past_intents_section}
 {user_preferences_section}
 """
@@ -47,7 +50,20 @@ class MovaChatService:
         joined = ", ".join(genres)
         return f"\n[사용자 취향 프로필 — {name}]\n선호 장르: {joined}\n위 장르를 우선 반영해 추천하세요.\n"
 
-    def format_past_intents_section(self, intents: list[MovaChatIntent]) -> str:
+    def format_tag_catalog_section(self, hits: list[MovaSearchItemSchema]) -> str:
+        """chat 키워드 → tags.label 검색으로 찾은 영화 (SearchRepository)."""
+        if not hits:
+            return ""
+        lines = [
+            "\n[태그·DB 카탈로그 — 의도 키워드로 조회된 작품]",
+            "아래는 `tags`·제목·장르 등 DB 검색 결과입니다. 가능하면 picks 3편을 여기서 고르세요.",
+        ]
+        for item in hits[:12]:
+            kind = "태그" if item.match_type == "keyword" else item.match_type
+            lines.append(f"- {item.title} ({item.year or '연도 미상'}) [{kind}]")
+        return "\n".join(lines)
+
+    def format_past_intents_section(self, intents: list[MovaChat]) -> str:
         if not intents:
             return ""
         lines = ["\n[자주 찾았던 취향]"]
@@ -62,13 +78,15 @@ class MovaChatService:
         *,
         refined_query: str = "",
         keywords: list[str] | None = None,
-        past_intents: list[MovaChatIntent] | None = None,
+        past_intents: list[MovaChat] | None = None,
+        tag_catalog: list[MovaSearchItemSchema] | None = None,
         user_nickname: str | None = None,
         preferred_genres: list[str] | None = None,
     ) -> str:
         parts = [
             MOVA_SYSTEM_PROMPT.format(
                 intent_section=self.format_intent_section(refined_query, keywords or []),
+                tag_catalog_section=self.format_tag_catalog_section(tag_catalog or []),
                 past_intents_section=self.format_past_intents_section(past_intents or []),
                 user_preferences_section=self.format_user_preferences_section(
                     user_nickname,

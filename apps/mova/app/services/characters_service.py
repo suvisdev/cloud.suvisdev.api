@@ -1,30 +1,30 @@
 import logging
 
-from mova.app.repositories.movie_characters_repository import MovieCharactersRepository
-from mova.app.schemas.movie_characters_schema import (
-    MovieCharacterLinkCreateSchema,
-    MovieCharacterLinkSchema,
-    MovieCharacterWithActorSchema,
-    MovieCharacterWithMovieSchema,
+from mova.app.repositories.characters_repository import CharactersRepository
+from mova.app.schemas.characters_schema import (
+    CharacterLinkCreateSchema,
+    CharacterLinkSchema,
+    CharacterWithActorSchema,
+    CharacterWithMovieSchema,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class MovieCharactersService:
+class CharactersService:
     def __init__(self) -> None:
-        self.repository = MovieCharactersRepository()
+        self.repository = CharactersRepository()
 
-    def _to_link_schema(self, row) -> MovieCharacterLinkSchema:
-        return MovieCharacterLinkSchema(
+    def _to_link_schema(self, row) -> CharacterLinkSchema:
+        return CharacterLinkSchema(
             id=row.id,
             movie_id=row.movie_id,
             actor_id=row.actor_id,
         )
 
-    async def link(self, payload: MovieCharacterLinkCreateSchema) -> MovieCharacterLinkSchema:
+    async def link(self, payload: CharacterLinkCreateSchema) -> CharacterLinkSchema:
         logger.info(
-            "[MovieCharactersService] link — movie_id=%s actor_id=%s",
+            "[CharactersService] link — movie_id=%s actor_id=%s",
             payload.movie_id,
             payload.actor_id,
         )
@@ -40,7 +40,7 @@ class MovieCharactersService:
         movie_id: int | None = None,
         actor_id: int | None = None,
         limit: int = 100,
-    ) -> list[MovieCharacterLinkSchema]:
+    ) -> list[CharacterLinkSchema]:
         rows = await self.repository.list_links(
             movie_id=movie_id,
             actor_id=actor_id,
@@ -52,10 +52,10 @@ class MovieCharactersService:
         self,
         movie_id: int,
         limit: int = 100,
-    ) -> list[MovieCharacterWithActorSchema]:
+    ) -> list[CharacterWithActorSchema]:
         rows = await self.repository.list_actors_by_movie(movie_id, limit=limit)
         return [
-            MovieCharacterWithActorSchema(
+            CharacterWithActorSchema(
                 id=link.id,
                 movie_id=link.movie_id,
                 actor_id=link.actor_id,
@@ -70,10 +70,10 @@ class MovieCharactersService:
         self,
         actor_id: int,
         limit: int = 100,
-    ) -> list[MovieCharacterWithMovieSchema]:
+    ) -> list[CharacterWithMovieSchema]:
         rows = await self.repository.list_movies_by_actor(actor_id, limit=limit)
         return [
-            MovieCharacterWithMovieSchema(
+            CharacterWithMovieSchema(
                 id=link.id,
                 movie_id=link.movie_id,
                 actor_id=link.actor_id,

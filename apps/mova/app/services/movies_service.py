@@ -9,7 +9,7 @@ from mova.app.schemas.movies_schema import (
     MovieTitleCreateSchema,
     MovieTitleSchema,
 )
-from mova.app.services.movie_characters_service import MovieCharactersService
+from mova.app.services.characters_service import CharactersService
 from mova.app.services.reviews_service import ReviewsService
 
 logger = logging.getLogger(__name__)
@@ -108,7 +108,7 @@ class MoviesService:
                 status_code=404,
             )
 
-        cast_rows = await MovieCharactersService().list_actors_by_movie(row.id, limit=50)
+        cast_rows = await CharactersService().list_actors_by_movie(row.id, limit=50)
         cast = [
             MovaTitleCastSchema(
                 name=a.actor_name,

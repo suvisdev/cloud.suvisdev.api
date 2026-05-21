@@ -2,10 +2,10 @@
 
 from sqlalchemy.orm import Mapped, mapped_column
 
-from database import Base
+from database import MovaBase
 
 
-class MovaModel(Base):
+class MovaModel(MovaBase):
     """모든 mova ORM 테이블의 추상 베이스 — PK: int 자동 증감 `id`."""
 
     __abstract__ = True
