@@ -2,7 +2,7 @@ from enum import StrEnum
 
 
 class UserRole(StrEnum):
-    """비즈니스 역할 코드 — PK가 아닌 `user_groups.code` 와 매핑."""
+    """회원 역할 — `users.role` 컬럼 값 (admin / user)."""
 
     ADMIN = "admin"
     USER = "user"

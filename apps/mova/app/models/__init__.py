@@ -1,5 +1,6 @@
 from mova.app.models.actors_model import MovaActor
 from mova.app.models.chat_model import MovaChat
+from mova.app.models.picks_model import MovaPick
 from mova.app.models.base import MovaModel
 from mova.app.models.characters_model import MovaCharacter
 from mova.app.models.movies_model import MovaMovie
@@ -15,5 +16,6 @@ __all__ = [
     "MovaTag",
     "MovaRanking",
     "MovaChat",
+    "MovaPick",
     "MovaReview",
 ]

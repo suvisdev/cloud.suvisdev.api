@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import DateTime, String, func
+from sqlalchemy.orm import Mapped, mapped_column
 
 from secom.app.models.base import SecomModel
 from secom.app.models.role import UserRole
@@ -12,9 +12,10 @@ class User(SecomModel):
 
     __tablename__ = "users"
 
-    user_group_id: Mapped[int] = mapped_column(
-        ForeignKey("user_groups.id"),
+    role: Mapped[str] = mapped_column(
+        String(16),
         nullable=False,
+        default=UserRole.USER,
         index=True,
     )
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
@@ -26,10 +27,3 @@ class User(SecomModel):
         server_default=func.now(),
         nullable=False,
     )
-
-    user_group: Mapped["UserGroup"] = relationship(back_populates="users")
-
-    @property
-    def role(self) -> str:
-        """API·스키마 호환용 — 그룹 `code` (admin / user)."""
-        return self.user_group.code if self.user_group else UserRole.USER

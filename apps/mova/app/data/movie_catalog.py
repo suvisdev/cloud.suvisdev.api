@@ -2,6 +2,7 @@
 
 TITLE_TO_CANONICAL_SLUG: dict[str, str] = {
     "원더풀스": "wonderfuls",
+    "암살": "assassination",
     "인터스텔라": "interstellar",
     "듄: 파트2": "dune-2",
     "오펜하이머": "oppenheimer",

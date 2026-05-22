@@ -39,7 +39,7 @@ class MovaBase(DeclarativeBase):
 
 
 class SecomBase(DeclarativeBase):
-    """Secom ORM (user_groups, users — 회원가입·로그인)."""
+    """Secom ORM (users — 회원가입·로그인, `role` 컬럼)."""
 
     pass
 
@@ -279,7 +279,7 @@ async def _drop_legacy_mova_users_table(conn) -> None:
     columns = {row[0] for row in result.fetchall()}
     if not columns:
         return
-    if "user_group_id" in columns:
+    if "role" in columns:
         return
     if "preferred_genres" in columns or "nickname" in columns:
         logger.warning("레거시 Mova users 테이블 제거 — Secom users 로 교체")
@@ -300,7 +300,7 @@ async def create_tables() -> None:
     async with secom_engine.begin() as conn:
         await _drop_legacy_mova_users_table(conn)
         await conn.run_sync(SecomBase.metadata.create_all)
-    logger.info("Secom DB 테이블 생성 완료 (users, user_groups)")
+    logger.info("Secom DB 테이블 생성 완료 (users)")
 
 
 async def dispose_engine() -> None:

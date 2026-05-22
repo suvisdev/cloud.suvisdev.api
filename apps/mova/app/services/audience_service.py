@@ -29,13 +29,37 @@ class MovaChatService:
     def __init__(self) -> None:
         self.reply_service = MovaChatReplyService()
 
-    def format_intent_section(self, refined_query: str, keywords: list[str]) -> str:
-        if not refined_query:
+    def format_intent_section(
+        self,
+        refined_query: str,
+        keywords: list[str],
+        *,
+        intent_type: str = "mood",
+        search_filters: dict | None = None,
+    ) -> str:
+        if not refined_query and not keywords:
             return ""
         kw = ", ".join(keywords) if keywords else "(없음)"
+        filters = search_filters if isinstance(search_filters, dict) else {}
+        must = filters.get("must") if isinstance(filters.get("must"), dict) else {}
+        similar = (
+            filters.get("similar_to")
+            if isinstance(filters.get("similar_to"), dict)
+            else {}
+        )
+        and_parts: list[str] = []
+        for actor in must.get("actors") or []:
+            and_parts.append(f"배우={actor}")
+        for genre in must.get("genres") or []:
+            and_parts.append(f"장르={genre}")
+        for tag_kw in must.get("keywords") or []:
+            and_parts.append(f"태그={tag_kw}")
+        and_line = " AND ".join(and_parts) if and_parts else "(없음)"
+        anchor = ", ".join(similar.get("actors") or []) or "(없음)"
         return (
             f"\n[이번 질문 검색 의도]\n"
-            f"정제: {refined_query} | 키워드: {kw}\n"
+            f"분류: {intent_type} | 정제: {refined_query} | 키워드: {kw}\n"
+            f"AND 조건(must): {and_line} | 유사 기준(similar_to): {anchor}\n"
         )
 
     def format_user_preferences_section(
@@ -78,6 +102,8 @@ class MovaChatService:
         *,
         refined_query: str = "",
         keywords: list[str] | None = None,
+        intent_type: str = "mood",
+        search_filters: dict | None = None,
         past_intents: list[MovaChat] | None = None,
         tag_catalog: list[MovaSearchItemSchema] | None = None,
         user_nickname: str | None = None,
@@ -85,7 +111,12 @@ class MovaChatService:
     ) -> str:
         parts = [
             MOVA_SYSTEM_PROMPT.format(
-                intent_section=self.format_intent_section(refined_query, keywords or []),
+                intent_section=self.format_intent_section(
+                    refined_query,
+                    keywords or [],
+                    intent_type=intent_type,
+                    search_filters=search_filters,
+                ),
                 tag_catalog_section=self.format_tag_catalog_section(tag_catalog or []),
                 past_intents_section=self.format_past_intents_section(past_intents or []),
                 user_preferences_section=self.format_user_preferences_section(

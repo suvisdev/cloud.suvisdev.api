@@ -17,13 +17,11 @@ MOVA_TABLE_CHECKS: tuple[str, ...] = (
     "tags",
     "rankings",
     "chat",
+    "picks",
     "reviews",
 )
 
-SECOM_TABLE_CHECKS: tuple[str, ...] = (
-    "user_groups",
-    "users",
-)
+SECOM_TABLE_CHECKS: tuple[str, ...] = ("users",)
 
 
 class DbHealthAdapter:

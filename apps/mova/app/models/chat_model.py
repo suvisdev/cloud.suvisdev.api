@@ -23,6 +23,19 @@ class MovaChat(MovaModel):
     raw_message: Mapped[str] = mapped_column(Text, nullable=False)
     refined_query: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     keywords: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    intent_type: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="mood",
+        index=True,
+        comment="filter_and | similar_person | mood",
+    )
+    search_filters: Mapped[dict] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+        comment="must(AND) / similar_to — 분류·검색용",
+    )
     hit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     last_used_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

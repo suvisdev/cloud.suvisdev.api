@@ -16,3 +16,5 @@ class MovaChatResponseSchema(BaseModel):
     recommendations: list[MovaChatRecommendationSchema] = Field(default_factory=list)
     refined_query: str | None = None
     keywords: list[str] = Field(default_factory=list)
+    intent_type: str | None = None
+    search_filters: dict = Field(default_factory=dict)

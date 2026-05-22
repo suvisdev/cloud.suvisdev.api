@@ -1,0 +1,89 @@
+"""Mova 추천용 카탈로그 시드: tags.label, movies.genres, actors+characters.
+
+Usage (backend 폴더에서):
+  python scripts/seed_mova_recommendation_catalog.py
+"""
+
+from __future__ import annotations
+
+import asyncio
+import selectors
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+APPS = ROOT / "apps"
+sys.path.insert(0, str(APPS))
+
+
+async def main() -> None:
+    from database import dispose_engine, reload_env
+    from mova.app.data.recommendation_catalog_seed import MOOD_TAG_BY_SLUG, MOVIE_SEEDS
+    from mova.app.repositories.actors_repository import ActorsRepository
+    from mova.app.repositories.characters_repository import CharactersRepository
+    from mova.app.repositories.movies_repository import MoviesRepository
+    from mova.app.repositories.tags_repository import TagsRepository
+
+    reload_env()
+    movies_repo = MoviesRepository()
+    actors_repo = ActorsRepository()
+    characters_repo = CharactersRepository()
+    tags_repo = TagsRepository()
+
+    tag_count = 0
+    cast_count = 0
+
+    for spec in MOVIE_SEEDS:
+        movie = await movies_repo.upsert(
+            {
+                "slug": spec["slug"],
+                "title": spec["title"],
+                "release_year": spec["release_year"],
+                "rating": spec["rating"],
+                "genres": list(spec["genres"]),
+                "platform": spec.get("platform"),
+                "poster": "",
+            },
+        )
+        print(f"movie id={movie.id} slug={movie.slug} genres={movie.genres}")
+
+        for director in spec.get("directors") or []:
+            actor = await actors_repo.upsert(
+                {"name": director, "role_type": "director", "profile_photo": ""},
+            )
+            await characters_repo.link(movie.id, actor.id)
+            cast_count += 1
+
+        for name in spec.get("actors") or []:
+            actor = await actors_repo.upsert(
+                {"name": name, "role_type": "actor", "profile_photo": ""},
+            )
+            await characters_repo.link(movie.id, actor.id)
+            cast_count += 1
+
+        for tag_slug in spec.get("tag_slugs") or []:
+            tag_def = MOOD_TAG_BY_SLUG.get(tag_slug)
+            if tag_def is None:
+                print(f"  skip unknown tag slug: {tag_slug}")
+                continue
+            await tags_repo.attach(
+                {
+                    "movie_id": movie.id,
+                    "slug": tag_def["slug"],
+                    "label": tag_def["label"],
+                    "description": tag_def["description"],
+                },
+            )
+            tag_count += 1
+            print(f"  tag {tag_def['label']!r}")
+
+    await dispose_engine()
+    print(
+        f"done. movies={len(MOVIE_SEEDS)} tag_attach={tag_count} cast_links={cast_count}",
+    )
+
+
+if __name__ == "__main__":
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    asyncio.run(main())

@@ -5,6 +5,7 @@ from sqlalchemy import func, select
 
 from database import get_session_factory
 from mova.app.models.chat_model import MovaChat
+from mova.app.services.intent_extraction_service import MAX_CHAT_KEYWORDS, merge_keyword_lists
 from secom.app.user_lookup import secom_user_exists
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,8 @@ class ChatRepository:
         refined_query: str,
         keywords: list[str] | None = None,
         *,
+        intent_type: str = "mood",
+        search_filters: dict | None = None,
         user_id: int | None = None,
     ) -> int:
         refined = refined_query.strip()[:255]
@@ -24,17 +27,21 @@ class ChatRepository:
             refined = raw_message.strip()[:255]
 
         normalized = refined.lower()
-        kw_list = [k.strip() for k in (keywords or []) if k and k.strip()][:12]
+        kw_list = merge_keyword_lists(keywords or [], limit=MAX_CHAT_KEYWORDS)
+        filters = search_filters if isinstance(search_filters, dict) else {}
+        intent = (intent_type or "mood").strip()[:32] or "mood"
         now = datetime.now(timezone.utc)
 
         if user_id is not None and not await secom_user_exists(user_id):
             raise ValueError(f"회원 ID {user_id}를 찾을 수 없습니다. (Secom users)")
 
         logger.info(
-            "[ChatRepository] upsert — user_id=%s refined=%r keywords=%s",
+            "[ChatRepository] upsert — user_id=%s intent=%s refined=%r keywords=%s filters=%s",
             user_id,
+            intent,
             refined,
             kw_list,
+            filters,
         )
 
         factory = get_session_factory()
@@ -55,6 +62,8 @@ class ChatRepository:
                     raw_message=raw_message.strip()[:2000],
                     refined_query=refined,
                     keywords=kw_list,
+                    intent_type=intent,
+                    search_filters=filters,
                     hit_count=1,
                     last_used_at=now,
                 )
@@ -63,9 +72,10 @@ class ChatRepository:
                 row.hit_count += 1
                 row.last_used_at = now
                 row.raw_message = raw_message.strip()[:2000]
+                row.intent_type = intent
+                row.search_filters = filters
                 if kw_list:
-                    merged = list(dict.fromkeys([*(row.keywords or []), *kw_list]))
-                    row.keywords = merged[:12]
+                    row.keywords = merge_keyword_lists(row.keywords or [], kw_list, limit=MAX_CHAT_KEYWORDS)
 
             await session.commit()
             await session.refresh(row)

@@ -1,9 +1,15 @@
 import logging
 
 from mova.app.repositories.chat_repository import ChatRepository
+from mova.app.repositories.movies_repository import MoviesRepository
+from mova.app.repositories.picks_repository import PicksRepository
 from mova.app.schemas.audience_schema import MovaChatResponseSchema
 from mova.app.services.audience_service import MovaChatService
-from mova.app.services.intent_extraction_service import IntentExtractionService
+from mova.app.services.intent_extraction_service import (
+    MAX_CHAT_KEYWORDS,
+    IntentExtractionService,
+    merge_keyword_lists,
+)
 from mova.app.services.movies_service import MoviesService
 from mova.app.services.search_service import SearchService
 from secom.app.user_lookup import get_secom_user_profile
@@ -17,6 +23,8 @@ class MovaChatController:
         self.intent_extraction_service = IntentExtractionService()
         self.chat_repository = ChatRepository()
         self.movies_service = MoviesService()
+        self.picks_repository = PicksRepository()
+        self.movies_repository = MoviesRepository()
 
     async def prepare_chat_context(
         self,
@@ -28,22 +36,32 @@ class MovaChatController:
 
         extracted = self.intent_extraction_service.extract(message)
         refined = str(extracted.get("refined_query", "")).strip()
-        keywords = extracted.get("keywords") or []
-        if isinstance(keywords, list):
-            keywords = [str(k).strip() for k in keywords if str(k).strip()]
-        else:
-            keywords = []
+        raw_kw = extracted.get("keywords") or []
+        keywords = (
+            merge_keyword_lists(raw_kw, limit=MAX_CHAT_KEYWORDS)
+            if isinstance(raw_kw, list)
+            else []
+        )
+        intent_type = str(extracted.get("intent_type") or "mood").strip() or "mood"
+        search_filters = (
+            extracted.get("search_filters")
+            if isinstance(extracted.get("search_filters"), dict)
+            else {}
+        )
 
         if not refined:
             refined = message.strip()[:255]
 
         past_intents: list = []
         tag_catalog: list = []
+        chat_id: int | None = None
         try:
-            await self.chat_repository.upsert(
+            chat_id = await self.chat_repository.upsert(
                 raw_message=message,
                 refined_query=refined,
                 keywords=keywords,
+                intent_type=intent_type,
+                search_filters=search_filters,
                 user_id=user_id,
             )
             past_all = await self.chat_repository.get_top_for_context(
@@ -55,7 +73,12 @@ class MovaChatController:
                 for p in past_all
                 if p.refined_query.strip().lower() != refined.lower()
             ][:6]
-            tag_catalog = await self._search_movies_by_intent(refined, keywords)
+            tag_catalog = await self._search_movies_by_intent(
+                refined,
+                keywords,
+                intent_type=intent_type,
+                search_filters=search_filters,
+            )
         except Exception:
             logger.warning(
                 "[MovaChatController] DB 미연결 — 의도 저장·태그 검색·과거 취향 생략, Gemini 추천만 진행",
@@ -75,45 +98,79 @@ class MovaChatController:
         return {
             "refined_query": refined,
             "keywords": keywords,
+            "intent_type": intent_type,
+            "search_filters": search_filters,
             "past_intents": past_intents,
             "tag_catalog": tag_catalog,
             "mova_user": mova_user,
+            "chat_id": chat_id,
+            "user_id": user_id,
         }
+
+    async def _save_picks(
+        self,
+        context: dict,
+        recommendations: list,
+    ) -> None:
+        chat_id = context.get("chat_id")
+        if chat_id is None or not recommendations:
+            return
+        rows: list[tuple[int, object, int]] = []
+        for rank, rec in enumerate(recommendations, start=1):
+            movie = await self.movies_repository.get_by_slug(rec.id) or await self.movies_repository.find_by_title(
+                rec.title,
+            )
+            if movie is None:
+                logger.warning(
+                    "[MovaChatController] picks skip — movie not in DB title=%r slug=%r",
+                    rec.title,
+                    rec.id,
+                )
+                continue
+            rows.append((movie.id, rec, rank))
+        if not rows:
+            return
+        try:
+            await self.picks_repository.save_chat_recommendations(
+                chat_id=chat_id,
+                user_id=context.get("user_id"),
+                movie_ids=rows,
+            )
+        except Exception:
+            logger.exception("[MovaChatController] picks 저장 실패")
 
     async def _search_movies_by_intent(
         self,
         refined_query: str,
         keywords: list[str],
+        *,
+        intent_type: str = "mood",
+        search_filters: dict | None = None,
     ) -> list:
-        """chat 의도 → GET /mova/search 와 동일: tags.label 등으로 movies 조회."""
+        """chat 의도·search_filters(AND) 기반 movies 후보."""
         search = SearchService()
-        seen: set[str] = set()
-        hits = []
-        queries: list[str] = []
-        if refined_query.strip():
-            queries.append(refined_query.strip())
-        for kw in keywords:
-            if kw.strip() and kw.strip() not in queries:
-                queries.append(kw.strip())
-        for q in queries[:5]:
-            try:
-                batch = await search.search(q, limit=8)
-            except Exception:
-                logger.warning("[MovaChatController] intent search failed — q=%r", q, exc_info=True)
-                continue
-            for item in batch:
-                if item.id in seen:
-                    continue
-                seen.add(item.id)
-                hits.append(item)
-                if len(hits) >= 12:
-                    return hits
-        logger.info(
-            "[MovaChatController] tag_catalog — queries=%s hits=%s",
-            queries,
-            len(hits),
-        )
-        return hits
+        try:
+            hits = await search.search_by_intent(
+                refined_query=refined_query,
+                keywords=keywords,
+                intent_type=intent_type,
+                search_filters=search_filters or {},
+                limit=12,
+            )
+            logger.info(
+                "[MovaChatController] tag_catalog — intent=%s filters=%s hits=%s",
+                intent_type,
+                search_filters,
+                len(hits),
+            )
+            return hits
+        except Exception:
+            logger.warning(
+                "[MovaChatController] intent search failed — intent=%s",
+                intent_type,
+                exc_info=True,
+            )
+            return []
 
     async def build_prompt(
         self,
@@ -130,6 +187,8 @@ class MovaChatController:
             message,
             refined_query=context["refined_query"],
             keywords=context["keywords"],
+            intent_type=context.get("intent_type") or "mood",
+            search_filters=context.get("search_filters") or {},
             past_intents=context["past_intents"],
             tag_catalog=context.get("tag_catalog") or [],
             user_nickname=user.get("nickname") if user else None,
@@ -155,9 +214,13 @@ class MovaChatController:
             except Exception:
                 logger.exception("[MovaChatController] 추천 영화 DB 메타 보강 실패")
 
+            await self._save_picks(context, recommendations)
+
         return MovaChatResponseSchema(
             reply=intro,
             recommendations=recommendations,
             refined_query=context.get("refined_query") or None,
             keywords=context.get("keywords") or [],
+            intent_type=context.get("intent_type"),
+            search_filters=context.get("search_filters") or {},
         )
