@@ -147,6 +147,16 @@ class SignupRequest(BaseModel):
     password: str = Field(..., min_length=6, max_length=128, description="비밀번호")
     nickname: str = Field(..., min_length=1, max_length=50, description="닉네임")
     email: str = Field(..., min_length=3, max_length=255, description="이메일")
+    gender: str | None = Field(
+        default="undisclosed",
+        description="male | female | other | undisclosed",
+    )
+    age_group: str | None = Field(
+        default="undisclosed",
+        description="10s | 20s | 30s | 40s | 50s | 60s_plus | undisclosed",
+    )
+    birth_year: int | None = Field(default=None, ge=1900, le=2100)
+    preferred_genres: list[str] = Field(default_factory=list)
 
 
 class SignupResponse(BaseModel):
@@ -179,6 +189,12 @@ async def lifespan(app: FastAPI):
             try:
                 await create_tables()
                 await seed_secom_if_empty()
+                try:
+                    from mova.app.seed_assistants import seed_assistants_if_empty
+
+                    await seed_assistants_if_empty()
+                except Exception as ast_err:
+                    logger.warning("[main] assistants 시드 생략: %s", ast_err)
                 try:
                     from mova.app.services.movie_import_service import MovieImportService
 
@@ -966,6 +982,10 @@ async def signup(req: SignupRequest) -> SignupResponse:
         nickname=req.nickname.strip(),
         email=req.email.strip(),
         role=UserRole.USER,
+        gender=req.gender,
+        age_group=req.age_group,
+        birth_year=req.birth_year,
+        preferred_genres=req.preferred_genres,
     )
     logger.info("[main] save_user 진입 — %s", user_schema.log_summary())
     try:

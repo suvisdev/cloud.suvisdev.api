@@ -51,15 +51,49 @@ async def main() -> None:
             actor = await actors_repo.upsert(
                 {"name": director, "role_type": "director", "profile_photo": ""},
             )
-            await characters_repo.link(movie.id, actor.id)
+            link = await characters_repo.link(movie.id, actor.id)
             cast_count += 1
+            await tags_repo.attach(
+                {
+                    "movie_id": movie.id,
+                    "character_id": link.id,
+                    "tag_kind": "cast",
+                    "label": director,
+                    "description": f"감독: {director}",
+                },
+            )
+            tag_count += 1
 
         for name in spec.get("actors") or []:
             actor = await actors_repo.upsert(
                 {"name": name, "role_type": "actor", "profile_photo": ""},
             )
-            await characters_repo.link(movie.id, actor.id)
+            link = await characters_repo.link(movie.id, actor.id)
             cast_count += 1
+            await tags_repo.attach(
+                {
+                    "movie_id": movie.id,
+                    "character_id": link.id,
+                    "tag_kind": "cast",
+                    "label": name,
+                    "description": f"출연: {name}",
+                },
+            )
+            tag_count += 1
+
+        for genre in spec.get("genres") or []:
+            g = str(genre).strip()
+            if not g:
+                continue
+            await tags_repo.attach(
+                {
+                    "movie_id": movie.id,
+                    "tag_kind": "genre",
+                    "label": g,
+                    "description": f"장르: {g}",
+                },
+            )
+            tag_count += 1
 
         for tag_slug in spec.get("tag_slugs") or []:
             tag_def = MOOD_TAG_BY_SLUG.get(tag_slug)
@@ -69,6 +103,7 @@ async def main() -> None:
             await tags_repo.attach(
                 {
                     "movie_id": movie.id,
+                    "tag_kind": "mood",
                     "slug": tag_def["slug"],
                     "label": tag_def["label"],
                     "description": tag_def["description"],

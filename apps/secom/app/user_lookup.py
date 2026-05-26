@@ -31,15 +31,33 @@ async def get_secom_user_nicknames(user_ids: set[int]) -> dict[int, str]:
 
 
 async def get_secom_user_profile(user_id: int) -> dict | None:
-    """Mova AI 채팅용 — Secom 회원 닉네임만 반영 (preferred_genres 없음)."""
+    """Mova AI 채팅용 — users + members 프로필."""
+    from secom.app.models.member_model import Member
+
     factory = get_secom_session_factory()
     async with factory() as session:
         user = await session.get(User, user_id)
         if user is None:
             return None
+        result = await session.execute(
+            select(Member).where(Member.user_id == user_id),
+        )
+        member = result.scalar_one_or_none()
+        preferred: list = []
+        gender = None
+        age_group = None
+        member_id = None
+        if member is not None:
+            member_id = member.id
+            preferred = list(member.preferred_genres or [])
+            gender = member.gender
+            age_group = member.age_group
         return {
             "id": user.id,
+            "member_id": member_id,
             "nickname": user.nickname,
             "email": user.email,
-            "preferred_genres": [],
+            "gender": gender,
+            "age_group": age_group,
+            "preferred_genres": preferred,
         }

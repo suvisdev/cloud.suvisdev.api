@@ -287,20 +287,32 @@ async def _drop_legacy_mova_users_table(conn) -> None:
 
 
 async def create_tables() -> None:
-    """Mova·Secom 각 DB에 해당 ORM 테이블만 생성."""
+    """Mova·Secom ORM 테이블 생성. 동일 DB면 `users` 선생성 후 Mova FK 적용."""
     import mova.app.models  # noqa: F401
     import secom.app.models  # noqa: F401
+
+    reload_env()
+    mova_url = _resolve_mova_url()
+    secom_url = _resolve_secom_url()
+
+    if secom_url == mova_url:
+        engine = get_mova_engine()
+        async with engine.begin() as conn:
+            await _drop_legacy_mova_users_table(conn)
+            await conn.run_sync(SecomBase.metadata.create_all)
+            await conn.run_sync(MovaBase.metadata.create_all)
+        logger.info("공유 DB — users(Secom) 후 Mova 테이블 생성 완료")
+        return
+
+    secom_engine = get_secom_engine()
+    async with secom_engine.begin() as conn:
+        await conn.run_sync(SecomBase.metadata.create_all)
+    logger.info("Secom DB 테이블 생성 완료 (users)")
 
     mova_engine = get_mova_engine()
     async with mova_engine.begin() as conn:
         await conn.run_sync(MovaBase.metadata.create_all)
     logger.info("Mova DB 테이블 생성 완료")
-
-    secom_engine = get_secom_engine()
-    async with secom_engine.begin() as conn:
-        await _drop_legacy_mova_users_table(conn)
-        await conn.run_sync(SecomBase.metadata.create_all)
-    logger.info("Secom DB 테이블 생성 완료 (users)")
 
 
 async def dispose_engine() -> None:

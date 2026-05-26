@@ -21,6 +21,8 @@ class ChatRepository:
         intent_type: str = "mood",
         search_filters: dict | None = None,
         user_id: int | None = None,
+        member_id: int | None = None,
+        assistant_id: int | None = None,
     ) -> int:
         refined = refined_query.strip()[:255]
         if not refined:
@@ -36,12 +38,11 @@ class ChatRepository:
             raise ValueError(f"회원 ID {user_id}를 찾을 수 없습니다. (Secom users)")
 
         logger.info(
-            "[ChatRepository] upsert — user_id=%s intent=%s refined=%r keywords=%s filters=%s",
+            "[ChatRepository] upsert — user_id=%s member_id=%s assistant_id=%s intent=%s",
             user_id,
+            member_id,
+            assistant_id,
             intent,
-            refined,
-            kw_list,
-            filters,
         )
 
         factory = get_session_factory()
@@ -59,6 +60,8 @@ class ChatRepository:
             if row is None:
                 row = MovaChat(
                     user_id=user_id,
+                    member_id=member_id,
+                    assistant_id=assistant_id,
                     raw_message=raw_message.strip()[:2000],
                     refined_query=refined,
                     keywords=kw_list,
@@ -74,6 +77,10 @@ class ChatRepository:
                 row.raw_message = raw_message.strip()[:2000]
                 row.intent_type = intent
                 row.search_filters = filters
+                if member_id is not None:
+                    row.member_id = member_id
+                if assistant_id is not None:
+                    row.assistant_id = assistant_id
                 if kw_list:
                     row.keywords = merge_keyword_lists(row.keywords or [], kw_list, limit=MAX_CHAT_KEYWORDS)
 

@@ -4,8 +4,16 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from database import get_session_factory
+from mova.app.models.characters_model import MovaCharacter
 from mova.app.models.movies_model import MovaMovie
-from mova.app.models.tags_model import MovaTag, slugify_tag
+from mova.app.models.tags_model import (
+    TAG_KIND_CAST,
+    TAG_KIND_GENRE,
+    TAG_KIND_MOOD,
+    TAG_KINDS,
+    MovaTag,
+    slugify_tag,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,13 +30,44 @@ class TagsRepository:
         movie_id = int(data["movie_id"])
         label = str(data.get("label", "")).strip()
         if not label:
-            raise TagsRepositoryError("감성 태그 문구가 비어 있습니다.", status_code=400)
+            raise TagsRepositoryError("태그 문구가 비어 있습니다.", status_code=400)
 
-        slug = str(data.get("slug") or "").strip() or slugify_tag(label)
+        tag_kind = str(data.get("tag_kind") or TAG_KIND_MOOD).strip().lower()
+        if tag_kind not in TAG_KINDS:
+            raise TagsRepositoryError(
+                f"tag_kind는 mood, genre, cast 중 하나여야 합니다. (got {tag_kind!r})",
+                status_code=400,
+            )
+
+        character_id_raw = data.get("character_id")
+        character_id = (
+            int(character_id_raw) if character_id_raw is not None else None
+        )
+
+        slug = str(data.get("slug") or "").strip()
+        if not slug:
+            if tag_kind == TAG_KIND_CAST and character_id is not None:
+                slug = f"cast-{slugify_tag(label)}"
+            elif tag_kind == TAG_KIND_GENRE:
+                slug = f"genre-{slugify_tag(label)}"
+            else:
+                slug = slugify_tag(label)
         slug = slug[:64]
         description = str(data.get("description", "")).strip()
 
-        logger.info("[TagsRepository] attach — movie_id=%s %r", movie_id, label)
+        if tag_kind == TAG_KIND_CAST and character_id is None:
+            raise TagsRepositoryError(
+                "cast 태그는 character_id(characters.id)가 필요합니다.",
+                status_code=400,
+            )
+
+        logger.info(
+            "[TagsRepository] attach — movie_id=%s kind=%s character_id=%s %r",
+            movie_id,
+            tag_kind,
+            character_id,
+            label,
+        )
         factory = get_session_factory()
         async with factory() as session:
             movie = await session.get(MovaMovie, movie_id)
@@ -38,24 +77,45 @@ class TagsRepository:
                     status_code=404,
                 )
 
-            result = await session.execute(
-                select(MovaTag).where(
+            if character_id is not None:
+                character = await session.get(MovaCharacter, character_id)
+                if character is None:
+                    raise TagsRepositoryError(
+                        f"연결 ID {character_id}를 찾을 수 없습니다.",
+                        status_code=404,
+                    )
+                if character.movie_id != movie_id:
+                    raise TagsRepositoryError(
+                        "character_id가 해당 movie_id와 일치하지 않습니다.",
+                        status_code=400,
+                    )
+
+            if character_id is not None:
+                stmt = select(MovaTag).where(MovaTag.character_id == character_id)
+            else:
+                stmt = select(MovaTag).where(
                     MovaTag.movie_id == movie_id,
                     MovaTag.slug == slug,
-                ),
-            )
+                )
+
+            result = await session.execute(stmt)
             row = result.scalar_one_or_none()
             if row is None:
                 row = MovaTag(
                     movie_id=movie_id,
+                    character_id=character_id,
+                    tag_kind=tag_kind,
                     slug=slug,
                     label=label[:255],
                     description=description,
                 )
                 session.add(row)
             else:
+                row.slug = slug
                 row.label = label[:255]
                 row.description = description
+                row.tag_kind = tag_kind
+                row.movie_id = movie_id
 
             try:
                 await session.commit()
@@ -63,7 +123,7 @@ class TagsRepository:
             except IntegrityError as e:
                 await session.rollback()
                 raise TagsRepositoryError(
-                    "영화 감성 태그 저장에 실패했습니다.",
+                    "영화 태그 저장에 실패했습니다.",
                     status_code=409,
                 ) from e
             return row
@@ -90,7 +150,7 @@ class TagsRepository:
             result = await session.execute(
                 select(MovaTag)
                 .where(MovaTag.movie_id == movie_id)
-                .order_by(MovaTag.label.asc())
+                .order_by(MovaTag.tag_kind.asc(), MovaTag.label.asc())
                 .limit(limit),
             )
             return list(result.scalars().all())

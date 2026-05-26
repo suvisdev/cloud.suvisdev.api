@@ -2,9 +2,11 @@ import json
 import logging
 import re
 
+from mova.app.data.movie_catalog import resolve_canonical_slug
 from mova.app.models.movies_model import slugify_movie
 from mova.app.repositories.movies_repository import MoviesRepository
 from mova.app.schemas.audience_schema import MovaChatRecommendationSchema
+from mova.app.services.movie_import_service import MovieImportService
 
 logger = logging.getLogger(__name__)
 
@@ -70,17 +72,23 @@ class MovaChatReplyService:
         self,
         recommendations: list[MovaChatRecommendationSchema],
     ) -> list[MovaChatRecommendationSchema]:
-        """DB에 저장된 영화 메타(포스터·slug·연도)로 추천 카드를 보강한다."""
+        """DB 메타(포스터·slug·연도)로 보강. DB·Gemini에 포스터 없으면 TMDB 검색."""
         if not recommendations:
             return []
         repo = MoviesRepository()
+        import_svc = MovieImportService()
         enriched: list[MovaChatRecommendationSchema] = []
         for rec in recommendations:
-            movie = await repo.get_by_slug(rec.id) or await repo.find_by_title(rec.title)
+            canonical = resolve_canonical_slug(rec.id, title=rec.title)
+            movie = (
+                await repo.get_by_slug(canonical)
+                or await repo.get_by_slug(rec.id)
+                or await repo.find_by_title(rec.title)
+            )
             poster = _coerce_poster(rec.poster)
             year = rec.year
             platform = rec.platform
-            slug = rec.id
+            slug = canonical if canonical != "movie" else rec.id
             if movie is not None:
                 slug = movie.slug
                 if not poster:
@@ -89,6 +97,39 @@ class MovaChatReplyService:
                     year = movie.release_year or ""
                 if not platform and movie.platform:
                     platform = movie.platform
+
+            if not poster:
+                tmdb_payload = await import_svc._enrich_payload_with_tmdb(
+                    {
+                        "slug": slug,
+                        "title": rec.title,
+                        "release_year": year,
+                        "rating": float(movie.rating) if movie is not None else 0.0,
+                        "poster": "",
+                        "genres": list(movie.genres or []) if movie is not None else [],
+                    },
+                )
+                poster = str(tmdb_payload.get("poster") or "").strip()
+                if poster and movie is not None:
+                    try:
+                        await repo.upsert(
+                            {
+                                "slug": movie.slug,
+                                "title": movie.title,
+                                "release_year": movie.release_year,
+                                "rating": movie.rating,
+                                "poster": poster,
+                                "platform": movie.platform,
+                                "genres": list(movie.genres or []),
+                            },
+                        )
+                    except Exception:
+                        logger.debug(
+                            "[MovaChatReplyService] 포스터 DB 저장 스킵 — %r",
+                            rec.title,
+                            exc_info=True,
+                        )
+
             enriched.append(
                 rec.model_copy(
                     update={

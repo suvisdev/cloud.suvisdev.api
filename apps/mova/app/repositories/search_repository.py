@@ -104,14 +104,22 @@ class SearchRepository:
         pattern = f"%{name.strip()}%"
         if not pattern.strip("%"):
             return set()
-        rows = await session.execute(
+        via_cast = await session.execute(
             select(MovaMovie.id)
             .join(MovaCharacter, MovaCharacter.movie_id == MovaMovie.id)
             .join(MovaActor, MovaActor.id == MovaCharacter.actor_id)
             .where(MovaActor.name.ilike(pattern))
             .distinct(),
         )
-        return set(rows.scalars().all())
+        via_tag = await session.execute(
+            select(MovaMovie.id)
+            .join(MovaTag, MovaTag.movie_id == MovaMovie.id)
+            .join(MovaCharacter, MovaCharacter.id == MovaTag.character_id)
+            .join(MovaActor, MovaActor.id == MovaCharacter.actor_id)
+            .where(MovaActor.name.ilike(pattern))
+            .distinct(),
+        )
+        return set(via_cast.scalars().all()) | set(via_tag.scalars().all())
 
     async def _movie_ids_by_genre(self, session, genre: str) -> set[int]:
         pattern = f"%{genre.strip()}%"

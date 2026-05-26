@@ -19,6 +19,8 @@ class TagsService:
         return TagSchema(
             id=row.id,
             movie_id=row.movie_id,
+            character_id=row.character_id,
+            tag_kind=row.tag_kind or "mood",
             slug=row.slug,
             label=row.label,
             description=row.description or "",
@@ -43,6 +45,8 @@ class TagsService:
                 "label": payload.label,
                 "slug": payload.slug,
                 "description": payload.description,
+                "character_id": payload.character_id,
+                "tag_kind": payload.tag_kind,
             },
         )
         return self._tag_schema(row)

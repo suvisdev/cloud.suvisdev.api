@@ -12,6 +12,8 @@ from mova.app.services.intent_extraction_service import (
 )
 from mova.app.services.movies_service import MoviesService
 from mova.app.services.search_service import SearchService
+from mova.app.repositories.assistants_repository import AssistantsRepository
+from secom.app.repositories.member_repository import MemberRepository
 from secom.app.user_lookup import get_secom_user_profile
 
 logger = logging.getLogger(__name__)
@@ -55,6 +57,21 @@ class MovaChatController:
         past_intents: list = []
         tag_catalog: list = []
         chat_id: int | None = None
+        member_id: int | None = None
+        assistant_id: int | None = None
+        if user_id is not None:
+            try:
+                member = await MemberRepository().ensure_for_user(user_id)
+                member_id = member.id
+            except Exception:
+                logger.exception("[MovaChatController] member ensure 실패 user_id=%s", user_id)
+        try:
+            assistant = await AssistantsRepository().get_default()
+            if assistant is not None:
+                assistant_id = assistant.id
+        except Exception:
+            logger.exception("[MovaChatController] default assistant 조회 실패")
+
         try:
             chat_id = await self.chat_repository.upsert(
                 raw_message=message,
@@ -63,6 +80,8 @@ class MovaChatController:
                 intent_type=intent_type,
                 search_filters=search_filters,
                 user_id=user_id,
+                member_id=member_id,
+                assistant_id=assistant_id,
             )
             past_all = await self.chat_repository.get_top_for_context(
                 limit=8,

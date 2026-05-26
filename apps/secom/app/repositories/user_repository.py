@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from database import get_secom_session_factory
 from secom.app.models.role import UserRole
 from secom.app.models.user_model import User
+from secom.app.repositories.member_repository import MemberRepository
 from secom.app.schemas.auth_schema import LoginSchema, UserSchema
 from secom.app.security import hash_password, verify_password
 
@@ -40,8 +41,9 @@ class UserRepository:
             if existing.scalar_one_or_none() is not None:
                 raise UserRepositoryError("이미 사용 중인 아이디입니다.", status_code=409)
 
+            role = self._normalize_role(user_schema.role)
             user = User(
-                role=self._normalize_role(user_schema.role),
+                role=role,
                 username=user_schema.username,
                 password_hash=hash_password(user_schema.password),
                 nickname=user_schema.nickname,
@@ -54,7 +56,21 @@ class UserRepository:
             except IntegrityError as e:
                 await session.rollback()
                 raise UserRepositoryError("이미 사용 중인 아이디입니다.", status_code=409) from e
-            return user.id
+            user_id = user.id
+
+        try:
+            await MemberRepository().create_for_user(
+                user_id,
+                gender=user_schema.gender,
+                age_group=user_schema.age_group,
+                birth_year=user_schema.birth_year,
+                preferred_genres=user_schema.preferred_genres,
+                bio=user_schema.bio,
+                user_role=role,
+            )
+        except Exception:
+            logger.exception("[UserRepository] members 프로필 생성 실패 user_id=%s", user_id)
+        return user_id
 
     async def login_user(self, login_schema: LoginSchema) -> int:
         logger.info(

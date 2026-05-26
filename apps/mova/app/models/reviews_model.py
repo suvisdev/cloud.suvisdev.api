@@ -30,9 +30,10 @@ class MovaReview(MovaModel):
 
     user_id: Mapped[int] = mapped_column(
         Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
-        comment="Secom users.id (별도 DB — FK 없음)",
+        comment="Secom users.id (동일 DB FK)",
     )
     movie_id: Mapped[int] = mapped_column(
         Integer,
