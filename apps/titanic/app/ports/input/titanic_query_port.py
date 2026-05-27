@@ -1,0 +1,23 @@
+from __future__ import annotations
+
+from typing import Any, Protocol
+
+import pandas as pd
+
+
+class TitanicQueryPort(Protocol):
+    """타이타닉 조회(Query) 인바운드 포트."""
+
+    def get_data(self) -> pd.DataFrame: ...
+
+    def get_count(self) -> int: ...
+
+    def get_survived_count(self) -> int: ...
+
+    def get_dead_count(self) -> int: ...
+
+    def has_decision_tree_model(self) -> bool: ...
+
+    def get_model_name_and_accuracy(self) -> dict[str, str | None]: ...
+
+    def analyze_dicaprio_survival(self) -> dict[str, Any]: ...

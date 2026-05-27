@@ -8,9 +8,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s:\t%(message)s")
 logger = logging.getLogger(__name__)
 
 from fastapi import Depends, FastAPI, HTTPException
-from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -84,8 +82,8 @@ from secom.app.controllers.user_controller import UserController
 from secom.app.repositories.user_repository import UserRepositoryError
 from secom.app.models.role import UserRole
 from secom.app.schemas.auth_schema import LoginSchema, UserSchema
-from titanic.app.controllers.james_controller import JamesController
-from titanic.app.schemas.caledon_validation import TitanicPredictInput, TitanicPredictOutput
+from titanic.adapter.inbound.api.v1.titanic_command_router import titanic_router as titanic_command_router
+from titanic.adapter.inbound.api.v1.titanic_query_router import titanic_router as titanic_query_router
 
 keymaker = get_keymaker()
 
@@ -229,6 +227,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(titanic_query_router)
+app.include_router(titanic_command_router)
 
 
 @app.get("/")
@@ -1035,74 +1036,12 @@ async def check_db_domains(db: AsyncSession = Depends(get_db)):
     return await DbHealthAdapter.check_all_domains(db)
 
 
-@app.get("/titanic/data")
-def read_titanic_data():
-    james = JamesController()
-    df = james.get_data()
-    return df.to_dict(orient="records")
-
-
-@app.get("/titanic/count")
-def read_titanic_count():
-    james = JamesController()
-    count = james.get_count()
-    return {"count": count}
-
-
-@app.get("/titanic/count/survived")
-def read_titanic_count_survived():
-    james = JamesController()
-    survived_count = james.get_survived_count()
-    return {"survived_count": survived_count}
-
-
-@app.get("/titanic/count/dead")
-def read_titanic_count_dead():
-    james = JamesController()
-    dead_count = james.get_dead_count()
-    return {"dead_count": dead_count}
-
-
-@app.get("/titanic/dead/count")
-def read_titanic_dead_count():
-    james = JamesController()
-    dead_count = james.get_dead_count()
-    return {"dead_count": dead_count}
-
-
-@app.get("/titanic/tree")
-def read_titanic_tree():
-    james = JamesController()
-    tree = james.has_decision_tree_model()
-    return {"tree": tree}
-
-
-@app.get("/titanic/model")
-def read_titanic_model():
-    controller = JamesController()
-    model_name = controller.get_model_name_and_accuracy()
-    return JSONResponse(content=jsonable_encoder(model_name))
-
-
-@app.post("/titanic/predict", response_model=TitanicPredictOutput)
-def predict_titanic_survival(payload: TitanicPredictInput):
-    controller = JamesController()
-    return controller.predict(payload)
-
-
-@app.get("/titanic/predict/dicaprio")
-def analyze_titanic_dicaprio():
-    controller = JamesController()
-    return controller.analyze_dicaprio_survival()
-
-
-
 @app.get("/doro/data")
 def read_doro_data():
-    doro_director = DoroDirector()
-    df = doro_director.get_data()
-    return df.to_dict(orient="records")
-
+    raise HTTPException(
+        status_code=410,
+        detail="프로젝트 내부 파일 읽기 기능이 제거되었습니다. 외부 저장소/DB 연동으로 전환해 주세요.",
+    )
 
 if __name__ == "__main__":
     import uvicorn

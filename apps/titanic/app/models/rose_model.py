@@ -1,12 +1,8 @@
 import logging
-from pathlib import Path
-import joblib
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 
 logger = logging.getLogger(__name__)
-
-_MODEL_PATH = Path(__file__).resolve().parent / "titanic_decision_tree.joblib"
 
 
 class RoseModel:
@@ -15,28 +11,14 @@ class RoseModel:
     def __init__(self) -> None:
         self.model = DecisionTreeClassifier(max_depth=5, random_state=42)
         self.is_trained = False
-        self.load_model()
+        logger.info("[RoseModel] 내부 파일 기반 모델 로딩이 비활성화되었습니다.")
 
     def get_model_name(self) -> str:
         """ML 모델의 알고리즘 명을 반환합니다."""
         return type(self.model).__name__
 
-    def load_model(self) -> None:
-        """로컬 저장소에서 학습된 의사결정나무 모델을 불러옵니다."""
-        if _MODEL_PATH.is_file():
-            try:
-                self.model = joblib.load(_MODEL_PATH)
-                self.is_trained = True
-                logger.info("[RoseModel] 성공적으로 사전 학습된 모델을 불러왔습니다.")
-            except Exception as e:
-                logger.warning("[RoseModel] 모델 파일 로드 중 실패하여 재학습을 유도합니다: %s", e)
-                self.is_trained = False
-        else:
-            logger.info("[RoseModel] 모델 파일이 없어 새로 학습해야 합니다.")
-            self.is_trained = False
-
     def train_and_save(self, df: pd.DataFrame) -> None:
-        """제공된 데이터프레임을 활용하여 6개 독립변수 기준으로 모델을 학습시키고 디스크에 저장합니다."""
+        """제공된 데이터프레임을 활용하여 6개 독립변수 기준으로 모델을 메모리에서만 학습시킵니다."""
         logger.info("[RoseModel] 6개 독립변수 기준 의사결정나무 모델 학습 개시...")
 
         # 전처리
@@ -54,11 +36,7 @@ class RoseModel:
         # 모델 피팅
         self.model.fit(X, y)
         self.is_trained = True
-
-        # 저장
-        _MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump(self.model, _MODEL_PATH)
-        logger.info("[RoseModel] 학습 완료 및 모델 저장 완료: %s", _MODEL_PATH)
+        logger.info("[RoseModel] 학습 완료 (내부 파일 저장 없음)")
 
     def predict(self, features: pd.DataFrame) -> list[int]:
         """특징량 데이터프레임을 받아 생존 여부를 예측합니다 (0: 사망, 1: 생존)."""

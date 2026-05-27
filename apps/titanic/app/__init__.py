@@ -1,3 +1,4 @@
-from titanic.app.controllers.james_controller import JamesController
+from titanic.app.use_cases.titanic_command_impl import TitanicCommandImpl
+from titanic.app.use_cases.titanic_query_impl import TitanicQueryImpl
 
-__all__ = ["JamesController"]
+__all__ = ["TitanicCommandImpl", "TitanicQueryImpl"]
