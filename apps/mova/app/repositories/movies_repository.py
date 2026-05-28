@@ -3,7 +3,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from database import get_session_factory
+from core.database import get_session_factory
 from mova.app.data.movie_catalog import resolve_canonical_slug
 from mova.app.models.movies_model import MovaMovie, slugify_movie
 

@@ -43,12 +43,12 @@ async def table_exists(conn, table: str) -> bool:
 
 async def main() -> None:
     from database import create_tables, dispose_engine, get_engine, reload_env
-    from secom.app.repositories.member_repository import MemberRepository
-    from secom.app.seed_groups import seed_groups_if_empty
+    from friday13th.app.repositories.member_repository import MemberRepository
+    from friday13th.app.seed_groups import seed_groups_if_empty
     from mova.app.seed_assistants import seed_assistants_if_empty
 
     from sqlalchemy import select
-    from secom.app.models.user_model import User
+    from friday13th.app.models.user_model import User
 
     reload_env()
     await create_tables()

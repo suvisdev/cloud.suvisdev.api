@@ -4,14 +4,14 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
-from database import get_session_factory
+from core.database import get_session_factory
 from mova.app.models.movies_model import MovaMovie
 from mova.app.models.reviews_model import (
     ACTION_REVIEW,
     EVENT_ACTION_TYPES,
     MovaReview,
 )
-from secom.app.user_lookup import get_secom_user_nicknames, secom_user_exists
+from friday13th.app.user_lookup import get_secom_user_nicknames, secom_user_exists
 
 logger = logging.getLogger(__name__)
 

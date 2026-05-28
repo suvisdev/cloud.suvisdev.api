@@ -3,7 +3,7 @@
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import (
+from core.database import (
     ensure_mova_database,
     ensure_secom_database,
     get_mova_session_factory,

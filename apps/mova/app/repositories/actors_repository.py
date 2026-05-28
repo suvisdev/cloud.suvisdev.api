@@ -3,7 +3,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from database import get_session_factory
+from core.database import get_session_factory
 from mova.app.models.actors_model import MovaActor
 
 logger = logging.getLogger(__name__)

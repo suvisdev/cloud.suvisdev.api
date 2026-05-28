@@ -2,7 +2,7 @@
 
 from sqlalchemy.orm import Mapped, mapped_column
 
-from database import MovaBase
+from core.database import MovaBase
 
 
 class MovaModel(MovaBase):

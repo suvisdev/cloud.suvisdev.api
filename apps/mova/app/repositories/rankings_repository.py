@@ -5,7 +5,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import aliased
 
-from database import get_session_factory
+from core.database import get_session_factory
 from mova.app.models.movies_model import MovaMovie
 from mova.app.models.rankings_model import MovaRanking
 

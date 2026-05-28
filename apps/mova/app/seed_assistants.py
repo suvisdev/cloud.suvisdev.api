@@ -4,7 +4,7 @@ import logging
 
 from sqlalchemy import select
 
-from database import get_session_factory
+from core.database import get_session_factory
 from mova.app.models.assistants_model import MovaAssistant
 
 logger = logging.getLogger(__name__)

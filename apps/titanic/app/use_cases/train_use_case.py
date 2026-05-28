@@ -1,6 +1,6 @@
 import pandas as pd
 
-from titanic.app.models.rose_model import RoseModel
+from titanic.app.use_cases.rose_query import RoseModel
 from titanic.app.use_cases.caledon_validation import TitanicPredictInput, TitanicPredictOutput
 from titanic.app.use_cases.walter_reader import WalterReader
 

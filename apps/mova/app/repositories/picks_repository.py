@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 
-from database import get_session_factory
+from core.database import get_session_factory
 from mova.app.models.picks_model import MovaPick
 from mova.app.schemas.audience_schema import MovaChatRecommendationSchema
 
