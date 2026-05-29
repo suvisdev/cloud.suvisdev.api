@@ -2,7 +2,7 @@ import pandas as pd
 
 from titanic.app.use_cases.rose_query import RoseModel
 from titanic.app.use_cases.caledon_validation import TitanicPredictInput, TitanicPredictOutput
-from titanic.app.use_cases.walter_reader import WalterReader
+from titanic.app.use_cases.reader_use_case import WalterReader
 
 
 class JackService:

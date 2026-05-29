@@ -5,15 +5,12 @@ import logging
 from io import StringIO
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
-from titanic.app.ports.input.james_use_case import (
-    JamesRowPayload,
-    JamesUploadResult,
-    JamesUseCase,
-)
+from sqlalchemy.exc import SQLAlchemyError
+from titanic.app.dtos.james_dto import JamesRowPayload, JamesUploadResult
+from titanic.app.use_cases.james_command import JamesCommand
 
 james_router = APIRouter(prefix="/titanic/james", tags=["james"])
 logger = logging.getLogger(__name__)
-request_logger = logging.getLogger("uvicorn.error")
 
 _REQUIRED_HEADERS = [
     "PassengerId",
@@ -38,33 +35,10 @@ async def upload_titanic_csv(
 ) -> JamesUploadResult:
     filename_raw = file.filename or ""
     filename = filename_raw.lower()
-    server_temp_path = str(getattr(file.file, "name", ""))
-    if not server_temp_path:
-        server_temp_path = "(in-memory)"
-
-    print("\n================ TITANIC CSV UPLOAD START ================", flush=True)
-    print(
-        f"[TITANIC-UPLOAD] file={filename_raw} temp_path={server_temp_path}",
-        flush=True,
-    )
-    print("==========================================================\n", flush=True)
     logger.info(
-        "================ TITANIC CSV UPLOAD START ================",
-    )
-    logger.info(
-        "[TITANIC-UPLOAD] file=%s temp_path=%s",
+        "🤖 [JamesRouter] upload_titanic_csv 진입 — file=%s path=%s",
         filename_raw,
-        server_temp_path,
-    )
-    logger.info("[TITANIC-UPLOAD] request_path=%s method=%s", request.url.path, request.method)
-    request_logger.warning(
-        "[TITANIC-UPLOAD-PATH] %s %s file=%s",
-        request.method,
         request.url.path,
-        filename_raw,
-    )
-    logger.info(
-        "[TITANIC-UPLOAD-FLOW] walter_router -> james_use_case -> james_command -> james_repository -> james_pg_repository -> NeonDB",
     )
 
     if not filename.endswith(".csv"):
@@ -89,7 +63,6 @@ async def upload_titanic_csv(
 
     rows: list[JamesRowPayload] = []
     for row in reader:
-        # Sex -> gender 변환 (모든 필드는 str 유지)
         rows.append(
             JamesRowPayload(
                 passenger_id=str(row.get("PassengerId", "") or ""),
@@ -107,14 +80,27 @@ async def upload_titanic_csv(
             )
         )
 
+    logger.info("🤖 [JamesRouter] parsed_rows=%s", len(rows))
+
+    try:
+        result = await JamesCommand().receive_upload_records(
+            [row.model_dump() for row in rows],
+        )
+    except RuntimeError as exc:
+        logger.exception("🤖 [JamesRouter] DB 연결 실패")
+        raise HTTPException(
+            status_code=503,
+            detail=f"DB에 연결할 수 없습니다. backend/.env 의 DATABASE_URL을 확인하세요. ({exc})",
+        ) from exc
+    except SQLAlchemyError as exc:
+        logger.exception("🤖 [JamesRouter] DB 저장 실패")
+        raise HTTPException(
+            status_code=500,
+            detail=f"DB 저장에 실패했습니다: {exc}",
+        ) from exc
+
     logger.info(
-        "[TITANIC-UPLOAD] parsed_rows=%s headers=%s",
-        len(rows),
-        ",".join(reader.fieldnames or []),
-    )
-    result = await JamesUseCase().upload_rows(rows)
-    logger.info("[TITANIC-UPLOAD] saved_rows=%s", result.row_count)
-    logger.info(
-        "================= TITANIC CSV UPLOAD END =================",
+        "🤖 [JamesRouter] upload_titanic_csv 완료 — saved_rows=%s",
+        result.row_count,
     )
     return result

@@ -284,15 +284,24 @@ async def _drop_legacy_mova_users_table(conn) -> None:
         await conn.execute(text('DROP TABLE IF EXISTS "users" CASCADE'))
 
 
-async def create_tables() -> None:
-    """Mova·Friday13th·Titanic ORM 테이블을 Neon에 생성."""
-    import mova.app.models  # noqa: F401
+async def ensure_titanic_tables() -> None:
+    """Titanic James 업로드·Walter 조회용 `titanic_passengers` 테이블 보장."""
     import titanic.adapter.outbound.orm.james_orm_model  # noqa: F401
 
     mova_engine = get_mova_engine()
     async with mova_engine.begin() as conn:
-        await conn.run_sync(MovaBase.metadata.create_all)
         await conn.run_sync(TitanicBase.metadata.create_all)
+    logger.debug("Titanic DB 테이블 확인 완료 (titanic_passengers)")
+
+
+async def create_tables() -> None:
+    """Mova·Friday13th·Titanic ORM 테이블을 Neon에 생성."""
+    import mova.app.models  # noqa: F401
+
+    mova_engine = get_mova_engine()
+    async with mova_engine.begin() as conn:
+        await conn.run_sync(MovaBase.metadata.create_all)
+    await ensure_titanic_tables()
     logger.info("Mova/Titanic DB 테이블 생성 완료")
 
     try:

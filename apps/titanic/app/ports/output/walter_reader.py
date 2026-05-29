@@ -1,37 +1,20 @@
 from __future__ import annotations
 
-import logging
-from typing import Protocol
+from abc import ABC, abstractmethod
 
-from titanic.adapter.outbound.pg.walter_pg_reader import WalterPgReader
 from titanic.app.dtos.walter_dto import WalterPassengerItem
 
-logger = logging.getLogger(__name__)
 
+class WalterReader(ABC):
+    """승객 목록 조회 아웃바운드 포트 (ABC).
 
-class WalterReaderPort(Protocol):
-    async def get_passengers(self, *, offset: int, limit: int) -> list[WalterPassengerItem]: ...
-    async def get_total_count(self) -> int: ...
+    DB에서 (목록, 전체 건수)를 한 번에 읽는다.
+    페이지 번호·total_pages 계산은 입력 포트(WalterUseCase)를 구현하는 WalterQuery가 담당한다.
+    """
 
-
-class WalterReader(WalterReaderPort):
-    """애플리케이션 출력 포트 구현체 (Reader -> PgReader 위임)."""
-
-    def __init__(self, pg_reader: WalterPgReader | None = None) -> None:
-        self._pg_reader = pg_reader or WalterPgReader()
-
-    async def get_passengers(self, *, offset: int, limit: int) -> list[WalterPassengerItem]:
-        logger.info(
-            "[WalterReader] get_passengers 진입 — offset=%s limit=%s",
-            offset,
-            limit,
-        )
-        items = await self._pg_reader.get_passengers(offset=offset, limit=limit)
-        logger.info("[WalterReader] get_passengers 완료 — items=%s", len(items))
-        return items
-
-    async def get_total_count(self) -> int:
-        logger.info("[WalterReader] get_total_count 진입")
-        total = await self._pg_reader.get_total_count()
-        logger.info("[WalterReader] get_total_count 완료 — total=%s", total)
-        return total
+    @abstractmethod
+    async def read_passengers_page(
+        offset: int,
+        limit: int,
+    ) -> tuple[list[WalterPassengerItem], int]:
+        pass

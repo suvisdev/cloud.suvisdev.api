@@ -4,24 +4,35 @@ import logging
 
 from sqlalchemy import func, select
 
-from core.database import get_mova_session_factory
+from core.database import ensure_titanic_tables, get_mova_session_factory
 from titanic.adapter.outbound.orm.james_orm_model import TitanicPassengerRow
 from titanic.app.dtos.walter_dto import WalterPassengerItem
+from titanic.app.ports.output.walter_reader import WalterReader
 
 logger = logging.getLogger(__name__)
 
 
-class WalterPgReader:
-    """Titanic 승객 목록 조회용 PostgreSQL 아웃바운드 어댑터."""
+class WalterPgReader(WalterReader):
+    """Titanic 승객 목록 조회 — PostgreSQL 아웃바운드 어댑터 (포트 구현)."""
 
-    async def get_passengers(self, *, offset: int, limit: int) -> list[WalterPassengerItem]:
+    async def read_passengers_page(
+        self,
+        offset: int,
+        limit: int,
+    ) -> tuple[list[WalterPassengerItem], int]:
+        await ensure_titanic_tables()
         logger.info(
-            "[WalterPgReader] get_passengers 진입 (Neon) — offset=%s limit=%s",
+            "🤖 [WalterPgReader] read_passengers_page 진입 (Neon) — offset=%s limit=%s",
             offset,
             limit,
         )
         factory = get_mova_session_factory()
         async with factory() as session:
+            count_result = await session.execute(
+                select(func.count()).select_from(TitanicPassengerRow),
+            )
+            total = int(count_result.scalar_one())
+
             result = await session.execute(
                 select(TitanicPassengerRow)
                 .order_by(TitanicPassengerRow.id.asc())
@@ -47,17 +58,10 @@ class WalterPgReader:
                 )
                 for row in rows
             ]
-            logger.info(
-                "[WalterPgReader] get_passengers 완료 (Neon) — items=%s",
-                len(items),
-            )
-            return items
 
-    async def get_total_count(self) -> int:
-        logger.info("[WalterPgReader] get_total_count 진입 (Neon)")
-        factory = get_mova_session_factory()
-        async with factory() as session:
-            result = await session.execute(select(func.count()).select_from(TitanicPassengerRow))
-            total = int(result.scalar_one())
-            logger.info("[WalterPgReader] get_total_count 완료 (Neon) — total=%s", total)
-            return total
+        logger.info(
+            "🤖 [WalterPgReader] read_passengers_page 완료 (Neon) — items=%s total=%s",
+            len(items),
+            total,
+        )
+        return items, total

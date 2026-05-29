@@ -1,36 +1,41 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
-from titanic.app.ports.output.james_repository import JamesRepository, JamesRepositoryPort
+import logging
+from typing import Any
 
+from titanic.adapter.outbound.pg.james_pg_repository import JamesPgRepository
+from titanic.app.dtos.james_dto import JamesRowPayload, JamesUploadResult
+from titanic.app.ports.output.james_repository import JamesRepository
 
-class JamesRowPayload(BaseModel):
-    passenger_id: str
-    survived: str
-    pclass: str
-    name: str
-    gender: str
-    age: str
-    sibsp: str
-    parch: str
-    ticket: str
-    fare: str
-    cabin: str
-    embarked: str
-
-
-class JamesUploadResult(BaseModel):
-    row_count: int
-    rows: list[JamesRowPayload]
+logger = logging.getLogger(__name__)
 
 
 class JamesCommand:
-    """james 입력 데이터를 애플리케이션 유스케이스로 이동/처리."""
+    """james_router → 입력 포트 → 출력 포트(repository)로 업로드 데이터 이동."""
 
-    def __init__(self, repository: JamesRepositoryPort | None = None) -> None:
-        self._repository = repository or JamesRepository()
+    def __init__(self, repository: JamesRepository | None = None) -> None:
+        self._repository = repository or JamesPgRepository()
 
-    async def upload_rows(self, rows: list[JamesRowPayload]) -> JamesUploadResult:
-        # use case -> output port(repository)로 전달
-        return await self._repository.save_rows(rows)
+    async def receive_upload_records(
+        self,
+        records: list[dict[str, Any]],
+    ) -> JamesUploadResult:
+        logger.info(
+            "🤖 [JamesCommand] receive_upload_records 진입 — rows=%s",
+            len(records),
+        )
+        rows = [JamesRowPayload.model_validate(record) for record in records]
+        result = await self._repository.save_rows(rows)
+        logger.info(
+            "🤖 [JamesCommand] receive_upload_records 완료 — saved=%s",
+            result.row_count,
+        )
+        return result
 
+
+from titanic.app.ports.input.james_use_case import JamesUseCase  # noqa: E402
+
+JamesCommand = type("JamesCommand", (JamesUseCase, JamesCommand), dict(JamesCommand.__dict__))
+
+
+__all__ = ["JamesCommand", "JamesRowPayload", "JamesUploadResult"]

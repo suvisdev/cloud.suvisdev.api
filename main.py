@@ -224,6 +224,9 @@ async def lifespan(app: FastAPI):
             "[startup] Titanic CSV 업로드 엔드포인트: POST /titanic/james/upload",
         )
         logger.info(
+            "[startup] Titanic 승객 목록 엔드포인트: GET /titanic/walter/passengers",
+        )
+        logger.info(
             "[startup] 회원가입 엔드포인트: POST /auth/signup",
         )
         logger.info(

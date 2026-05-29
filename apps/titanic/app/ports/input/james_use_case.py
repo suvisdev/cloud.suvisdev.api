@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol
+from abc import ABC, abstractmethod
 
 from titanic.app.use_cases.james_command import (
     JamesCommand,
@@ -9,18 +9,9 @@ from titanic.app.use_cases.james_command import (
 )
 
 
-class JamesUseCasePort(Protocol):
-    """CSV 업로드로 받은 데이터를 처리하는 입력 포트."""
+class JamesUseCase(ABC):
+    """James CSV 업로드(POST) 입력 포트 (ABC). 조회(GET)는 WalterUseCase."""
 
-    async def upload_rows(self, rows: list[JamesRowPayload]) -> JamesUploadResult: ...
-
-
-class JamesUseCase(JamesUseCasePort):
-    """입력 포트에서 use case 구현으로 위임."""
-
-    def __init__(self, command: JamesCommand | None = None) -> None:
-        self._command = command or JamesCommand()
-
-    async def upload_rows(self, rows: list[JamesRowPayload]) -> JamesUploadResult:
-        return await self._command.upload_rows(rows)
-
+    @abstractmethod
+    async def receive_upload_records(records: list[dict[str, Any]]) -> JamesUploadResult:
+        pass
