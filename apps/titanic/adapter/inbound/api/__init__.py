@@ -5,7 +5,12 @@ from titanic.adapter.inbound.api.v1.cal_pistol_router import cal_pistol_router
 from titanic.adapter.inbound.api.v1.hartley_violin_router import hartley_violin_router
 from titanic.adapter.inbound.api.v1.isidor_bed_router import isidor_bed_router
 from titanic.adapter.inbound.api.v1.jack_sketch_router import jack_sketch_router
+from titanic.adapter.inbound.api.v1 import james_router as james_router_module
 from titanic.adapter.inbound.api.v1.james_router import james_router
+from titanic.app.ports.input.james_use_case import JamesUseCase
+from titanic.app.use_cases.james_interactor import JamesInteractor
+
+james_router_module.james_use_case = JamesInteractor()
 from titanic.adapter.inbound.api.v1.rose_diamond_router import rose_diamond_router
 from titanic.adapter.inbound.api.v1.ruth_corset_router import ruth_corset_router
 from titanic.adapter.inbound.api.v1.smith_captain_router import smith_captain_router

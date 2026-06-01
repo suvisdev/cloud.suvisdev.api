@@ -10,5 +10,8 @@ class JamesUseCase(ABC):
     """James CSV 업로드(POST) 입력 포트 (ABC). 조회(GET)는 WalterUseCase."""
 
     @abstractmethod
-    async def receive_upload_records(records: list[dict[str, Any]]) -> JamesUploadResult:
+    async def receive_upload_records(
+        self,
+        records: list[dict[str, Any]],
+    ) -> JamesUploadResult:
         pass

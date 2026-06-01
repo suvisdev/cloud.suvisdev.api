@@ -11,9 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class JamesPgRepository(JamesRepository):
-    def __init__(self, repository: JamesRepository | None = None) -> None:
-        self._repository = repository
-    
     """Titanic James 업로드 — Neon(PostgreSQL) 아웃바운드 어댑터 (포트 구현)."""
 
     async def save_rows(self, rows: list[JamesRowPayload]) -> JamesUploadResult:

@@ -13,6 +13,9 @@ from titanic.app.ports.input.james_use_case import JamesUseCase
 james_router = APIRouter(prefix="/titanic/james", tags=["james"])
 logger = logging.getLogger(__name__)
 
+# 입력 포트(UseCase) — 구현체는 adapter/inbound/api/__init__.py 에서 주입
+james_use_case: JamesUseCase | None = None
+
 _REQUIRED_HEADERS = [
     "PassengerId",
     "Survived",
@@ -32,10 +35,6 @@ _REQUIRED_HEADERS = [
 @james_router.post("/upload", response_model=int)
 async def upload_titanic_csv(file: UploadFile = File(...)) -> int:
     filename = file.filename or ""
-    
-    james_use_case = JamesUseCase()
-    """타이타닉 승객 데이터 csv 파일 업로드 코드"""
-
     logger.info("🤖 [JamesRouter] upload_titanic_csv 진입 — file=%s", filename)
 
     if not filename.lower().endswith(".csv"):
@@ -62,7 +61,6 @@ async def upload_titanic_csv(file: UploadFile = File(...)) -> int:
     ]
 
     # records에 상위 5줄 출력하는 로그
-    print(f"[제임스 라우터] 업로드된 csv 파일에서 파싱된 상위 5개 레코드:")
     preview_count = min(5, len(records))
     logger.info(
         "🤖 [JamesRouter] records 파싱 완료 — total=%s, 미리보기 %s건",
@@ -77,8 +75,14 @@ async def upload_titanic_csv(file: UploadFile = File(...)) -> int:
             record.model_dump(),
         )
 
+    if james_use_case is None:
+        raise HTTPException(
+            status_code=500,
+            detail="JamesUseCase가 연결되지 않았습니다.",
+        )
+
     try:
-        result = await JamesInteractor(JamesPgRepository()).receive_upload_records(
+        result = await james_use_case.receive_upload_records(
             [record.model_dump() for record in records],
         )
     except RuntimeError as exc:
