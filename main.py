@@ -84,13 +84,10 @@ from mova.app.schemas.reviews_schema import (
     ReviewUpdateSchema,
     ReviewWithUserSchema,
 )
-from friday13th.app.seed import seed_secom_if_empty
-from friday13th.app.controllers.user_controller import UserController
-from friday13th.app.repositories.user_repository import UserRepositoryError
-from friday13th.app.models.role import UserRole
-from friday13th.app.schemas.auth_schema import LoginSchema, UserSchema
-from titanic.adapter.inbound.api.v1.james_router import james_router
-from titanic.adapter.inbound.api.v1.walter_router import walter_router
+from friday13th.app.dtos.user_model import seed_secom_if_empty
+from friday13th.adapter.inbound.api.v1.login_router import login_router
+from friday13th.adapter.inbound.api.v1.signup_router import signup_router
+from titanic.adapter.inbound.api import titanic_router
 
 keymaker = get_keymaker()
 
@@ -227,10 +224,10 @@ async def lifespan(app: FastAPI):
             "[startup] Titanic 승객 목록 엔드포인트: GET /titanic/walter/passengers",
         )
         logger.info(
-            "[startup] 회원가입 엔드포인트: POST /auth/signup",
+            "[startup] 회원가입 엔드포인트: POST /friday13th/signup/signup",
         )
         logger.info(
-            "[startup] 로그인 엔드포인트: POST /auth/login",
+            "[startup] 로그인 엔드포인트: POST /friday13th/login/login",
         )
         yield
     finally:
@@ -265,8 +262,9 @@ async def request_path_logger(request: Request, call_next):
     )
     return response
 
-app.include_router(james_router)
-app.include_router(walter_router)
+app.include_router(titanic_router)
+app.include_router(login_router)
+app.include_router(signup_router)
 
 
 @app.get("/")
@@ -998,78 +996,6 @@ async def mova_list_hot_rankings(
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
 
-
-@app.put("/mova/rankings/hot", response_model=list[HotRankingDisplaySchema])
-async def mova_save_hot_rankings(payload: RankingBulkSchema) -> list[HotRankingDisplaySchema]:
-    """Mova HOT 랭킹 저장 (해당 기준일 목록 교체, 영화 FK)."""
-    logger.info("[main] mova save hot rankings — count=%s", len(payload.items))
-    try:
-        return await RankingsController().save_rankings(payload)
-    except RankingsRepositoryError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-
-
-@app.post("/auth/signup", response_model=SignupResponse, status_code=201)
-async def signup(req: SignupRequest, request: Request) -> SignupResponse:
-    """회원가입 → Controller → Service → Repository → Neon DB."""
-    user_schema = UserSchema(
-        username=req.username.strip(),
-        password=req.password,
-        nickname=req.nickname.strip(),
-        email=req.email.strip(),
-        role=UserRole.USER,
-        gender=req.gender,
-        age_group=req.age_group,
-        birth_year=req.birth_year,
-        preferred_genres=req.preferred_genres,
-    )
-    logger.info("[main] save_user 진입 — %s", user_schema.log_summary())
-    logger.info("[main] signup request_path=%s method=%s", request.url.path, request.method)
-    logger.info(
-        "[AUTH-SIGNUP-FLOW] main.signup -> UserController.save_user -> UserService.save_user -> UserRepository.save_user -> NeonDB(users/members)",
-    )
-    try:
-        user_id = await UserController().save_user(user_schema)
-    except UserRepositoryError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-
-    return SignupResponse(
-        message="회원가입이 완료되었습니다.",
-        id=user_id,
-        username=user_schema.username,
-        nickname=user_schema.nickname,
-        email=user_schema.email,
-    )
-
-
-@app.post("/auth/login", response_model=LoginResponse)
-async def login(req: LoginRequest, request: Request) -> LoginResponse:
-    """로그인 → Controller → Service → Repository → Neon DB."""
-    username = req.username.strip()
-    login_schema = LoginSchema(username=username, password=req.password)
-    logger.info("[main] login_user 진입 — %s", login_schema.log_summary())
-    logger.info("[main] login request_path=%s method=%s", request.url.path, request.method)
-    logger.info(
-        "[AUTH-LOGIN-FLOW] main.login -> UserController.login_user -> UserService.login_user -> UserRepository.login_user -> NeonDB(users)",
-    )
-    try:
-        user_id = await UserController().login_user(login_schema)
-    except UserRepositoryError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-
-    return LoginResponse(
-        message="로그인에 성공했습니다.",
-        id=user_id,
-        username=username,
-    )
-
-
 @app.get("/db-check")
 async def check_db(db: AsyncSession = Depends(get_db)):
     return await DbHealthAdapter.neon_time_check(db)
@@ -1096,7 +1022,7 @@ if __name__ == "__main__":
         "main:app",
         host="127.0.0.1",
         port=8000,
-        reload=False,
+        reload=True,
         log_level="info",
         access_log=True,
     )

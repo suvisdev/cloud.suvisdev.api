@@ -295,7 +295,7 @@ async def ensure_titanic_tables() -> None:
 
 
 async def create_tables() -> None:
-    """Mova·Friday13th·Titanic ORM 테이블을 Neon에 생성."""
+    """Mova·Secom·Titanic ORM 테이블을 Neon에 생성."""
     import mova.app.models  # noqa: F401
 
     mova_engine = get_mova_engine()
@@ -305,9 +305,12 @@ async def create_tables() -> None:
     logger.info("Mova/Titanic DB 테이블 생성 완료")
 
     try:
-        import friday13th.app.models  # noqa: F401
+        import friday13th.app.dtos.group_model  # noqa: F401
+        import friday13th.app.dtos.member_group_model  # noqa: F401
+        import friday13th.app.dtos.member_model  # noqa: F401
+        import friday13th.app.dtos.user_model  # noqa: F401
     except ModuleNotFoundError:
-        logger.warning("friday13th 패키지 없음 — Secom 테이블 생성 생략")
+        logger.warning("friday13th ORM 없음 — Secom 테이블 생성 생략")
         return
 
     secom_engine = get_secom_engine()

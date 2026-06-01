@@ -11,7 +11,7 @@ from mova.app.models.reviews_model import (
     EVENT_ACTION_TYPES,
     MovaReview,
 )
-from friday13th.app.user_lookup import get_secom_user_nicknames, secom_user_exists
+from friday13th.app.dtos.user_model import get_secom_user_nicknames, secom_user_exists
 
 logger = logging.getLogger(__name__)
 

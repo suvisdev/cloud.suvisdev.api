@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from core.database import get_session_factory
 from mova.app.models.chat_model import MovaChat
 from mova.app.services.intent_extraction_service import MAX_CHAT_KEYWORDS, merge_keyword_lists
-from friday13th.app.user_lookup import secom_user_exists
+from friday13th.app.dtos.user_model import secom_user_exists
 
 logger = logging.getLogger(__name__)
 

@@ -13,8 +13,8 @@ from mova.app.services.intent_extraction_service import (
 from mova.app.services.movies_service import MoviesService
 from mova.app.services.search_service import SearchService
 from mova.app.repositories.assistants_repository import AssistantsRepository
-from friday13th.app.repositories.member_repository import MemberRepository
-from friday13th.app.user_lookup import get_secom_user_profile
+from friday13th.app.dtos.member_model import MemberRepository
+from friday13th.app.dtos.user_model import get_secom_user_profile
 
 logger = logging.getLogger(__name__)
 

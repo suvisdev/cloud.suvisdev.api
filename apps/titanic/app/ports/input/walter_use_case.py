@@ -10,7 +10,7 @@ class WalterUseCase(ABC):
 
     API·라우터가 호출하는 화면 단위 조회만 정의한다.
     DB 목록/건수 읽기는 출력 포트 WalterReader.read_passengers_page 에 맡기고,
-    WalterQuery 가 두 포트 사이를 연결한다.
+    WalterInteractor 가 두 포트 사이를 연결한다.
     """
 
     @abstractmethod
