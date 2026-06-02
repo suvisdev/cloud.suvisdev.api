@@ -1,34 +1,50 @@
 from __future__ import annotations
 
+import hashlib
+import logging
+
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from core.database import get_secom_session_factory
-from friday13th.app.auth_errors import UserRepositoryError
+from friday13th.app.dtos.auth_command_dto import SignupCommand
 from friday13th.app.dtos.role import UserRole
 from friday13th.app.dtos.user_model import User
 from friday13th.app.ports.output.signup_repository import SignupRepository
-from friday13th.app.schemas.auth_schema import UserSchema
-from friday13th.app.security import hash_password
+
+logger = logging.getLogger(__name__)
+
+
+def _hash_password(raw_password: str) -> str:
+    return hashlib.sha256(raw_password.encode("utf-8")).hexdigest()
 
 class SignupPgRepository(SignupRepository):
     """Friday13th 회원가입 PostgreSQL 아웃바운드 어댑터."""
 
-    async def save_user(self, payload: dict[str, Any]) -> int:
+    async def save_user(self, command: SignupCommand) -> int:
+        user_payload = command.user
+        member_payload = command.member
+        role = str(user_payload.role or UserRole.USER)
+        username = user_payload.username
+        # 🎁로그 코드 시작
+        logger.info("🤖 [SignupPgRepository] save_user 진입 — username=%s", username)
+        # 🎁로그 코드 끝
+
         factory = get_secom_session_factory()
         async with factory() as session:
             existing = await session.execute(
-                select(User.id).where(User.username == payload["username"]),
+                select(User.id).where(User.username == username),
             )
             if existing.scalar_one_or_none() is not None:
                 raise HTTPException(status_code=409, detail="이미 사용 중인 아이디입니다.")
 
             user = User(
                 role=role,
-                username=payload["username"],
-                password_hash=hash_password(payload["password"]),
-                nickname=payload["nickname"],
-                email=payload["email"],
+                username=username,
+                password_hash=_hash_password(user_payload.password),
+                nickname=user_payload.nickname,
+                email=user_payload.email,
             )
             session.add(user)
             try:
@@ -36,7 +52,7 @@ class SignupPgRepository(SignupRepository):
                 await session.refresh(user)
             except IntegrityError as exc:
                 await session.rollback()
-                raise UserRepositoryError("이미 사용 중인 아이디입니다.", status_code=409) from exc
+                raise HTTPException(status_code=409, detail="이미 사용 중인 아이디입니다.") from exc
             user_id = user.id
 
         try:
@@ -44,11 +60,11 @@ class SignupPgRepository(SignupRepository):
 
             await MemberRepository().create_for_user(
                 user_id,
-                gender=user_schema.gender,
-                age_group=user_schema.age_group,
-                birth_year=user_schema.birth_year,
-                preferred_genres=user_schema.preferred_genres,
-                bio=user_schema.bio,
+                gender=member_payload.gender,
+                age_group=member_payload.age_group,
+                birth_year=member_payload.birth_year,
+                preferred_genres=member_payload.preferred_genres,
+                bio=member_payload.bio,
                 user_role=role,
             )
         except Exception:
@@ -57,5 +73,7 @@ class SignupPgRepository(SignupRepository):
                 user_id,
             )
 
+        # 🎁로그 코드 시작
         logger.info("🤖 [SignupPgRepository] save_user 완료 — user_id=%s", user_id)
+        # 🎁로그 코드 끝
         return user_id

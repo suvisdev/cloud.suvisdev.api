@@ -2,47 +2,47 @@ from __future__ import annotations
 
 import logging
 
-from core.database import ensure_titanic_tables, get_mova_session_factory
-from titanic.adapter.outbound.orm.james_orm_model import TitanicPassengerRow
-from titanic.app.dtos.james_dto import JamesRowPayload, JamesUploadResult
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from titanic.app.dtos.james_dto import BookingCommand, PersonCommand
 from titanic.app.ports.output.james_repository import JamesRepository
 
 logger = logging.getLogger(__name__)
 
 
 class JamesPgRepository(JamesRepository):
-    """Titanic James 업로드 — Neon(PostgreSQL) 아웃바운드 어댑터 (포트 구현)."""
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
 
-    async def save_rows(self, rows: list[JamesRowPayload]) -> JamesUploadResult:
-        logger.info("🤖 [JamesPgRepository] save_rows 진입 — rows=%s", len(rows))
-
-        if not rows:
-            logger.info("🤖 [JamesPgRepository] save_rows 완료 — saved=0")
-            return JamesUploadResult(row_count=0, rows=[])
-
-        await ensure_titanic_tables()
-        factory = get_mova_session_factory()
-        async with factory() as session:
-            session.add_all(
-                [
-                    TitanicPassengerRow(
-                        passenger_id=row.passenger_id,
-                        survived=row.survived,
-                        pclass=row.pclass,
-                        name=row.name,
-                        gender=row.gender,
-                        age=row.age,
-                        sibsp=row.sibsp,
-                        parch=row.parch,
-                        ticket=row.ticket,
-                        fare=row.fare,
-                        cabin=row.cabin,
-                        embarked=row.embarked,
-                    )
-                    for row in rows
-                ],
+    async def receive_uploaded_records(
+        self,
+        person_commands: list[PersonCommand],
+        booking_commands: list[BookingCommand],
+    ) -> int:
+        # 🎁로그 코드 시작
+        logger.info(
+            "🤖 [JamesPgRepository] receive_uploaded_records 진입 — persons=%s bookings=%s",
+            len(person_commands),
+            len(booking_commands),
+        )
+        # 🎁로그 코드 끝
+        for index, person in enumerate(person_commands[:5], start=1):
+            # 🎁로그 코드 시작
+            logger.info(
+                "🤖 [JamesPgRepository] person_commands[%s/%s] — %s",
+                index,
+                min(5, len(person_commands)),
+                person,
             )
-            await session.commit()
+            # 🎁로그 코드 끝
+        for index, booking in enumerate(booking_commands[:5], start=1):
+            # 🎁로그 코드 시작
+            logger.info(
+                "🤖 [JamesPgRepository] booking_commands[%s/%s] — %s",
+                index,
+                min(5, len(booking_commands)),
+                booking,
+            )
+            # 🎁로그 코드 끝
 
-        logger.info("🤖 [JamesPgRepository] save_rows 완료 — saved=%s", len(rows))
-        return JamesUploadResult(row_count=len(rows), rows=rows)
+        pass

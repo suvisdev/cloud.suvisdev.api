@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-
-from titanic.app.dtos.james_dto import JamesRowPayload, JamesUploadResult
-
+from typing import Any
 
 class JamesRepository(ABC):
     """James 업로드 데이터를 외부로 보내는 아웃바운드 포트 (ABC)."""
-
     @abstractmethod
-    async def save_rows(
+    async def receive_uploaded_records(
         self,
-        rows: list[JamesRowPayload],
-    ) -> JamesUploadResult:
+        person_commands: list[PersonCommand], 
+        booking_commands: list[BookingCommand]) -> int:
         pass

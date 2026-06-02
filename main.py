@@ -85,8 +85,7 @@ from mova.app.schemas.reviews_schema import (
     ReviewWithUserSchema,
 )
 from friday13th.app.dtos.user_model import seed_secom_if_empty
-from friday13th.adapter.inbound.api.v1.login_router import login_router
-from friday13th.adapter.inbound.api.v1.signup_router import signup_router
+from friday13th.adapter.inbound.api import login_router, signup_router
 from titanic.adapter.inbound.api import titanic_router
 
 keymaker = get_keymaker()

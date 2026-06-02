@@ -3,8 +3,8 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class JamesRowSchema(BaseModel):
-    """James CSV 업로드 한 행 — CSV 헤더 `Sex`는 필드명 `gender`로 매핑."""
+class TitanicRowSchema(BaseModel):
+    """Titanic CSV 업로드 한 행 — CSV 헤더 `Sex`는 필드명 `gender`로 매핑."""
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -14,15 +14,13 @@ class JamesRowSchema(BaseModel):
     name: str = Field(default="", alias="Name")
     gender: str = Field(default="", alias="Sex")
     age: str = Field(default="", alias="Age")
-    sibsp: str = Field(default="", alias="SibSp")
+    sib_sp: str = Field(default="", alias="SibSp")
     parch: str = Field(default="", alias="Parch")
     ticket: str = Field(default="", alias="Ticket")
     fare: str = Field(default="", alias="Fare")
     cabin: str = Field(default="", alias="Cabin")
     embarked: str = Field(default="", alias="Embarked")
 
-class JamesUploadResponse(BaseModel):
-    """POST /titanic/james/upload 응답."""
-
+class TitanicUploadResponse(BaseModel):
     row_count: int = 0
-    rows: list[JamesRowSchema] = Field(default_factory=list)
+    rows: list[TitanicRowSchema] = Field(default_factory=list)

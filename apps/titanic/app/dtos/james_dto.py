@@ -1,23 +1,27 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from dataclasses import dataclass
 
 
-class JamesRowPayload(BaseModel):
-    passenger_id: str = ""
-    survived: str = ""
-    pclass: str = ""
-    name: str = ""
-    gender: str = ""
-    age: str = ""
-    sibsp: str = ""
-    parch: str = ""
-    ticket: str = ""
-    fare: str = ""
-    cabin: str = ""
-    embarked: str = ""
+@dataclass
+class PersonCommand:
+    """ERD Person — 승객 1명."""
+
+    passenger_id: str
+    name: str
+    gender: str
+    age: str
+    sib_sp: str
+    parch: str
+    survived: str
 
 
-class JamesUploadResult(BaseModel):
-    row_count: int = 0
-    rows: list[JamesRowPayload] = Field(default_factory=list)
+@dataclass
+class BookingCommand:
+    """ERD Booking + Port 역정규화 (country 제외)."""
+
+    pclass: str
+    ticket: str
+    fare: str
+    cabin: str
+    embarked: str
