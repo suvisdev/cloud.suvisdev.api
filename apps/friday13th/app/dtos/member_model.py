@@ -65,7 +65,7 @@ class MemberRepository:
     async def ensure_for_user(self, user_id: int) -> Member:
         from sqlalchemy import select
 
-        from core.database import get_secom_session_factory
+        from core.matrix.oracle_database import get_secom_session_factory
 
         factory = get_secom_session_factory()
         async with factory() as session:
@@ -94,7 +94,7 @@ class MemberRepository:
     ) -> Member:
         from sqlalchemy import select
 
-        from core.database import get_secom_session_factory
+        from core.matrix.oracle_database import get_secom_session_factory
 
         factory = get_secom_session_factory()
         async with factory() as session:

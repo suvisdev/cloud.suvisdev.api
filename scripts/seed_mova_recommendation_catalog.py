@@ -12,23 +12,25 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = Path(__file__).resolve().parent
 APPS = ROOT / "apps"
+sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(APPS))
 
 
 async def main() -> None:
     from database import dispose_engine, reload_env
-    from mova.app.data.recommendation_catalog_seed import MOOD_TAG_BY_SLUG, MOVIE_SEEDS
-    from mova.app.repositories.actors_repository import ActorsRepository
-    from mova.app.repositories.characters_repository import CharactersRepository
-    from mova.app.repositories.movies_repository import MoviesRepository
-    from mova.app.repositories.tags_repository import TagsRepository
+    from recommendation_catalog_seed_data import MOOD_TAG_BY_SLUG, MOVIE_SEEDS
+    from mova.adapter.outbound.pg.actors_pg_repository import ActorsPgRepository
+    from mova.adapter.outbound.pg.characters_pg_repository import CharactersPgRepository
+    from mova.adapter.outbound.pg.movies_pg_repository import MoviesPgRepository
+    from mova.adapter.outbound.pg.tags_pg_repository import TagsPgRepository
 
     reload_env()
-    movies_repo = MoviesRepository()
-    actors_repo = ActorsRepository()
-    characters_repo = CharactersRepository()
-    tags_repo = TagsRepository()
+    movies_repo = MoviesPgRepository()
+    actors_repo = ActorsPgRepository()
+    characters_repo = CharactersPgRepository()
+    tags_repo = TagsPgRepository()
 
     tag_count = 0
     cast_count = 0

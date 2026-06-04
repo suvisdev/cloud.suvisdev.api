@@ -6,7 +6,7 @@ import logging
 from fastapi import HTTPException
 from sqlalchemy import select
 
-from core.database import get_secom_session_factory
+from core.matrix.oracle_database import get_secom_session_factory
 from friday13th.app.dtos.auth_command_dto import LoginUserCommand
 from friday13th.app.dtos.user_model import User
 from friday13th.app.ports.output.login_repository import LoginRepository

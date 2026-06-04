@@ -1,25 +1,31 @@
+from fastapi import APIRouter
 import logging
 
-from fastapi import APIRouter, Query
-
-from titanic.app.dtos.walter_dto import WalterPassengerPage
+from titanic.adapter.inbound.api.schemas.walter_schema import WalterSchema
+from titanic.app.ports.input.walter_use_case import WalterUseCase
 from titanic.app.use_cases.walter_interactor import WalterInteractor
 
-walter_router = APIRouter(prefix="/titanic/walter", tags=["titanic-walter"])
+walter_router = APIRouter(prefix="/walter", tags=["walter"])
 logger = logging.getLogger(__name__)
 
 
-@walter_router.get("/passengers", response_model=WalterPassengerPage)
-async def get_passenger_page(
-    page: int = Query(default=1, ge=1, description="1부터 시작하는 페이지 번호"),
-) -> WalterPassengerPage:
-    # 요구사항: 화면에는 50명 단위 목록
-    logger.info("🤖 [WalterRouter] get_passenger_page 진입 — page=%s page_size=50", page)
-    result = await WalterInteractor().get_passenger_page(page, 50)
-    logger.info(
-        "🤖 [WalterRouter] get_passenger_page 완료 — page=%s items=%s total=%s",
-        result.page,
-        len(result.items),
-        result.total_count,
-    )
-    return result
+
+@walter_router.get("/myself", status_code=204)
+async def introduce_myself() -> None:
+    schema = WalterSchema()
+
+    # 🎁로그 코드 시작
+    logger.info("🎁로그 시작#########################################")
+    logger.info("🤖 [WalterRouter] Walter의 자기소개글을 가져오는 API 호출")
+    logger.info(f"🤖 ID: {schema.id}")
+    logger.info(f"🤖 Name: {schema.name}")
+    logger.info(f"🤖 Memo: {schema.memo}")
+    logger.info("🎁로그 끝#######################################")
+    # 🎁로그 코드 끝
+
+    walter: WalterUseCase = WalterInteractor()
+    walter.introduce_myself(schema)
+
+    pass
+
+

@@ -62,8 +62,6 @@ class JamesInteractor(JamesUseCase):
         ]
         repository: JamesRepository = JamesPgRepository(None)
 
-        await repository.receive_uploaded_records(person_commands, booking_commands)
-
-        pass
+        return await repository.receive_uploaded_records(person_commands, booking_commands)
 
 

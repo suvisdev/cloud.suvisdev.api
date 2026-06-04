@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from core.database import get_secom_session_factory
+from core.matrix.oracle_database import get_secom_session_factory
 from friday13th.app.dtos.auth_command_dto import SignupCommand
 from friday13th.app.dtos.role import UserRole
 from friday13th.app.dtos.user_model import User

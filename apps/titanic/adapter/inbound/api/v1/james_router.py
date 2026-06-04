@@ -51,7 +51,7 @@ def _normalize_titanic_row(row: dict) -> dict:
 
 
 @james_router.post("/upload", response_model=int)
-async def upload_titanic_file(file: UploadFile = File(...)) -> int:
+async def receive_uploaded_records(file: UploadFile = File(...)) -> int:
     """타이타닉 승객 데이터 CSV 파일 업로드."""
     if file.content_type not in {"text/csv", "application/vnd.ms-excel", "text/plain"}:
         raise HTTPException(status_code=400, detail="CSV 파일을 업로드해주세요.")
@@ -90,7 +90,4 @@ async def upload_titanic_file(file: UploadFile = File(...)) -> int:
     
     use_case: JamesUseCase = JamesInteractor()
 
-    await use_case.receive_uploaded_records(schemas)
-
-
-    return len(schemas)
+    return await use_case.receive_uploaded_records(schemas)

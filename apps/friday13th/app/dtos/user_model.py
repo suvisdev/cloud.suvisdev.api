@@ -32,7 +32,7 @@ class User(SecomModel):
 async def secom_user_exists(user_id: int) -> bool:
     from sqlalchemy import select
 
-    from core.database import get_secom_session_factory
+    from core.matrix.oracle_database import get_secom_session_factory
 
     factory = get_secom_session_factory()
     async with factory() as session:
@@ -46,7 +46,7 @@ async def get_secom_user_nicknames(user_ids: set[int]) -> dict[int, str]:
 
     from sqlalchemy import select
 
-    from core.database import get_secom_session_factory
+    from core.matrix.oracle_database import get_secom_session_factory
 
     factory = get_secom_session_factory()
     async with factory() as session:
@@ -59,7 +59,7 @@ async def get_secom_user_nicknames(user_ids: set[int]) -> dict[int, str]:
 async def get_secom_user_profile(user_id: int) -> dict:
     from sqlalchemy import select
 
-    from core.database import get_secom_session_factory
+    from core.matrix.oracle_database import get_secom_session_factory
     from friday13th.app.dtos.member_model import Member
 
     factory = get_secom_session_factory()
