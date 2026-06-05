@@ -23,32 +23,7 @@ class JamesPgRepository(JamesRepository):
         person_commands: list[PersonCommand],
         booking_commands: list[BookingCommand],
     ) -> int:
-        # 🎁로그 코드 시작
-        logger.info(
-            "🤖 [JamesPgRepository] receive_uploaded_records 진입 — persons=%s bookings=%s",
-            len(person_commands),
-            len(booking_commands),
-        )
-        # 🎁로그 코드 끝
-        for index, person in enumerate(person_commands[:5], start=1):
-            # 🎁로그 코드 시작
-            logger.info(
-                "🤖 [JamesPgRepository] person_commands[%s/%s] — %s",
-                index,
-                min(5, len(person_commands)),
-                person,
-            )
-            # 🎁로그 코드 끝
-        for index, booking in enumerate(booking_commands[:5], start=1):
-            # 🎁로그 코드 시작
-            logger.info(
-                "🤖 [JamesPgRepository] booking_commands[%s/%s] — %s",
-                index,
-                min(5, len(booking_commands)),
-                booking,
-            )
-            # 🎁로그 코드 끝
-
+       
         await ensure_titanic_tables()
 
         if self._session is not None:
@@ -103,7 +78,4 @@ class JamesPgRepository(JamesRepository):
         if self._session is not None:
             await session.commit()
 
-        # 🎁로그 코드 시작
-        logger.info("🤖 [JamesPgRepository] receive_uploaded_records 완료 — saved=%s", saved)
-        # 🎁로그 코드 끝
         return saved

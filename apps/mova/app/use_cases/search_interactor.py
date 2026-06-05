@@ -1,20 +1,16 @@
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from mova.adapter.inbound.api.schemas.search_schema import MovaSearchItemSchema
-from mova.adapter.outbound.pg.search_pg_repository import SearchPgRepository
 from mova.domain.value_objects.movie_catalog import resolve_canonical_slug
 from mova.app.ports.input.search_use_case import SearchUseCase
 from mova.app.ports.output.search_repository import SearchHit, SearchRepository
 
-logger = logging.getLogger(__name__)
-
 
 class SearchInteractor(SearchUseCase):
-    def __init__(self) -> None:
-        self._repository: SearchRepository = SearchPgRepository()
+    def __init__(self, repository: SearchRepository) -> None:
+        self._repository = repository
 
     def _to_item(self, hit: SearchHit) -> MovaSearchItemSchema:
         movie = hit.movie
@@ -31,7 +27,6 @@ class SearchInteractor(SearchUseCase):
         q = query.strip()
         if not q:
             return []
-        logger.info("[SearchInteractor] search — q=%r limit=%s", q, limit)
         hits = await self._repository.search(q, limit=limit)
         return [self._to_item(hit) for hit in hits]
 
@@ -51,11 +46,6 @@ class SearchInteractor(SearchUseCase):
             limit=limit,
         )
         if structured:
-            logger.info(
-                "[SearchInteractor] search_by_intent — type=%s structured_hits=%s",
-                intent_type,
-                len(structured),
-            )
             return [self._to_item(hit) for hit in structured]
 
         seen: set[str] = set()

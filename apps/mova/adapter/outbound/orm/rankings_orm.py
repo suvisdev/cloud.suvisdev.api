@@ -1,4 +1,4 @@
-"""@see docs/DevOps/Backend/ENTITY_RULE.md — Mova HOT 랭킹 (영화 FK)."""
+"""@see docs/DevOps/Backend/ENTITY_RULE.md — Mova HOT 랭킹 (영화·chat FK)."""
 
 from datetime import date
 
@@ -6,14 +6,15 @@ from sqlalchemy import Date, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from mova.adapter.outbound.orm.base_orm import MovaModel
+from mova.domain.value_objects.ranking_source import RANKING_SOURCE_BOX_OFFICE
 
 
 class MovaRanking(MovaModel):
-    """실시간 HOT 랭킹. PK `id` — `movie_id` FK, 기준일 `ranked_at`."""
+    """HOT 랭킹 스냅샷. `source`별 일별 TOP N — chat_trend는 picks·chat 집계."""
 
     __tablename__ = "rankings"
     __table_args__ = (
-        UniqueConstraint("rank", "ranked_at", name="uq_rankings_rank_date"),
+        UniqueConstraint("rank", "ranked_at", "source", name="uq_rankings_rank_date_source"),
     )
 
     rank: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
@@ -23,5 +24,19 @@ class MovaRanking(MovaModel):
         nullable=False,
         index=True,
     )
+    chat_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("chat.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="source=chat_trend — 대표 검색 의도 chat.id",
+    )
+    source: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+        default=RANKING_SOURCE_BOX_OFFICE,
+        index=True,
+    )
+    score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     badge: Mapped[str | None] = mapped_column(String(8), nullable=True)
     ranked_at: Mapped[date] = mapped_column(Date, nullable=False, index=True)

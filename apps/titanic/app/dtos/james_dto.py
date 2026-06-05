@@ -25,3 +25,7 @@ class BookingCommand:
     fare: str
     cabin: str
     embarked: str
+
+@dataclass
+class JamesResponse:
+    answer: str

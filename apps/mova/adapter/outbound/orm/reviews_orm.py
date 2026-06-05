@@ -6,6 +6,7 @@ from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from mova.adapter.outbound.orm.base_orm import MovaModel
+from viewer.app.dtos.user_model import User
 
 ACTION_FAVORITE = "favorite"
 ACTION_WATCHED = "watched"
@@ -30,7 +31,7 @@ class MovaReview(MovaModel):
 
     user_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey(User.__table__.c.id, ondelete="CASCADE"),
         nullable=False,
         index=True,
         comment="Secom users.id (동일 DB FK)",

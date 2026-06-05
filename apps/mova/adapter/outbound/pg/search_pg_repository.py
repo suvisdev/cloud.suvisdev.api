@@ -4,12 +4,13 @@ import logging
 from typing import Any
 
 from sqlalchemy import String, cast, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.matrix.oracle_database import get_session_factory
 from mova.adapter.outbound.orm.actors_orm import MovaActor
 from mova.adapter.outbound.orm.characters_orm import MovaCharacter
 from mova.adapter.outbound.orm.tags_orm import MovaTag
 from mova.adapter.outbound.orm.movies_orm import MovaMovie
+from mova.adapter.outbound.pg.pg_session import run_pg
 
 from mova.app.ports.output.search_repository import MatchType, SearchHit, SearchRepository
 
@@ -24,6 +25,9 @@ _MATCH_PRIORITY: dict[MatchType, int] = {
 
 
 class SearchPgRepository(SearchRepository):
+    def __init__(self, session: AsyncSession | None = None) -> None:
+        self._session = session
+
     async def search(self, query: str, *, limit: int = 12) -> list[SearchHit]:
         q = query.strip()
         if not q:
@@ -38,8 +42,7 @@ class SearchPgRepository(SearchRepository):
             if existing is None or _MATCH_PRIORITY[match_type] < _MATCH_PRIORITY[existing.match_type]:
                 merged[movie.id] = SearchHit(movie=movie, match_type=match_type)
 
-        factory = get_session_factory()
-        async with factory() as session:
+        async def work(session: AsyncSession) -> None:
             title_rows = await session.execute(
                 select(MovaMovie)
                 .where(
@@ -88,6 +91,8 @@ class SearchPgRepository(SearchRepository):
             )
             for movie in genre_rows.scalars():
                 _merge(movie, "keyword")
+
+        await run_pg(self._session, work)
 
         ordered = sorted(
             merged.values(),
@@ -180,8 +185,7 @@ class SearchPgRepository(SearchRepository):
         must_kw = [k for k in (must.get("keywords") or []) if str(k).strip()]
         anchor_actors = [a for a in (similar.get("actors") or []) if str(a).strip()]
 
-        factory = get_session_factory()
-        async with factory() as session:
+        async def work(session: AsyncSession) -> list[SearchHit]:
             if intent_type == "filter_and":
                 sets: list[set[int]] = []
                 for name in actors:
@@ -239,4 +243,6 @@ class SearchPgRepository(SearchRepository):
                 )
                 return ordered[:limit]
 
-        return []
+            return []
+
+        return await run_pg(self._session, work)

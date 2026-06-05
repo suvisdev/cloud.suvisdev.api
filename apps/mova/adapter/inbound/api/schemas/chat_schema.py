@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class MovaChatRecommendationSchema(BaseModel):
@@ -37,3 +37,11 @@ class MovaChatRequest(BaseModel):
         default=None,
         description="Mova 회원 ID — 로그인 사용자 취향·의도 저장에 사용",
     )
+
+    @field_validator("message", mode="before")
+    @classmethod
+    def strip_message(cls, value: str) -> str:
+        return value.strip() if isinstance(value, str) else value
+
+    def history_dicts(self) -> list[dict[str, str]]:
+        return [{"role": item.role, "content": item.content} for item in self.history]

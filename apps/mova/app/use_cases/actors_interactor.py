@@ -1,21 +1,14 @@
 from __future__ import annotations
 
-import logging
-
 from mova.adapter.inbound.api.schemas.actors_schema import ActorCreateSchema, ActorSchema
-from mova.adapter.outbound.pg.actors_pg_repository import (
-    ActorsPgRepository,
-    ActorsRepositoryError,
-)
+from mova.adapter.outbound.pg.actors_pg_repository import ActorsRepositoryError
 from mova.app.ports.input.actors_use_case import ActorsUseCase
 from mova.app.ports.output.actors_repository import ActorsRepository
 
-logger = logging.getLogger(__name__)
-
 
 class ActorsInteractor(ActorsUseCase):
-    def __init__(self) -> None:
-        self._repository: ActorsRepository = ActorsPgRepository()
+    def __init__(self, repository: ActorsRepository) -> None:
+        self._repository = repository
 
     def _to_schema(self, row) -> ActorSchema:
         return ActorSchema(
@@ -33,11 +26,6 @@ class ActorsInteractor(ActorsUseCase):
         }
 
     async def save_actor(self, payload: ActorCreateSchema) -> ActorSchema:
-        logger.info(
-            "[ActorsInteractor] save_actor — %r (%s)",
-            payload.name,
-            payload.role_type,
-        )
         row = await self._repository.upsert(self._create_to_dict(payload))
         return self._to_schema(row)
 

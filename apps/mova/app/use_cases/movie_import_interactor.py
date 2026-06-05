@@ -1,18 +1,20 @@
 from __future__ import annotations
 
-import logging
 from datetime import date
 
 from core.matrix.keymaker_api import get_keymaker
 from mova.adapter.inbound.api.schemas.movie_import_schema import MovieImportResultSchema
 from mova.adapter.inbound.api.schemas.rankings_schema import RankingBulkSchema, RankingItemCreateSchema
-from mova.adapter.outbound.http import KoficAdapter, KoficAdapterError, TmdbAdapter, TmdbAdapterError
-from mova.adapter.outbound.pg.movies_pg_repository import MoviesPgRepository
+from mova.domain.value_objects.ranking_source import RANKING_SOURCE_BOX_OFFICE
+from mova.adapter.outbound.http import (
+    KoficAdapter,
+    KoficAdapterError,
+    TmdbAdapter,
+    TmdbAdapterError,
+)
 from mova.app.ports.input.movie_import_use_case import MovieImportUseCase
+from mova.app.ports.input.rankings_use_case import RankingsUseCase
 from mova.app.ports.output.movies_repository import MoviesRepository
-from mova.app.use_cases.rankings_interactor import RankingsInteractor
-
-logger = logging.getLogger(__name__)
 
 _TMDB_SLUG_PREFIX = "tmdb-"
 _KOFIC_SLUG_PREFIX = "kofic-"
@@ -26,10 +28,43 @@ def kofic_slug(movie_cd: str) -> str:
     return f"{_KOFIC_SLUG_PREFIX}{str(movie_cd).strip()}"
 
 
+def _clamp(value: int, lo: int, hi: int) -> int:
+    return min(max(value, lo), hi)
+
+
+def _resolve_kofic_target_date(target_date: str | None) -> str:
+    raw = (target_date or KoficAdapter.default_target_date()).strip()
+    if len(raw) != 8 or not raw.isdigit():
+        raise KoficAdapterError("target_date 형식은 YYYYMMDD 입니다.", status_code=400)
+    return raw
+
+
+def _validate_week_gb(week_gb: str) -> str:
+    if week_gb not in ("0", "1"):
+        raise KoficAdapterError("week_gb는 0(주간) 또는 1(주말)만 가능합니다.", status_code=400)
+    return week_gb
+
+
 class MovieImportInteractor(MovieImportUseCase):
-    def __init__(self) -> None:
-        self.movies_repository: MoviesRepository = MoviesPgRepository()
-        self._rankings = RankingsInteractor()
+    def __init__(
+        self,
+        movies_repository: MoviesRepository | None = None,
+        rankings_use_case: RankingsUseCase | None = None,
+    ) -> None:
+        # LLM adapter는 enrichment 용으로만 이 interactor를 호출하는 경우가 많아서,
+        # 기본값 주입으로 adapter/outbound 계층 간 결합을 줄입니다.
+        if movies_repository is None:
+            from mova.adapter.outbound.pg.movies_pg_repository import MoviesPgRepository
+
+            movies_repository = MoviesPgRepository()
+        if rankings_use_case is None:
+            from mova.adapter.outbound.pg.rankings_pg_repository import RankingsPgRepository
+            from mova.app.use_cases.rankings_interactor import RankingsInteractor
+
+            rankings_use_case = RankingsInteractor(RankingsPgRepository())
+
+        self._movies_repository = movies_repository
+        self._rankings_use_case = rankings_use_case
 
     def _adapter(self) -> TmdbAdapter:
         key = get_keymaker().tmdb_api_key
@@ -137,21 +172,18 @@ class MovieImportInteractor(MovieImportUseCase):
                     if str(g.get("name") or "").strip()
                 ]
         except Exception:
-            logger.debug(
-                "[MovieImportInteractor] TMDB 포스터 보강 실패 — title=%r",
-                title,
-                exc_info=True,
-            )
+            pass
         return payload
 
     async def _upsert_kofic_payload(self, payload: dict) -> int:
         enriched = await self.enrich_payload_with_tmdb(payload)
-        row = await self.movies_repository.upsert(enriched)
+        row = await self._movies_repository.upsert(enriched)
         return row.id
 
     async def enrich_missing_posters(self, *, limit: int = 50) -> MovieImportResultSchema:
         """포스터가 비어 있는 영화(주로 KOFIC)에 TMDB 포스터를 채운다."""
-        rows = await self.movies_repository.list_movies(limit=max(limit * 3, 100))
+        limit = _clamp(limit, 1, 100)
+        rows = await self._movies_repository.list_movies(limit=max(limit * 3, 100))
         updated_ids: list[int] = []
         for row in rows:
             if row.poster_url:
@@ -167,7 +199,7 @@ class MovieImportInteractor(MovieImportUseCase):
             enriched = await self.enrich_payload_with_tmdb(payload)
             if not enriched.get("poster"):
                 continue
-            saved = await self.movies_repository.upsert(enriched)
+            saved = await self._movies_repository.upsert(enriched)
             updated_ids.append(saved.id)
             if len(updated_ids) >= limit:
                 break
@@ -182,7 +214,7 @@ class MovieImportInteractor(MovieImportUseCase):
         payload = self._movie_payload_from_tmdb(detail, genre_map=genre_map)
         if not payload["title"]:
             raise TmdbAdapterError("TMDB 영화 제목이 비어 있습니다.", status_code=400)
-        row = await self.movies_repository.upsert(payload)
+        row = await self._movies_repository.upsert(payload)
         return row.id
 
     async def import_movie_by_tmdb_id(self, tmdb_id: int) -> MovieImportResultSchema:
@@ -190,7 +222,6 @@ class MovieImportInteractor(MovieImportUseCase):
         detail = await adapter.fetch_movie_detail(tmdb_id)
         genre_map = await adapter.genre_map()
         movie_id = await self._upsert_tmdb_detail(detail, genre_map=genre_map)
-        logger.info("[MovieImportInteractor] import_movie_by_tmdb_id — %s -> %s", tmdb_id, movie_id)
         return MovieImportResultSchema(
             imported=1,
             movie_ids=[movie_id],
@@ -198,16 +229,19 @@ class MovieImportInteractor(MovieImportUseCase):
         )
 
     async def import_movie_by_kofic_cd(self, movie_cd: str) -> MovieImportResultSchema:
+        code = movie_cd.strip()
+        if not code:
+            raise KoficAdapterError("movie_cd가 비어 있습니다.", status_code=400)
         adapter = self._kofic_adapter()
-        info = await adapter.fetch_movie_info(movie_cd.strip())
-        payload = self._movie_payload_from_kofic(info, movie_cd)
+        info = await adapter.fetch_movie_info(code)
+        payload = self._movie_payload_from_kofic(info, code)
         if not payload["title"]:
             raise KoficAdapterError("KOFIC 영화 제목이 비어 있습니다.", status_code=400)
         movie_id = await self._upsert_kofic_payload(payload)
         return MovieImportResultSchema(
             imported=1,
             movie_ids=[movie_id],
-            message=f"KOFIC {movie_cd} 저장 완료",
+            message=f"KOFIC {code} 저장 완료",
         )
 
     async def _import_summaries(
@@ -240,7 +274,7 @@ class MovieImportInteractor(MovieImportUseCase):
                 movie_id = await self._upsert_tmdb_detail(detail, genre_map=genre_map)
                 ids.append(movie_id)
             except Exception:
-                logger.exception("[MovieImportInteractor] TMDB %s 저장 실패", tid)
+                pass
 
         return ids
 
@@ -251,6 +285,7 @@ class MovieImportInteractor(MovieImportUseCase):
         setup_rankings: bool = True,
         ranking_limit: int = 10,
     ) -> MovieImportResultSchema:
+        pages = _clamp(pages, 1, 5)
         adapter = self._adapter()
         summaries: list[dict] = []
         for page in range(1, max(1, pages) + 1):
@@ -277,6 +312,10 @@ class MovieImportInteractor(MovieImportUseCase):
         pages: int = 1,
         setup_rankings: bool = False,
     ) -> MovieImportResultSchema:
+        query = query.strip()
+        if not query:
+            raise TmdbAdapterError("검색어 q가 비어 있습니다.", status_code=400)
+        pages = _clamp(pages, 1, 3)
         adapter = self._adapter()
         summaries: list[dict] = []
         for page in range(1, max(1, pages) + 1):
@@ -297,11 +336,12 @@ class MovieImportInteractor(MovieImportUseCase):
     async def import_kofic_daily(
         self,
         *,
-        target_date: str,
+        target_date: str | None = None,
         setup_rankings: bool = True,
     ) -> MovieImportResultSchema:
+        date_arg = _resolve_kofic_target_date(target_date)
         adapter = self._kofic_adapter()
-        rows = await adapter.fetch_daily_boxoffice(target_date)
+        rows = await adapter.fetch_daily_boxoffice(date_arg)
         movie_ids: list[int] = []
         ranking_items: list[RankingItemCreateSchema] = []
 
@@ -327,8 +367,12 @@ class MovieImportInteractor(MovieImportUseCase):
 
         rankings_updated = False
         if setup_rankings and ranking_items:
-            await self._rankings.save_rankings(
-                RankingBulkSchema(ranked_at=date.today(), items=ranking_items),
+            await self._rankings_use_case.save_rankings(
+                RankingBulkSchema(
+                    ranked_at=date.today(),
+                    source=RANKING_SOURCE_BOX_OFFICE,
+                    items=ranking_items,
+                ),
             )
             rankings_updated = True
 
@@ -336,18 +380,20 @@ class MovieImportInteractor(MovieImportUseCase):
             imported=len(movie_ids),
             movie_ids=movie_ids,
             rankings_updated=rankings_updated,
-            message=f"KOFIC 일간 박스오피스 {len(movie_ids)}편 반영 ({target_date})",
+            message=f"KOFIC 일간 박스오피스 {len(movie_ids)}편 반영 ({date_arg})",
         )
 
     async def import_kofic_weekly(
         self,
         *,
-        target_date: str,
+        target_date: str | None = None,
         week_gb: str = "0",
         setup_rankings: bool = True,
     ) -> MovieImportResultSchema:
+        date_arg = _resolve_kofic_target_date(target_date)
+        week_gb = _validate_week_gb(week_gb)
         adapter = self._kofic_adapter()
-        rows = await adapter.fetch_weekly_boxoffice(target_date, week_gb=week_gb)
+        rows = await adapter.fetch_weekly_boxoffice(date_arg, week_gb=week_gb)
         movie_ids: list[int] = []
         ranking_items: list[RankingItemCreateSchema] = []
 
@@ -373,8 +419,12 @@ class MovieImportInteractor(MovieImportUseCase):
 
         rankings_updated = False
         if setup_rankings and ranking_items:
-            await self._rankings.save_rankings(
-                RankingBulkSchema(ranked_at=date.today(), items=ranking_items),
+            await self._rankings_use_case.save_rankings(
+                RankingBulkSchema(
+                    ranked_at=date.today(),
+                    source=RANKING_SOURCE_BOX_OFFICE,
+                    items=ranking_items,
+                ),
             )
             rankings_updated = True
 
@@ -382,7 +432,7 @@ class MovieImportInteractor(MovieImportUseCase):
             imported=len(movie_ids),
             movie_ids=movie_ids,
             rankings_updated=rankings_updated,
-            message=f"KOFIC 주간 박스오피스 {len(movie_ids)}편 반영 ({target_date})",
+            message=f"KOFIC 주간 박스오피스 {len(movie_ids)}편 반영 ({date_arg})",
         )
 
     async def _setup_rankings_from_movie_ids(self, movie_ids: list[int]) -> bool:
@@ -390,7 +440,7 @@ class MovieImportInteractor(MovieImportUseCase):
             return False
         rows: list[tuple] = []
         for mid in movie_ids:
-            row = await self.movies_repository.get_by_id(mid)
+            row = await self._movies_repository.get_by_id(mid)
             if row is not None:
                 rows.append((row, float(row.rating or 0)))
 
@@ -405,8 +455,12 @@ class MovieImportInteractor(MovieImportUseCase):
         ]
         if not items:
             return False
-        await self._rankings.save_rankings(
-            RankingBulkSchema(ranked_at=date.today(), items=items),
+        await self._rankings_use_case.save_rankings(
+            RankingBulkSchema(
+                ranked_at=date.today(),
+                source=RANKING_SOURCE_BOX_OFFICE,
+                items=items,
+            ),
         )
         return True
 
@@ -417,14 +471,12 @@ class MovieImportInteractor(MovieImportUseCase):
         pages: int = 2,
     ) -> MovieImportResultSchema | None:
         """DB 영화가 적으면 TMDB 인기 목록으로 자동 채운다."""
-        existing = await self.movies_repository.list_movies(limit=min_movies + 1)
+        existing = await self._movies_repository.list_movies(limit=min_movies + 1)
         if len(existing) >= min_movies:
             return None
         key = get_keymaker().tmdb_api_key
         if not key:
-            logger.info("[MovieImportInteractor] TMDB_API_KEY 없음 — 자동 시드 생략")
             return None
-        logger.info("[MovieImportInteractor] DB 영화 %s편 — TMDB 인기 목록 시드 시작", len(existing))
         return await self.import_popular(pages=pages, setup_rankings=True)
 
     async def import_by_tmdb_id(self, tmdb_id: int) -> MovieImportResultSchema:

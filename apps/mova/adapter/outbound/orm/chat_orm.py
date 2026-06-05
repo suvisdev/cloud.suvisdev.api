@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from mova.adapter.outbound.orm.base_orm import MovaModel
+from viewer.app.dtos.user_model import User
 
 
 class MovaChat(MovaModel):
@@ -16,17 +17,10 @@ class MovaChat(MovaModel):
 
     user_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey(User.__table__.c.id, ondelete="SET NULL"),
         nullable=True,
         index=True,
         comment="Secom users.id (동일 DB FK, 비로그인은 NULL)",
-    )
-    member_id: Mapped[int | None] = mapped_column(
-        Integer,
-        ForeignKey("members.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True,
-        comment="회원 프로필 members.id",
     )
     assistant_id: Mapped[int | None] = mapped_column(
         Integer,

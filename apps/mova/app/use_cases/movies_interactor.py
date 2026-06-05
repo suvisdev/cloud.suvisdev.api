@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import logging
-
 from mova.adapter.inbound.api.schemas.search_schema import (
     MovaTitleCastSchema,
     MovaTitleDetailSchema,
@@ -12,25 +10,27 @@ from mova.adapter.inbound.api.schemas.movies_schema import (
     MovieTitleCreateSchema,
     MovieTitleSchema,
 )
-from mova.adapter.outbound.pg.movies_pg_repository import (
-    MoviesPgRepository,
-    MoviesRepositoryError,
-)
+from mova.adapter.outbound.pg.movies_pg_repository import MoviesRepositoryError
 from mova.domain.value_objects.movie_catalog import (
     resolve_canonical_slug,
     title_for_canonical_slug,
 )
+from mova.app.ports.input.characters_use_case import CharactersUseCase
 from mova.app.ports.input.movies_use_case import MoviesUseCase
+from mova.app.ports.input.reviews_use_case import ReviewsUseCase
 from mova.app.ports.output.movies_repository import MoviesRepository
-from mova.app.use_cases.characters_interactor import CharactersInteractor
-from mova.app.use_cases.reviews_interactor import ReviewsInteractor
-
-logger = logging.getLogger(__name__)
 
 
 class MoviesInteractor(MoviesUseCase):
-    def __init__(self) -> None:
-        self._repository: MoviesRepository = MoviesPgRepository()
+    def __init__(
+        self,
+        repository: MoviesRepository,
+        characters_use_case: CharactersUseCase,
+        reviews_use_case: ReviewsUseCase,
+    ) -> None:
+        self._repository = repository
+        self._characters_use_case = characters_use_case
+        self._reviews_use_case = reviews_use_case
 
     def _to_schema(self, row) -> MovieSchema:
         return MovieSchema(
@@ -56,13 +56,11 @@ class MoviesInteractor(MoviesUseCase):
         }
 
     async def save_movie(self, payload: MovieCreateSchema) -> MovieSchema:
-        logger.info("[MoviesInteractor] save_movie — %r", payload.title)
         row = await self._repository.upsert(self._create_to_dict(payload))
         return self._to_schema(row)
 
     async def save_title(self, payload: MovieTitleCreateSchema) -> MovieTitleSchema:
         title = payload.title.strip()
-        logger.info("[MoviesInteractor] save_title — %r", title)
         movie_id = await self._repository.upsert_title(title)
         return MovieTitleSchema(id=movie_id, title=title)
 
@@ -105,7 +103,7 @@ class MoviesInteractor(MoviesUseCase):
                 status_code=404,
             )
 
-        cast_rows = await CharactersInteractor().list_actors_by_movie(row.id, limit=50)
+        cast_rows = await self._characters_use_case.list_actors_by_movie(row.id, limit=50)
         cast = [
             MovaTitleCastSchema(
                 name=actor.actor_name,
@@ -118,14 +116,11 @@ class MoviesInteractor(MoviesUseCase):
         rating_count = 0
         rating = float(row.rating or 0)
         try:
-            summary = await ReviewsInteractor().get_movie_rating_summary(row.id)
+            summary = await self._reviews_use_case.get_movie_rating_summary(row.id)
             rating_count = summary.review_count
             rating = float(summary.average_rating)
         except Exception:
-            logger.debug(
-                "[MoviesInteractor] rating summary skipped for movie_id=%s",
-                row.id,
-            )
+            pass
 
         poster = row.poster_url or ""
         response_id = (

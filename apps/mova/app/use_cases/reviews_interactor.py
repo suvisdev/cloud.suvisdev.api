@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import logging
-
 from mova.adapter.inbound.api.schemas.reviews_schema import (
     MovieRatingSummarySchema,
     ReviewActivityCreateSchema,
@@ -12,19 +10,14 @@ from mova.adapter.inbound.api.schemas.reviews_schema import (
     ReviewUpdateSchema,
     ReviewWithUserSchema,
 )
-from mova.adapter.outbound.pg.reviews_pg_repository import (
-    ReviewsPgRepository,
-    ReviewsRepositoryError,
-)
+from mova.adapter.outbound.pg.reviews_pg_repository import ReviewsRepositoryError
 from mova.app.ports.input.reviews_use_case import ReviewsUseCase
 from mova.app.ports.output.reviews_repository import ReviewsRepository
 
-logger = logging.getLogger(__name__)
-
 
 class ReviewsInteractor(ReviewsUseCase):
-    def __init__(self) -> None:
-        self._repository: ReviewsRepository = ReviewsPgRepository()
+    def __init__(self, repository: ReviewsRepository) -> None:
+        self._repository = repository
 
     def _activity_schema(self, row) -> ReviewActivitySchema:
         return ReviewActivitySchema(
@@ -51,12 +44,6 @@ class ReviewsInteractor(ReviewsUseCase):
         self,
         payload: ReviewActivityCreateSchema,
     ) -> ReviewActivitySchema:
-        logger.info(
-            "[ReviewsInteractor] record_activity — user=%s movie=%s %s",
-            payload.user_id,
-            payload.movie_id,
-            payload.action_type,
-        )
         row = await self._repository.record_activity(
             user_id=payload.user_id,
             movie_id=payload.movie_id,
@@ -65,11 +52,6 @@ class ReviewsInteractor(ReviewsUseCase):
         return self._activity_schema(row)
 
     async def save_rating_review(self, payload: ReviewCreateSchema) -> ReviewSchema:
-        logger.info(
-            "[ReviewsInteractor] save_rating_review — user=%s movie=%s",
-            payload.user_id,
-            payload.movie_id,
-        )
         row, _, _ = await self._repository.upsert_rating_review(
             user_id=payload.user_id,
             movie_id=payload.movie_id,
@@ -155,6 +137,22 @@ class ReviewsInteractor(ReviewsUseCase):
     ) -> list[ReviewSchema]:
         rows = await self._repository.list_rating_reviews_by_user(user_id, limit=limit)
         return [self._rating_review_schema(row) for row in rows]
+
+    async def list_rating_reviews(
+        self,
+        *,
+        user_id: int | None = None,
+        movie_id: int | None = None,
+        limit: int = 50,
+    ) -> list[ReviewSchema]:
+        if user_id is None and movie_id is None:
+            raise ReviewsRepositoryError(
+                "user_id 또는 movie_id가 필요합니다.",
+                status_code=400,
+            )
+        if user_id is not None:
+            return await self.list_rating_reviews_by_user(user_id, limit=limit)
+        return await self.list_rating_reviews_by_movie(movie_id, limit=limit)
 
     async def list_rating_reviews_by_movie_with_users(
         self,

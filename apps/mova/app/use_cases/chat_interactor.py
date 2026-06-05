@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import logging
 from typing import Literal
 
 from mova.adapter.inbound.api.gemini_reply import gemini_reply
-from mova.adapter.inbound.api.schemas.chat_schema import MovaChatResponseSchema
+from mova.adapter.inbound.api.schemas.chat_schema import MovaChatRequest, MovaChatResponseSchema
 from mova.adapter.inbound.api.schemas.movies_schema import MovieTitleCreateSchema
 from mova.adapter.outbound.llm.chat_prompt import ChatPromptBuilder
 from mova.adapter.outbound.llm.intent_extraction import (
@@ -12,32 +11,39 @@ from mova.adapter.outbound.llm.intent_extraction import (
     IntentExtractionService,
     merge_keyword_lists,
 )
-from mova.adapter.outbound.pg.assistants_pg_repository import AssistantsPgRepository
-from mova.adapter.outbound.pg.chat_pg_repository import ChatPgRepository
-from mova.adapter.outbound.pg.movies_pg_repository import MoviesPgRepository
-from mova.adapter.outbound.pg.picks_pg_repository import PicksPgRepository
 from mova.app.ports.input.chat_use_case import ChatUseCase
+from mova.app.ports.input.movies_use_case import MoviesUseCase
+from mova.app.ports.input.rankings_use_case import RankingsUseCase
+from mova.app.ports.input.search_use_case import SearchUseCase
 from mova.app.ports.output.assistants_repository import AssistantsRepository
 from mova.app.ports.output.chat_repository import ChatRepository
 from mova.app.ports.output.movies_repository import MoviesRepository
 from mova.app.ports.output.picks_repository import PicksRepository
-from mova.app.use_cases.movies_interactor import MoviesInteractor
-from mova.app.use_cases.search_interactor import SearchInteractor
-from friday13th.app.dtos.member_model import MemberRepository
-from friday13th.app.dtos.user_model import get_secom_user_profile
-
-logger = logging.getLogger(__name__)
+from viewer.app.dtos.user_model import get_secom_user_profile
 
 
 class ChatInteractor(ChatUseCase):
-    def __init__(self) -> None:
-        self.chat_prompt = ChatPromptBuilder()
-        self.intent_extraction_service = IntentExtractionService()
-        self.chat_repository: ChatRepository = ChatPgRepository()
-        self.movies_interactor = MoviesInteractor()
-        self.picks_repository: PicksRepository = PicksPgRepository()
-        self.movies_repository: MoviesRepository = MoviesPgRepository()
-        self.search_interactor = SearchInteractor()
+    def __init__(
+        self,
+        chat_repository: ChatRepository,
+        picks_repository: PicksRepository,
+        movies_repository: MoviesRepository,
+        assistants_repository: AssistantsRepository,
+        movies_use_case: MoviesUseCase,
+        search_use_case: SearchUseCase,
+        intent_extraction_service: IntentExtractionService,
+        chat_prompt_builder: ChatPromptBuilder,
+        rankings_use_case: RankingsUseCase,
+    ) -> None:
+        self._chat_repository = chat_repository
+        self._picks_repository = picks_repository
+        self._movies_repository = movies_repository
+        self._assistants_repository = assistants_repository
+        self._movies_use_case = movies_use_case
+        self._search_use_case = search_use_case
+        self._rankings_use_case = rankings_use_case
+        self._intent_extraction_service = intent_extraction_service
+        self._chat_prompt_builder = chat_prompt_builder
 
     async def prepare_chat_context(
         self,
@@ -45,9 +51,7 @@ class ChatInteractor(ChatUseCase):
         *,
         user_id: int | None = None,
     ) -> dict:
-        logger.info("[ChatInteractor] prepare_chat_context 진입")
-
-        extracted = self.intent_extraction_service.extract(message)
+        extracted = self._intent_extraction_service.extract(message)
         refined = str(extracted.get("refined_query", "")).strip()
         raw_kw = extracted.get("keywords") or []
         keywords = (
@@ -68,34 +72,25 @@ class ChatInteractor(ChatUseCase):
         past_intents: list = []
         tag_catalog: list = []
         chat_id: int | None = None
-        member_id: int | None = None
         assistant_id: int | None = None
-        if user_id is not None:
-            try:
-                member = await MemberRepository().ensure_for_user(user_id)
-                member_id = member.id
-            except Exception:
-                logger.exception("[ChatInteractor] member ensure 실패 user_id=%s", user_id)
         try:
-            assistant_repo: AssistantsRepository = AssistantsPgRepository()
-            assistant = await assistant_repo.get_default()
+            assistant = await self._assistants_repository.get_default()
             if assistant is not None:
                 assistant_id = assistant.id
         except Exception:
-            logger.exception("[ChatInteractor] default assistant 조회 실패")
+            pass
 
         try:
-            chat_id = await self.chat_repository.upsert(
+            chat_id = await self._chat_repository.upsert(
                 raw_message=message,
                 refined_query=refined,
                 keywords=keywords,
                 intent_type=intent_type,
                 search_filters=search_filters,
                 user_id=user_id,
-                member_id=member_id,
                 assistant_id=assistant_id,
             )
-            past_all = await self.chat_repository.get_top_for_context(
+            past_all = await self._chat_repository.get_top_for_context(
                 limit=8,
                 user_id=user_id,
             )
@@ -111,20 +106,14 @@ class ChatInteractor(ChatUseCase):
                 search_filters=search_filters,
             )
         except Exception:
-            logger.warning(
-                "[ChatInteractor] DB 미연결 — 의도 저장·태그 검색·과거 취향 생략",
-                exc_info=True,
-            )
+            pass
 
         mova_user = None
         if user_id is not None:
             try:
                 mova_user = await get_secom_user_profile(user_id)
             except Exception:
-                logger.warning(
-                    "[ChatInteractor] user_id=%s Secom 프로필 로드 실패",
-                    user_id,
-                )
+                pass
 
         return {
             "refined_query": refined,
@@ -144,27 +133,29 @@ class ChatInteractor(ChatUseCase):
             return
         rows: list[tuple[int, object, int]] = []
         for rank, rec in enumerate(recommendations, start=1):
-            movie = await self.movies_repository.get_by_slug(rec.id) or await self.movies_repository.find_by_title(
+            movie = await self._movies_repository.get_by_slug(rec.id) or await self._movies_repository.find_by_title(
                 rec.title,
             )
             if movie is None:
-                logger.warning(
-                    "[ChatInteractor] picks skip — title=%r slug=%r",
-                    rec.title,
-                    rec.id,
-                )
                 continue
             rows.append((movie.id, rec, rank))
         if not rows:
             return
         try:
-            await self.picks_repository.save_chat_recommendations(
+            await self._picks_repository.save_chat_recommendations(
                 chat_id=chat_id,
                 user_id=context.get("user_id"),
                 movie_ids=rows,
             )
+            await self._refresh_chat_trend_rankings()
         except Exception:
-            logger.exception("[ChatInteractor] picks 저장 실패")
+            pass
+
+    async def _refresh_chat_trend_rankings(self) -> None:
+        try:
+            await self._rankings_use_case.refresh_chat_trend_rankings()
+        except Exception:
+            pass
 
     async def _search_movies_by_intent(
         self,
@@ -175,21 +166,14 @@ class ChatInteractor(ChatUseCase):
         search_filters: dict | None = None,
     ) -> list:
         try:
-            hits = await self.search_interactor.search_by_intent(
+            return await self._search_use_case.search_by_intent(
                 refined_query=refined_query,
                 keywords=keywords,
                 intent_type=intent_type,
                 search_filters=search_filters or {},
                 limit=12,
             )
-            logger.info(
-                "[ChatInteractor] tag_catalog — intent=%s hits=%s",
-                intent_type,
-                len(hits),
-            )
-            return hits
         except Exception:
-            logger.warning("[ChatInteractor] intent search failed", exc_info=True)
             return []
 
     async def build_prompt(
@@ -202,7 +186,7 @@ class ChatInteractor(ChatUseCase):
             context = await self.prepare_chat_context(message)
 
         user = context.get("mova_user")
-        return self.chat_prompt.build_prompt(
+        return self._chat_prompt_builder.build_prompt(
             history,
             message,
             refined_query=context["refined_query"],
@@ -220,21 +204,21 @@ class ChatInteractor(ChatUseCase):
         raw_gemini: str,
         context: dict,
     ) -> MovaChatResponseSchema:
-        intro, recommendations = self.chat_prompt.parse_structured_reply(raw_gemini)
+        intro, recommendations = self._chat_prompt_builder.parse_structured_reply(raw_gemini)
 
         if recommendations:
             try:
                 titles = [r.title for r in recommendations]
                 for title in titles:
-                    await self.movies_interactor.save_title(MovieTitleCreateSchema(title=title))
+                    await self._movies_use_case.save_title(MovieTitleCreateSchema(title=title))
             except Exception:
-                logger.exception("[ChatInteractor] 추천 영화 제목 DB 저장 실패")
+                pass
             try:
-                recommendations = await self.chat_prompt.reply_service.enrich_from_db(
+                recommendations = await self._chat_prompt_builder.reply_service.enrich_from_db(
                     recommendations,
                 )
             except Exception:
-                logger.exception("[ChatInteractor] 추천 영화 DB 메타 보강 실패")
+                pass
 
             await self._save_picks(context, recommendations)
 
@@ -259,3 +243,11 @@ class ChatInteractor(ChatUseCase):
         prompt = await self.build_prompt(history, message, context=context)
         raw = gemini_reply(prompt, model_key)
         return await self.build_response(raw, context)
+
+    async def chat_from_request(self, req: MovaChatRequest) -> MovaChatResponseSchema:
+        return await self.chat(
+            req.message,
+            req.history_dicts(),
+            user_id=req.user_id,
+            model_key=req.model,
+        )

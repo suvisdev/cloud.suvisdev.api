@@ -1,23 +1,18 @@
 from __future__ import annotations
 
-import logging
-
 from mova.adapter.inbound.api.schemas.tags_schema import (
     MoviesByTagSchema,
     TagCatalogSchema,
     TagCreateSchema,
     TagSchema,
 )
-from mova.adapter.outbound.pg.tags_pg_repository import TagsPgRepository
 from mova.app.ports.input.tags_use_case import TagsUseCase
 from mova.app.ports.output.tags_repository import TagsRepository
 
-logger = logging.getLogger(__name__)
-
 
 class TagsInteractor(TagsUseCase):
-    def __init__(self) -> None:
-        self._repository: TagsRepository = TagsPgRepository()
+    def __init__(self, repository: TagsRepository) -> None:
+        self._repository = repository
 
     def _tag_schema(self, row) -> TagSchema:
         return TagSchema(
@@ -38,11 +33,6 @@ class TagsInteractor(TagsUseCase):
         )
 
     async def attach(self, payload: TagCreateSchema) -> TagSchema:
-        logger.info(
-            "[TagsInteractor] attach — movie_id=%s %r",
-            payload.movie_id,
-            payload.label,
-        )
         row = await self._repository.attach(
             {
                 "movie_id": payload.movie_id,

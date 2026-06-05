@@ -4,10 +4,11 @@ import logging
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.matrix.oracle_database import get_session_factory
 from mova.domain.value_objects.movie_catalog import resolve_canonical_slug
 from mova.adapter.outbound.orm.movies_orm import MovaMovie, slugify_movie
+from mova.adapter.outbound.pg.pg_session import run_pg
 from mova.app.ports.output.movies_repository import MoviesRepository
 
 logger = logging.getLogger(__name__)
@@ -21,27 +22,33 @@ class MoviesRepositoryError(Exception):
 
 
 class MoviesPgRepository(MoviesRepository):
+    def __init__(self, session: AsyncSession | None = None) -> None:
+        self._session = session
+
     async def get_by_id(self, movie_id: int) -> MovaMovie | None:
-        factory = get_session_factory()
-        async with factory() as session:
+        async def work(session: AsyncSession) -> MovaMovie | None:
             result = await session.execute(select(MovaMovie).where(MovaMovie.id == movie_id))
             return result.scalar_one_or_none()
+
+        return await run_pg(self._session, work)
 
     async def get_by_slug(self, slug: str) -> MovaMovie | None:
         key = slug.strip()
         if not key:
             return None
-        factory = get_session_factory()
-        async with factory() as session:
+
+        async def work(session: AsyncSession) -> MovaMovie | None:
             result = await session.execute(select(MovaMovie).where(MovaMovie.slug == key))
             return result.scalar_one_or_none()
+
+        return await run_pg(self._session, work)
 
     async def find_by_title(self, title: str) -> MovaMovie | None:
         key = title.strip()
         if not key:
             return None
-        factory = get_session_factory()
-        async with factory() as session:
+
+        async def work(session: AsyncSession) -> MovaMovie | None:
             exact = await session.execute(
                 select(MovaMovie).where(MovaMovie.title == key[:255]).limit(1),
             )
@@ -52,6 +59,8 @@ class MoviesPgRepository(MoviesRepository):
                 select(MovaMovie).where(MovaMovie.title.ilike(f"%{key}%")).limit(1),
             )
             return fuzzy.scalar_one_or_none()
+
+        return await run_pg(self._session, work)
 
     async def upsert(self, data: dict) -> MovaMovie:
         title = str(data.get("title", "")).strip()
@@ -66,8 +75,8 @@ class MoviesPgRepository(MoviesRepository):
         slug = slug[:64]
 
         logger.info("[MoviesPgRepository] upsert — slug=%r title=%r", slug, title)
-        factory = get_session_factory()
-        async with factory() as session:
+
+        async def work(session: AsyncSession) -> MovaMovie:
             result = await session.execute(select(MovaMovie).where(MovaMovie.slug == slug))
             row = result.scalar_one_or_none()
             if row is None:
@@ -94,7 +103,7 @@ class MoviesPgRepository(MoviesRepository):
                     row.genres = list(data.get("genres") or [])
 
             try:
-                await session.commit()
+                await session.flush()
                 await session.refresh(row)
             except IntegrityError as e:
                 await session.rollback()
@@ -103,6 +112,8 @@ class MoviesPgRepository(MoviesRepository):
                     status_code=409,
                 ) from e
             return row
+
+        return await run_pg(self._session, work)
 
     async def upsert_title(self, title: str) -> int:
         row = await self.upsert({"title": title})
@@ -120,12 +131,13 @@ class MoviesPgRepository(MoviesRepository):
         return ids
 
     async def list_movies(self, limit: int = 100) -> list[MovaMovie]:
-        factory = get_session_factory()
-        async with factory() as session:
+        async def work(session: AsyncSession) -> list[MovaMovie]:
             result = await session.execute(
                 select(MovaMovie).order_by(MovaMovie.id.desc()).limit(limit),
             )
             return list(result.scalars().all())
+
+        return await run_pg(self._session, work)
 
     async def list_titles(self, limit: int = 100) -> list[MovaMovie]:
         return await self.list_movies(limit=limit)

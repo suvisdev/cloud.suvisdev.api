@@ -1,15 +1,22 @@
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timezone
 
-from core.matrix.oracle_database import get_session_factory
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from mova.adapter.inbound.api.schemas.chat_schema import MovaChatRecommendationSchema
 from mova.adapter.outbound.orm.picks_orm import MovaPick
+from mova.adapter.outbound.pg.pg_session import run_pg
 from mova.app.ports.output.picks_repository import PicksRepository
 
 logger = logging.getLogger(__name__)
 
 
 class PicksPgRepository(PicksRepository):
+    def __init__(self, session: AsyncSession | None = None) -> None:
+        self._session = session
+
     async def save_chat_recommendations(
         self,
         *,
@@ -21,8 +28,8 @@ class PicksPgRepository(PicksRepository):
             return 0
 
         batch_at = datetime.now(timezone.utc)
-        factory = get_session_factory()
-        async with factory() as session:
+
+        async def work(session: AsyncSession) -> int:
             for movie_id, rec, rank in movie_ids:
                 session.add(
                     MovaPick(
@@ -35,10 +42,13 @@ class PicksPgRepository(PicksRepository):
                         batch_at=batch_at,
                     ),
                 )
-            await session.commit()
+            await session.flush()
+            return len(movie_ids)
+
+        count = await run_pg(self._session, work)
         logger.info(
             "[PicksPgRepository] save_chat_recommendations — chat_id=%s count=%s",
             chat_id,
-            len(movie_ids),
+            count,
         )
-        return len(movie_ids)
+        return count

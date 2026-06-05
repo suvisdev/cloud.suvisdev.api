@@ -73,6 +73,16 @@ class ReviewsUseCase(ABC):
         pass
 
     @abstractmethod
+    async def list_rating_reviews(
+        self,
+        *,
+        user_id: int | None = None,
+        movie_id: int | None = None,
+        limit: int = 50,
+    ) -> list[ReviewSchema]:
+        pass
+
+    @abstractmethod
     async def list_rating_reviews_by_movie_with_users(
         self,
         movie_id: int,

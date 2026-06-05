@@ -37,7 +37,7 @@ class MovieImportUseCase(ABC):
     async def import_kofic_daily(
         self,
         *,
-        target_date: str,
+        target_date: str | None = None,
         setup_rankings: bool = True,
     ) -> MovieImportResultSchema:
         pass
@@ -46,7 +46,7 @@ class MovieImportUseCase(ABC):
     async def import_kofic_weekly(
         self,
         *,
-        target_date: str,
+        target_date: str | None = None,
         week_gb: str = "0",
         setup_rankings: bool = True,
     ) -> MovieImportResultSchema:

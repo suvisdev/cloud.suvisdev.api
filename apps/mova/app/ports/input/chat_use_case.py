@@ -3,7 +3,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Literal
 
-from mova.adapter.inbound.api.schemas.chat_schema import MovaChatResponseSchema
+from mova.adapter.inbound.api.schemas.chat_schema import (
+    MovaChatRequest,
+    MovaChatResponseSchema,
+)
 
 
 class ChatUseCase(ABC):
@@ -42,4 +45,8 @@ class ChatUseCase(ABC):
         user_id: int | None = None,
         model_key: Literal["flash", "flash15", "pro"] | None = None,
     ) -> MovaChatResponseSchema:
+        pass
+
+    @abstractmethod
+    async def chat_from_request(self, req: MovaChatRequest) -> MovaChatResponseSchema:
         pass

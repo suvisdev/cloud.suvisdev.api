@@ -1,23 +1,18 @@
 from __future__ import annotations
 
-import logging
-
 from mova.adapter.inbound.api.schemas.characters_schema import (
     CharacterLinkCreateSchema,
     CharacterLinkSchema,
     CharacterWithActorSchema,
     CharacterWithMovieSchema,
 )
-from mova.adapter.outbound.pg.characters_pg_repository import CharactersPgRepository
 from mova.app.ports.input.characters_use_case import CharactersUseCase
 from mova.app.ports.output.characters_repository import CharactersRepository
 
-logger = logging.getLogger(__name__)
-
 
 class CharactersInteractor(CharactersUseCase):
-    def __init__(self) -> None:
-        self._repository: CharactersRepository = CharactersPgRepository()
+    def __init__(self, repository: CharactersRepository) -> None:
+        self._repository = repository
 
     def _to_link_schema(self, row) -> CharacterLinkSchema:
         return CharacterLinkSchema(
@@ -27,11 +22,6 @@ class CharactersInteractor(CharactersUseCase):
         )
 
     async def link(self, payload: CharacterLinkCreateSchema) -> CharacterLinkSchema:
-        logger.info(
-            "[CharactersInteractor] link — movie_id=%s actor_id=%s",
-            payload.movie_id,
-            payload.actor_id,
-        )
         row = await self._repository.link(payload.movie_id, payload.actor_id)
         return self._to_link_schema(row)
 

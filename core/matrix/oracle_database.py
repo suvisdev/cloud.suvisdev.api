@@ -46,7 +46,7 @@ class MovaBase(DeclarativeBase):
 
 
 class SecomBase(DeclarativeBase):
-    """Secom ORM (users, members, groups)."""
+    """Secom ORM (groups, admins, users)."""
     pass
 
 
@@ -121,13 +121,18 @@ def ensure_mova_database() -> tuple[bool, str | None]:
 
 def ensure_secom_database() -> tuple[bool, str | None]:
     global _secom_session_factory, _secom_engine, _secom_init_error, _active_secom_url
+    reload_env()
     explicit_url = (os.getenv("SECOM_DATABASE_URL") or "").strip()
-    url = _normalize_database_url(explicit_url) if explicit_url else _normalize_database_url(os.getenv("MOVA_DATABASE_URL") or "")
+    if explicit_url:
+        url = _normalize_database_url(explicit_url)
+    else:
+        url = _normalize_database_url(
+            os.getenv("MOVA_DATABASE_URL") or os.getenv("DATABASE_URL") or "",
+        )
 
     if _secom_session_factory is not None and _active_secom_url == url:
         return True, None
 
-    reload_env()
     engine, factory, err, active = _init_engine(url, "Secom", _active_secom_url)
     _secom_engine, _secom_session_factory, _secom_init_error, _active_secom_url = engine, factory, err, active
     return factory is not None, err
@@ -236,7 +241,8 @@ async def _drop_legacy_mova_users_table(conn) -> None:
     
     if not columns or "user_group_id" in columns:
         return
-        
+    if "group_id" in columns or "role" in columns:
+        return
     if "preferred_genres" in columns or "nickname" in columns:
         logger.warning("Legacy Mova users table detected. Dropping for Secom integration.")
         await conn.execute(text('DROP TABLE IF EXISTS "users" CASCADE'))
@@ -247,20 +253,22 @@ async def create_tables() -> None:
     await ensure_titanic_tables()
     import mova.adapter.outbound.orm  # noqa: F401
 
-    mova_engine = get_mova_engine()
-    if mova_engine:
-        async with mova_engine.begin() as conn:
-            await conn.run_sync(MovaBase.metadata.create_all)
-
     try:
-        import friday13th.app.dtos.user_model
+        import viewer.app.dtos.admin_model  # noqa: F401
+        import viewer.app.dtos.group_model  # noqa: F401
+        import viewer.app.dtos.user_model  # noqa: F401
         secom_engine = get_secom_engine()
         if secom_engine:
             async with secom_engine.begin() as conn:
                 await _drop_legacy_mova_users_table(conn)
                 await conn.run_sync(SecomBase.metadata.create_all)
     except ModuleNotFoundError:
-        logger.warning("Friday13th models not found.")
+        logger.warning("Viewer models not found.")
+
+    mova_engine = get_mova_engine()
+    if mova_engine:
+        async with mova_engine.begin() as conn:
+            await conn.run_sync(MovaBase.metadata.create_all)
 
 
 async def ensure_titanic_tables() -> None:

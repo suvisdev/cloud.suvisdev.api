@@ -1,18 +1,24 @@
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timezone
 
 from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.matrix.oracle_database import get_session_factory
 from mova.adapter.outbound.llm.intent_extraction import MAX_CHAT_KEYWORDS, merge_keyword_lists
 from mova.adapter.outbound.orm.chat_orm import MovaChat
+from mova.adapter.outbound.pg.pg_session import run_pg
 from mova.app.ports.output.chat_repository import ChatRepository
-from friday13th.app.dtos.user_model import secom_user_exists
+from viewer.app.dtos.user_model import secom_user_exists
 
 logger = logging.getLogger(__name__)
 
 
 class ChatPgRepository(ChatRepository):
+    def __init__(self, session: AsyncSession | None = None) -> None:
+        self._session = session
+
     async def upsert(
         self,
         raw_message: str,
@@ -22,7 +28,6 @@ class ChatPgRepository(ChatRepository):
         intent_type: str = "mood",
         search_filters: dict | None = None,
         user_id: int | None = None,
-        member_id: int | None = None,
         assistant_id: int | None = None,
     ) -> int:
         refined = refined_query.strip()[:255]
@@ -39,15 +44,13 @@ class ChatPgRepository(ChatRepository):
             raise ValueError(f"회원 ID {user_id}를 찾을 수 없습니다. (Secom users)")
 
         logger.info(
-            "[ChatPgRepository] upsert — user_id=%s member_id=%s assistant_id=%s intent=%s",
+            "[ChatPgRepository] upsert — user_id=%s assistant_id=%s intent=%s",
             user_id,
-            member_id,
             assistant_id,
             intent,
         )
 
-        factory = get_session_factory()
-        async with factory() as session:
+        async def work(session: AsyncSession) -> int:
             stmt = select(MovaChat).where(
                 func.lower(MovaChat.refined_query) == normalized,
             )
@@ -61,7 +64,6 @@ class ChatPgRepository(ChatRepository):
             if row is None:
                 row = MovaChat(
                     user_id=user_id,
-                    member_id=member_id,
                     assistant_id=assistant_id,
                     raw_message=raw_message.strip()[:2000],
                     refined_query=refined,
@@ -78,8 +80,6 @@ class ChatPgRepository(ChatRepository):
                 row.raw_message = raw_message.strip()[:2000]
                 row.intent_type = intent
                 row.search_filters = filters
-                if member_id is not None:
-                    row.member_id = member_id
                 if assistant_id is not None:
                     row.assistant_id = assistant_id
                 if kw_list:
@@ -87,9 +87,11 @@ class ChatPgRepository(ChatRepository):
                         row.keywords or [], kw_list, limit=MAX_CHAT_KEYWORDS
                     )
 
-            await session.commit()
+            await session.flush()
             await session.refresh(row)
             return row.id
+
+        return await run_pg(self._session, work)
 
     async def get_top_for_context(
         self,
@@ -97,8 +99,7 @@ class ChatPgRepository(ChatRepository):
         *,
         user_id: int | None = None,
     ) -> list[MovaChat]:
-        factory = get_session_factory()
-        async with factory() as session:
+        async def work(session: AsyncSession) -> list[MovaChat]:
             stmt = (
                 select(MovaChat)
                 .order_by(MovaChat.hit_count.desc(), MovaChat.last_used_at.desc())
@@ -111,3 +112,5 @@ class ChatPgRepository(ChatRepository):
 
             result = await session.execute(stmt)
             return list(result.scalars().all())
+
+        return await run_pg(self._session, work)

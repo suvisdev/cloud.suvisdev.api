@@ -13,6 +13,8 @@ class RankingsRepository(ABC):
         self,
         items: list[dict],
         ranked_at: date,
+        *,
+        source: str,
     ) -> list[tuple[MovaRanking, MovaMovie]]:
         pass
 
@@ -20,7 +22,18 @@ class RankingsRepository(ABC):
     async def list_rankings_with_movies(
         self,
         *,
+        source: str,
         ranked_at: date | None = None,
         limit: int = 20,
-    ) -> list[tuple[MovaRanking, MovaMovie]]:
+    ) -> list[tuple[MovaRanking, MovaMovie, str | None]]:
+        pass
+
+    @abstractmethod
+    async def aggregate_chat_trend_scores(
+        self,
+        *,
+        since: date,
+        limit: int = 10,
+    ) -> list[dict]:
+        """picks·chat 집계 — movie_id, score, chat_id."""
         pass

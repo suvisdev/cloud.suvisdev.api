@@ -4,8 +4,8 @@ import logging
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.matrix.oracle_database import get_session_factory
 from mova.adapter.outbound.orm.characters_orm import MovaCharacter
 from mova.adapter.outbound.orm.movies_orm import MovaMovie
 from mova.adapter.outbound.orm.tags_orm import (
@@ -16,6 +16,7 @@ from mova.adapter.outbound.orm.tags_orm import (
     MovaTag,
     slugify_tag,
 )
+from mova.adapter.outbound.pg.pg_session import run_pg
 from mova.app.ports.output.tags_repository import TagsRepository
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,9 @@ class TagsRepositoryError(Exception):
 
 
 class TagsPgRepository(TagsRepository):
+    def __init__(self, session: AsyncSession | None = None) -> None:
+        self._session = session
+
     async def attach(self, data: dict) -> MovaTag:
         movie_id = int(data["movie_id"])
         label = str(data.get("label", "")).strip()
@@ -71,8 +75,8 @@ class TagsPgRepository(TagsRepository):
             character_id,
             label,
         )
-        factory = get_session_factory()
-        async with factory() as session:
+
+        async def work(session: AsyncSession) -> MovaTag:
             movie = await session.get(MovaMovie, movie_id)
             if movie is None:
                 raise TagsRepositoryError(
@@ -121,7 +125,7 @@ class TagsPgRepository(TagsRepository):
                 row.movie_id = movie_id
 
             try:
-                await session.commit()
+                await session.flush()
                 await session.refresh(row)
             except IntegrityError as e:
                 await session.rollback()
@@ -131,9 +135,10 @@ class TagsPgRepository(TagsRepository):
                 ) from e
             return row
 
+        return await run_pg(self._session, work)
+
     async def list_catalog(self, limit: int = 100) -> list[MovaTag]:
-        factory = get_session_factory()
-        async with factory() as session:
+        async def work(session: AsyncSession) -> list[MovaTag]:
             result = await session.execute(
                 select(MovaTag)
                 .distinct(MovaTag.slug)
@@ -142,9 +147,10 @@ class TagsPgRepository(TagsRepository):
             )
             return list(result.scalars().all())
 
+        return await run_pg(self._session, work)
+
     async def list_by_movie(self, movie_id: int, limit: int = 50) -> list[MovaTag]:
-        factory = get_session_factory()
-        async with factory() as session:
+        async def work(session: AsyncSession) -> list[MovaTag]:
             if await session.get(MovaMovie, movie_id) is None:
                 raise TagsRepositoryError(
                     f"영화 ID {movie_id}를 찾을 수 없습니다.",
@@ -158,6 +164,8 @@ class TagsPgRepository(TagsRepository):
             )
             return list(result.scalars().all())
 
+        return await run_pg(self._session, work)
+
     async def list_movies_by_slug(
         self,
         slug: str,
@@ -167,8 +175,7 @@ class TagsPgRepository(TagsRepository):
         if not slug:
             raise TagsRepositoryError("태그 slug가 비어 있습니다.", status_code=400)
 
-        factory = get_session_factory()
-        async with factory() as session:
+        async def work(session: AsyncSession) -> list[tuple[MovaTag, MovaMovie]]:
             result = await session.execute(
                 select(MovaTag, MovaMovie)
                 .join(MovaMovie, MovaTag.movie_id == MovaMovie.id)
@@ -184,9 +191,10 @@ class TagsPgRepository(TagsRepository):
                 )
             return rows
 
+        return await run_pg(self._session, work)
+
     async def unlink(self, link_id: int) -> None:
-        factory = get_session_factory()
-        async with factory() as session:
+        async def work(session: AsyncSession) -> None:
             row = await session.get(MovaTag, link_id)
             if row is None:
                 raise TagsRepositoryError(
@@ -194,4 +202,5 @@ class TagsPgRepository(TagsRepository):
                     status_code=404,
                 )
             await session.delete(row)
-            await session.commit()
+
+        await run_pg(self._session, work)

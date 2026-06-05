@@ -6,6 +6,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from mova.adapter.outbound.orm.base_orm import MovaModel
+from viewer.app.dtos.user_model import User
 
 
 class MovaPick(MovaModel):
@@ -21,7 +22,7 @@ class MovaPick(MovaModel):
     )
     user_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey(User.__table__.c.id, ondelete="SET NULL"),
         nullable=True,
         index=True,
         comment="Secom users.id (동일 DB FK, 비로그인 NULL)",

@@ -16,7 +16,6 @@ class ChatRepository(ABC):
         intent_type: str = "mood",
         search_filters: dict | None = None,
         user_id: int | None = None,
-        member_id: int | None = None,
         assistant_id: int | None = None,
     ) -> int:
         pass
