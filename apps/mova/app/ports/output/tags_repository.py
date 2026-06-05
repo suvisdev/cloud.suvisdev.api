@@ -4,13 +4,14 @@ from abc import ABC, abstractmethod
 
 from mova.adapter.outbound.orm.movies_orm import MovaMovie
 from mova.adapter.outbound.orm.tags_orm import MovaTag
+from mova.app.dtos.tags_dto import TagAttachCommand
 
 
 class TagsRepository(ABC):
     """영화 태그(tags) 아웃바운드 포트."""
 
     @abstractmethod
-    async def attach(self, data: dict) -> MovaTag:
+    async def attach(self, command: TagAttachCommand) -> MovaTag:
         pass
 
     @abstractmethod

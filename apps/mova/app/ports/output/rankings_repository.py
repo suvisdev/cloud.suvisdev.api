@@ -5,13 +5,14 @@ from datetime import date
 
 from mova.adapter.outbound.orm.movies_orm import MovaMovie
 from mova.adapter.outbound.orm.rankings_orm import MovaRanking
+from mova.app.dtos.rankings_dto import RankingItemCommand
 
 
 class RankingsRepository(ABC):
     @abstractmethod
     async def replace_rankings(
         self,
-        items: list[dict],
+        items: list[RankingItemCommand],
         ranked_at: date,
         *,
         source: str,
@@ -35,5 +36,4 @@ class RankingsRepository(ABC):
         since: date,
         limit: int = 10,
     ) -> list[dict]:
-        """picks·chat 집계 — movie_id, score, chat_id."""
         pass

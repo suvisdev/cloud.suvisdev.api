@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from mova.adapter.inbound.api.schemas.characters_schema import (
-    CharacterLinkCreateSchema,
-    CharacterLinkSchema,
-    CharacterWithActorSchema,
-    CharacterWithMovieSchema,
+from mova.adapter.inbound.api.schemas.characters_schema import CharacterLinkCreateSchema
+from mova.app.dtos.characters_dto import (
+    CharacterLinkCommand,
+    CharacterLinkDto,
+    CharacterWithActorDto,
+    CharacterWithMovieDto,
 )
 from mova.app.ports.input.characters_use_case import CharactersUseCase
 from mova.app.ports.output.characters_repository import CharactersRepository
@@ -14,16 +15,10 @@ class CharactersInteractor(CharactersUseCase):
     def __init__(self, repository: CharactersRepository) -> None:
         self._repository = repository
 
-    def _to_link_schema(self, row) -> CharacterLinkSchema:
-        return CharacterLinkSchema(
-            id=row.id,
-            movie_id=row.movie_id,
-            actor_id=row.actor_id,
-        )
-
-    async def link(self, payload: CharacterLinkCreateSchema) -> CharacterLinkSchema:
-        row = await self._repository.link(payload.movie_id, payload.actor_id)
-        return self._to_link_schema(row)
+    async def link(self, payload: CharacterLinkCreateSchema) -> CharacterLinkDto:
+        command = CharacterLinkCommand.from_schema(payload)
+        row = await self._repository.link(command)
+        return CharacterLinkDto.from_orm(row)
 
     async def unlink(self, link_id: int) -> None:
         await self._repository.unlink(link_id)
@@ -34,29 +29,22 @@ class CharactersInteractor(CharactersUseCase):
         movie_id: int | None = None,
         actor_id: int | None = None,
         limit: int = 100,
-    ) -> list[CharacterLinkSchema]:
+    ) -> list[CharacterLinkDto]:
         rows = await self._repository.list_links(
             movie_id=movie_id,
             actor_id=actor_id,
             limit=limit,
         )
-        return [self._to_link_schema(row) for row in rows]
+        return [CharacterLinkDto.from_orm(row) for row in rows]
 
     async def list_actors_by_movie(
         self,
         movie_id: int,
         limit: int = 100,
-    ) -> list[CharacterWithActorSchema]:
+    ) -> list[CharacterWithActorDto]:
         rows = await self._repository.list_actors_by_movie(movie_id, limit=limit)
         return [
-            CharacterWithActorSchema(
-                id=link.id,
-                movie_id=link.movie_id,
-                actor_id=link.actor_id,
-                actor_name=actor.name,
-                role_type=actor.role_type,
-                profile_photo=actor.profile_photo_url,
-            )
+            CharacterWithActorDto.from_rows(link, actor)
             for link, actor in rows
         ]
 
@@ -64,19 +52,9 @@ class CharactersInteractor(CharactersUseCase):
         self,
         actor_id: int,
         limit: int = 100,
-    ) -> list[CharacterWithMovieSchema]:
+    ) -> list[CharacterWithMovieDto]:
         rows = await self._repository.list_movies_by_actor(actor_id, limit=limit)
         return [
-            CharacterWithMovieSchema(
-                id=link.id,
-                movie_id=link.movie_id,
-                actor_id=link.actor_id,
-                slug=movie.slug,
-                movie_title=movie.title,
-                release_year=movie.release_year,
-                rating=movie.rating,
-                poster=movie.poster_url,
-                platform=movie.platform,
-            )
+            CharacterWithMovieDto.from_rows(link, movie)
             for link, movie in rows
         ]

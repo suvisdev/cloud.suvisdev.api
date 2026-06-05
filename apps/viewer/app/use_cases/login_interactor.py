@@ -3,7 +3,7 @@
 import logging
 
 from viewer.adapter.inbound.api.schemas.login_schema import LoginSchema
-from viewer.app.dtos.auth_command_dto import LoginUserCommand
+from viewer.app.dtos.auth_command_dto import LoginResponseDto, LoginUserCommand
 from viewer.app.ports.input.login_use_case import LoginUseCase
 from viewer.app.ports.output.login_repository import LoginRepository
 
@@ -16,13 +16,9 @@ class LoginInteractor(LoginUseCase):
     def __init__(self, repository: LoginRepository) -> None:
         self._repository = repository
 
-    async def login(self, payload: LoginSchema) -> int:
-        # 🎁로그 코드 시작
+    async def login(self, payload: LoginSchema) -> LoginResponseDto:
         logger.info("🤖 [LoginInteractor] login 진입")
-        # 🎁로그 코드 끝
-        command = LoginUserCommand.from_payload(payload.model_dump())
+        command = LoginUserCommand.from_schema(payload)
         user_id = await self._repository.login_user(command)
-        # 🎁로그 코드 시작
         logger.info("🤖 [LoginInteractor] login 완료 — user_id=%s", user_id)
-        # 🎁로그 코드 끝
-        return user_id
+        return LoginResponseDto(user_id=user_id)

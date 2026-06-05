@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Literal
 
 from mova.adapter.inbound.api.gemini_reply import gemini_reply
-from mova.adapter.inbound.api.schemas.chat_schema import MovaChatRequest, MovaChatResponseSchema
+from mova.adapter.inbound.api.schemas.chat_schema import MovaChatRequest
 from mova.adapter.inbound.api.schemas.movies_schema import MovieTitleCreateSchema
 from mova.adapter.outbound.llm.chat_prompt import ChatPromptBuilder
 from mova.adapter.outbound.llm.intent_extraction import (
@@ -11,6 +11,8 @@ from mova.adapter.outbound.llm.intent_extraction import (
     IntentExtractionService,
     merge_keyword_lists,
 )
+from mova.app.dtos.chat_dto import ChatMessageCommand, ChatResponseDto, ChatUpsertCommand
+from mova.app.dtos.movies_dto import MovieTitleCommand
 from mova.app.ports.input.chat_use_case import ChatUseCase
 from mova.app.ports.input.movies_use_case import MoviesUseCase
 from mova.app.ports.input.rankings_use_case import RankingsUseCase
@@ -80,16 +82,17 @@ class ChatInteractor(ChatUseCase):
         except Exception:
             pass
 
+        upsert_command = ChatUpsertCommand(
+            raw_message=message,
+            refined_query=refined,
+            keywords=keywords,
+            intent_type=intent_type,
+            search_filters=search_filters,
+            user_id=user_id,
+            assistant_id=assistant_id,
+        )
         try:
-            chat_id = await self._chat_repository.upsert(
-                raw_message=message,
-                refined_query=refined,
-                keywords=keywords,
-                intent_type=intent_type,
-                search_filters=search_filters,
-                user_id=user_id,
-                assistant_id=assistant_id,
-            )
+            chat_id = await self._chat_repository.upsert(upsert_command)
             past_all = await self._chat_repository.get_top_for_context(
                 limit=8,
                 user_id=user_id,
@@ -203,14 +206,17 @@ class ChatInteractor(ChatUseCase):
         self,
         raw_gemini: str,
         context: dict,
-    ) -> MovaChatResponseSchema:
+    ) -> ChatResponseDto:
         intro, recommendations = self._chat_prompt_builder.parse_structured_reply(raw_gemini)
 
         if recommendations:
             try:
                 titles = [r.title for r in recommendations]
                 for title in titles:
-                    await self._movies_use_case.save_title(MovieTitleCreateSchema(title=title))
+                    title_command = MovieTitleCommand(title=title)
+                    await self._movies_use_case.save_title(
+                        MovieTitleCreateSchema(title=title_command.title),
+                    )
             except Exception:
                 pass
             try:
@@ -222,7 +228,7 @@ class ChatInteractor(ChatUseCase):
 
             await self._save_picks(context, recommendations)
 
-        return MovaChatResponseSchema(
+        return ChatResponseDto(
             reply=intro,
             recommendations=recommendations,
             refined_query=context.get("refined_query") or None,
@@ -238,16 +244,17 @@ class ChatInteractor(ChatUseCase):
         *,
         user_id: int | None = None,
         model_key: Literal["flash", "flash15", "pro"] | None = None,
-    ) -> MovaChatResponseSchema:
+    ) -> ChatResponseDto:
         context = await self.prepare_chat_context(message, user_id=user_id)
         prompt = await self.build_prompt(history, message, context=context)
         raw = gemini_reply(prompt, model_key)
         return await self.build_response(raw, context)
 
     async def chat_from_request(self, req: MovaChatRequest) -> MovaChatResponseSchema:
+        command = ChatMessageCommand.from_request(req)
         return await self.chat(
-            req.message,
-            req.history_dicts(),
-            user_id=req.user_id,
-            model_key=req.model,
+            command.message,
+            command.history,
+            user_id=command.user_id,
+            model_key=command.model_key,
         )

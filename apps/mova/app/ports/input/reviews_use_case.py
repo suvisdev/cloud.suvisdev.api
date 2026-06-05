@@ -3,14 +3,16 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from mova.adapter.inbound.api.schemas.reviews_schema import (
-    MovieRatingSummarySchema,
     ReviewActivityCreateSchema,
-    ReviewActivitySchema,
-    ReviewActivityWithMovieSchema,
     ReviewCreateSchema,
-    ReviewSchema,
     ReviewUpdateSchema,
-    ReviewWithUserSchema,
+)
+from mova.app.dtos.reviews_dto import (
+    MovieRatingSummaryDto,
+    RatingReviewDto,
+    ReviewActivityDto,
+    ReviewActivityWithMovieDto,
+    ReviewWithUserDto,
 )
 
 
@@ -21,11 +23,11 @@ class ReviewsUseCase(ABC):
     async def record_activity(
         self,
         payload: ReviewActivityCreateSchema,
-    ) -> ReviewActivitySchema:
+    ) -> ReviewActivityDto:
         pass
 
     @abstractmethod
-    async def save_rating_review(self, payload: ReviewCreateSchema) -> ReviewSchema:
+    async def save_rating_review(self, payload: ReviewCreateSchema) -> RatingReviewDto:
         pass
 
     @abstractmethod
@@ -33,7 +35,7 @@ class ReviewsUseCase(ABC):
         self,
         review_id: int,
         payload: ReviewUpdateSchema,
-    ) -> ReviewSchema:
+    ) -> RatingReviewDto:
         pass
 
     @abstractmethod
@@ -43,7 +45,7 @@ class ReviewsUseCase(ABC):
         *,
         action_type: str | None = None,
         limit: int = 100,
-    ) -> list[ReviewActivitySchema]:
+    ) -> list[ReviewActivityDto]:
         pass
 
     @abstractmethod
@@ -53,7 +55,7 @@ class ReviewsUseCase(ABC):
         *,
         action_type: str | None = None,
         limit: int = 100,
-    ) -> list[ReviewActivityWithMovieSchema]:
+    ) -> list[ReviewActivityWithMovieDto]:
         pass
 
     @abstractmethod
@@ -61,7 +63,7 @@ class ReviewsUseCase(ABC):
         self,
         movie_id: int,
         limit: int = 50,
-    ) -> list[ReviewSchema]:
+    ) -> list[RatingReviewDto]:
         pass
 
     @abstractmethod
@@ -69,7 +71,7 @@ class ReviewsUseCase(ABC):
         self,
         user_id: int,
         limit: int = 50,
-    ) -> list[ReviewSchema]:
+    ) -> list[RatingReviewDto]:
         pass
 
     @abstractmethod
@@ -79,7 +81,7 @@ class ReviewsUseCase(ABC):
         user_id: int | None = None,
         movie_id: int | None = None,
         limit: int = 50,
-    ) -> list[ReviewSchema]:
+    ) -> list[RatingReviewDto]:
         pass
 
     @abstractmethod
@@ -87,9 +89,9 @@ class ReviewsUseCase(ABC):
         self,
         movie_id: int,
         limit: int = 50,
-    ) -> list[ReviewWithUserSchema]:
+    ) -> list[ReviewWithUserDto]:
         pass
 
     @abstractmethod
-    async def get_movie_rating_summary(self, movie_id: int) -> MovieRatingSummarySchema:
+    async def get_movie_rating_summary(self, movie_id: int) -> MovieRatingSummaryDto:
         pass

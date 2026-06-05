@@ -16,4 +16,4 @@ async def mova_chat(
     chat: ChatUseCase = Depends(get_chat_use_case),
 ) -> MovaChatResponseSchema:
     """Mova AI 영화 추천 채팅."""
-    return await invoke(chat.chat_from_request(req), chat=True)
+    return (await invoke(chat.chat_from_request(req), chat=True)).to_schema()

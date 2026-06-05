@@ -1,7 +1,11 @@
 ﻿from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from viewer.adapter.inbound.api.schemas.login_schema import LoginSchema
+    from viewer.adapter.inbound.api.schemas.signup_schema import SignupSchema
 
 
 @dataclass
@@ -10,14 +14,8 @@ class LoginUserCommand:
     password: str
 
     @classmethod
-    def from_payload(cls, payload: dict[str, Any]) -> LoginUserCommand:
-        return cls(
-            username=str(payload.get("username", "")),
-            password=str(payload.get("password", "")),
-        )
-
-    def to_payload(self) -> dict[str, Any]:
-        return {"username": self.username, "password": self.password}
+    def from_schema(cls, payload: LoginSchema) -> LoginUserCommand:
+        return cls(username=payload.username, password=payload.password)
 
 
 @dataclass
@@ -32,45 +30,34 @@ class SignupUserCommand:
     preferred_genres: list[str] | None
     bio: str | None
 
-    @classmethod
-    def from_payload(cls, payload: dict[str, Any]) -> SignupUserCommand:
-        member = payload.get("member") if isinstance(payload.get("member"), dict) else {}
-        return cls(
-            username=str(payload.get("username", "")),
-            password=str(payload.get("password", "")),
-            nickname=str(payload.get("nickname", "")),
-            email=str(payload.get("email", "")),
-            gender=str(member.get("gender", payload.get("gender", "undisclosed"))),
-            age_group=str(member.get("age_group", payload.get("age_group", "undisclosed"))),
-            birth_year=member.get("birth_year", payload.get("birth_year")),
-            preferred_genres=member.get("preferred_genres", payload.get("preferred_genres")),
-            bio=member.get("bio", payload.get("bio")),
-        )
-
-    def to_payload(self) -> dict[str, Any]:
-        return {
-            "username": self.username,
-            "password": self.password,
-            "nickname": self.nickname,
-            "email": self.email,
-            "gender": self.gender,
-            "age_group": self.age_group,
-            "birth_year": self.birth_year,
-            "preferred_genres": self.preferred_genres,
-            "bio": self.bio,
-        }
-
 
 @dataclass
 class SignupCommand:
     user: SignupUserCommand
 
     @classmethod
-    def from_payload(cls, payload: dict[str, Any]) -> SignupCommand:
-        user_payload = dict(payload.get("user", payload))
-        if isinstance(payload.get("member"), dict):
-            user_payload["member"] = payload["member"]
-        return cls(user=SignupUserCommand.from_payload(user_payload))
+    def from_schema(cls, payload: SignupSchema) -> SignupCommand:
+        user = payload.user
+        return cls(
+            user=SignupUserCommand(
+                username=user.username,
+                password=user.password,
+                nickname=user.nickname,
+                email=user.email,
+                gender=user.gender,
+                age_group=user.age_group,
+                birth_year=user.birth_year,
+                preferred_genres=user.preferred_genres,
+                bio=user.bio,
+            ),
+        )
 
-    def to_payload(self) -> dict[str, Any]:
-        return {"user": self.user.to_payload()}
+
+@dataclass
+class LoginResponseDto:
+    user_id: int
+
+
+@dataclass
+class SignupResponseDto:
+    user_id: int

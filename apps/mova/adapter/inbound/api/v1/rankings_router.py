@@ -20,7 +20,7 @@ async def list_hot_rankings(
     rankings: RankingsUseCase = Depends(get_rankings_use_case),
 ) -> list[HotRankingDisplaySchema]:
     """Mova HOT 랭킹 — 기본 `source=chat_trend` (채팅·추천 집계)."""
-    return await invoke(
+    rows = await invoke(
         rankings.list_hot_rankings_from_query(
             source=source,
             ranked_at=ranked_at,
@@ -28,6 +28,7 @@ async def list_hot_rankings(
         ),
         domain_errors=(RankingsRepositoryError,),
     )
+    return [row.to_schema() for row in rows]
 
 
 @rankings_router.post("/rankings/hot/refresh", response_model=list[HotRankingDisplaySchema])
@@ -37,7 +38,8 @@ async def refresh_chat_trend_rankings(
     rankings: RankingsUseCase = Depends(get_rankings_use_case),
 ) -> list[HotRankingDisplaySchema]:
     """chat·picks 집계로 `source=chat_trend` 랭킹 스냅샷 갱신."""
-    return await invoke(
+    rows = await invoke(
         rankings.refresh_chat_trend_rankings(window_days=window_days, limit=limit),
         domain_errors=(RankingsRepositoryError,),
     )
+    return [row.to_schema() for row in rows]

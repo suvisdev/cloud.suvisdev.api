@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from mova.adapter.outbound.orm.actors_orm import MovaActor
 from mova.adapter.outbound.pg.pg_session import run_pg
+from mova.app.dtos.actors_dto import ActorUpsertCommand
 from mova.app.ports.output.actors_repository import ActorsRepository
 
 logger = logging.getLogger(__name__)
@@ -31,11 +32,11 @@ class ActorsPgRepository(ActorsRepository):
 
         return await run_pg(self._session, work)
 
-    async def upsert(self, data: dict) -> MovaActor:
-        name = str(data.get("name", "")).strip()
+    async def upsert(self, command: ActorUpsertCommand) -> MovaActor:
+        name = command.name.strip()
         if not name:
             raise ActorsRepositoryError("인물 이름이 비어 있습니다.", status_code=400)
-        role_type = str(data.get("role_type", "actor")).strip() or "actor"
+        role_type = command.role_type.strip() or "actor"
         if role_type not in ("director", "actor"):
             raise ActorsRepositoryError(
                 "role_type은 director 또는 actor 여야 합니다.",
@@ -56,13 +57,11 @@ class ActorsPgRepository(ActorsRepository):
                 row = MovaActor(
                     name=name[:128],
                     role_type=role_type,
-                    profile_photo_url=str(data.get("profile_photo", "")).strip(),
+                    profile_photo_url=command.profile_photo.strip(),
                 )
                 session.add(row)
             else:
-                row.profile_photo_url = str(
-                    data.get("profile_photo", row.profile_photo_url),
-                ).strip()
+                row.profile_photo_url = command.profile_photo.strip() or row.profile_photo_url
 
             try:
                 await session.flush()
@@ -77,19 +76,19 @@ class ActorsPgRepository(ActorsRepository):
 
         return await run_pg(self._session, work)
 
-    async def upsert_name(self, name: str) -> int:
-        row = await self.upsert({"name": name, "role_type": "actor"})
+    async def upsert_name(self, command: ActorUpsertCommand) -> int:
+        row = await self.upsert(command)
         return row.id
 
-    async def upsert_names(self, names: list[str]) -> list[int]:
+    async def upsert_names(self, commands: list[ActorUpsertCommand]) -> list[int]:
         ids: list[int] = []
         seen: set[str] = set()
-        for raw in names:
-            key = raw.strip()
+        for command in commands:
+            key = command.name.strip()
             if not key or key in seen:
                 continue
             seen.add(key)
-            ids.append(await self.upsert_name(key))
+            ids.append(await self.upsert_name(command))
         return ids
 
     async def list_actors(self, limit: int = 100) -> list[MovaActor]:

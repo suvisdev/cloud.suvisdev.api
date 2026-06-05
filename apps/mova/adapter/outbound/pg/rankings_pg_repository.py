@@ -13,6 +13,7 @@ from mova.adapter.outbound.orm.picks_orm import MovaPick
 from mova.adapter.outbound.orm.rankings_orm import MovaRanking
 from mova.adapter.outbound.pg.pg_session import run_pg
 from mova.domain.value_objects.ranking_source import RANKING_SOURCES
+from mova.app.dtos.rankings_dto import RankingItemCommand
 from mova.app.ports.output.rankings_repository import RankingsRepository
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ class RankingsPgRepository(RankingsRepository):
 
     async def replace_rankings(
         self,
-        items: list[dict],
+        items: list[RankingItemCommand],
         ranked_at: date,
         *,
         source: str,
@@ -48,11 +49,11 @@ class RankingsPgRepository(RankingsRepository):
         if not items:
             raise RankingsRepositoryError("랭킹 목록이 비어 있습니다.", status_code=400)
 
-        ranks = [int(i["rank"]) for i in items]
+        ranks = [item.rank for item in items]
         if len(ranks) != len(set(ranks)):
             raise RankingsRepositoryError("랭킹 순위(rank)가 중복되었습니다.", status_code=400)
 
-        movie_ids = [int(i["movie_id"]) for i in items]
+        movie_ids = [item.movie_id for item in items]
         logger.info(
             "[RankingsPgRepository] replace_rankings — date=%s source=%s count=%s",
             ranked_at,
@@ -78,12 +79,12 @@ class RankingsPgRepository(RankingsRepository):
             rows: list[MovaRanking] = []
             for item in items:
                 row = MovaRanking(
-                    rank=int(item["rank"]),
-                    movie_id=int(item["movie_id"]),
-                    chat_id=item.get("chat_id"),
+                    rank=item.rank,
+                    movie_id=item.movie_id,
+                    chat_id=item.chat_id,
                     source=source,
-                    score=item.get("score"),
-                    badge=item.get("badge"),
+                    score=item.score,
+                    badge=item.badge,
                     ranked_at=ranked_at,
                 )
                 session.add(row)

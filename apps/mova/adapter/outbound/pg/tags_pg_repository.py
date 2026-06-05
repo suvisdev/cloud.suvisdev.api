@@ -17,6 +17,7 @@ from mova.adapter.outbound.orm.tags_orm import (
     slugify_tag,
 )
 from mova.adapter.outbound.pg.pg_session import run_pg
+from mova.app.dtos.tags_dto import TagAttachCommand
 from mova.app.ports.output.tags_repository import TagsRepository
 
 logger = logging.getLogger(__name__)
@@ -33,25 +34,22 @@ class TagsPgRepository(TagsRepository):
     def __init__(self, session: AsyncSession | None = None) -> None:
         self._session = session
 
-    async def attach(self, data: dict) -> MovaTag:
-        movie_id = int(data["movie_id"])
-        label = str(data.get("label", "")).strip()
+    async def attach(self, command: TagAttachCommand) -> MovaTag:
+        movie_id = command.movie_id
+        label = command.label.strip()
         if not label:
             raise TagsRepositoryError("태그 문구가 비어 있습니다.", status_code=400)
 
-        tag_kind = str(data.get("tag_kind") or TAG_KIND_MOOD).strip().lower()
+        tag_kind = (command.tag_kind or TAG_KIND_MOOD).strip().lower()
         if tag_kind not in TAG_KINDS:
             raise TagsRepositoryError(
                 f"tag_kind는 mood, genre, cast 중 하나여야 합니다. (got {tag_kind!r})",
                 status_code=400,
             )
 
-        character_id_raw = data.get("character_id")
-        character_id = (
-            int(character_id_raw) if character_id_raw is not None else None
-        )
+        character_id = command.character_id
 
-        slug = str(data.get("slug") or "").strip()
+        slug = str(command.slug or "").strip()
         if not slug:
             if tag_kind == TAG_KIND_CAST and character_id is not None:
                 slug = f"cast-{slugify_tag(label)}"
@@ -60,7 +58,7 @@ class TagsPgRepository(TagsRepository):
             else:
                 slug = slugify_tag(label)
         slug = slug[:64]
-        description = str(data.get("description", "")).strip()
+        description = command.description.strip()
 
         if tag_kind == TAG_KIND_CAST and character_id is None:
             raise TagsRepositoryError(

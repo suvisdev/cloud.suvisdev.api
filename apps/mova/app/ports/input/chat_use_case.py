@@ -3,10 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Literal
 
-from mova.adapter.inbound.api.schemas.chat_schema import (
-    MovaChatRequest,
-    MovaChatResponseSchema,
-)
+from mova.adapter.inbound.api.schemas.chat_schema import MovaChatRequest
+from mova.app.dtos.chat_dto import ChatResponseDto
 
 
 class ChatUseCase(ABC):
@@ -33,7 +31,7 @@ class ChatUseCase(ABC):
         self,
         raw_gemini: str,
         context: dict,
-    ) -> MovaChatResponseSchema:
+    ) -> ChatResponseDto:
         pass
 
     @abstractmethod
@@ -44,9 +42,9 @@ class ChatUseCase(ABC):
         *,
         user_id: int | None = None,
         model_key: Literal["flash", "flash15", "pro"] | None = None,
-    ) -> MovaChatResponseSchema:
+    ) -> ChatResponseDto:
         pass
 
     @abstractmethod
-    async def chat_from_request(self, req: MovaChatRequest) -> MovaChatResponseSchema:
+    async def chat_from_request(self, req: MovaChatRequest) -> ChatResponseDto:
         pass

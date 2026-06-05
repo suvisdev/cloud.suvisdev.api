@@ -5,13 +5,14 @@ from abc import ABC, abstractmethod
 from mova.adapter.outbound.orm.actors_orm import MovaActor
 from mova.adapter.outbound.orm.characters_orm import MovaCharacter
 from mova.adapter.outbound.orm.movies_orm import MovaMovie
+from mova.app.dtos.characters_dto import CharacterLinkCommand
 
 
 class CharactersRepository(ABC):
     """영화–인물 연결(characters) 아웃바운드 포트."""
 
     @abstractmethod
-    async def link(self, movie_id: int, actor_id: int) -> MovaCharacter:
+    async def link(self, command: CharacterLinkCommand) -> MovaCharacter:
         pass
 
     @abstractmethod

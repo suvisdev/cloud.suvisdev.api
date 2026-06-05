@@ -5,6 +5,7 @@ from datetime import datetime
 
 from mova.adapter.outbound.orm.movies_orm import MovaMovie
 from mova.adapter.outbound.orm.reviews_orm import MovaReview
+from mova.app.dtos.reviews_dto import RatingReviewCommand, ReviewActivityCommand
 
 
 class ReviewsRepository(ABC):
@@ -13,10 +14,7 @@ class ReviewsRepository(ABC):
     @abstractmethod
     async def record_activity(
         self,
-        *,
-        user_id: int,
-        movie_id: int,
-        action_type: str,
+        command: ReviewActivityCommand,
         action_at: datetime | None = None,
     ) -> MovaReview:
         pass
@@ -24,11 +22,7 @@ class ReviewsRepository(ABC):
     @abstractmethod
     async def upsert_rating_review(
         self,
-        *,
-        user_id: int,
-        movie_id: int,
-        rating: float,
-        body: str,
+        command: RatingReviewCommand,
     ) -> tuple[MovaReview, float, int]:
         pass
 

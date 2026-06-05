@@ -10,6 +10,7 @@ from mova.adapter.outbound.orm.actors_orm import MovaActor
 from mova.adapter.outbound.orm.characters_orm import MovaCharacter
 from mova.adapter.outbound.orm.movies_orm import MovaMovie
 from mova.adapter.outbound.pg.pg_session import run_pg
+from mova.app.dtos.characters_dto import CharacterLinkCommand
 from mova.app.ports.output.characters_repository import CharactersRepository
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,9 @@ class CharactersPgRepository(CharactersRepository):
         result = await session.execute(select(MovaActor).where(MovaActor.id == actor_id))
         return result.scalar_one_or_none()
 
-    async def link(self, movie_id: int, actor_id: int) -> MovaCharacter:
+    async def link(self, command: CharacterLinkCommand) -> MovaCharacter:
+        movie_id = command.movie_id
+        actor_id = command.actor_id
         logger.info(
             "[CharactersPgRepository] link — movie_id=%s actor_id=%s",
             movie_id,

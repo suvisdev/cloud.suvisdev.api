@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from mova.adapter.inbound.api.schemas.movie_import_schema import MovieImportResultSchema
+from mova.app.dtos.movie_import_dto import MovieImportResultDto
 
 
 class MovieImportUseCase(ABC):
@@ -12,7 +12,7 @@ class MovieImportUseCase(ABC):
         *,
         pages: int = 2,
         setup_rankings: bool = True,
-    ) -> MovieImportResultSchema:
+    ) -> MovieImportResultDto:
         pass
 
     @abstractmethod
@@ -22,15 +22,15 @@ class MovieImportUseCase(ABC):
         *,
         pages: int = 1,
         setup_rankings: bool = False,
-    ) -> MovieImportResultSchema:
+    ) -> MovieImportResultDto:
         pass
 
     @abstractmethod
-    async def import_by_tmdb_id(self, tmdb_id: int) -> MovieImportResultSchema:
+    async def import_by_tmdb_id(self, tmdb_id: int) -> MovieImportResultDto:
         pass
 
     @abstractmethod
-    async def import_by_kofic_cd(self, movie_cd: str) -> MovieImportResultSchema:
+    async def import_by_kofic_cd(self, movie_cd: str) -> MovieImportResultDto:
         pass
 
     @abstractmethod
@@ -39,7 +39,7 @@ class MovieImportUseCase(ABC):
         *,
         target_date: str | None = None,
         setup_rankings: bool = True,
-    ) -> MovieImportResultSchema:
+    ) -> MovieImportResultDto:
         pass
 
     @abstractmethod
@@ -49,9 +49,9 @@ class MovieImportUseCase(ABC):
         target_date: str | None = None,
         week_gb: str = "0",
         setup_rankings: bool = True,
-    ) -> MovieImportResultSchema:
+    ) -> MovieImportResultDto:
         pass
 
     @abstractmethod
-    async def enrich_missing_posters(self, *, limit: int = 50) -> MovieImportResultSchema:
+    async def enrich_missing_posters(self, *, limit: int = 50) -> MovieImportResultDto:
         pass

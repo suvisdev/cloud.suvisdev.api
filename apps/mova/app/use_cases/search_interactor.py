@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
-
-from mova.adapter.inbound.api.schemas.search_schema import MovaSearchItemSchema
+from mova.app.dtos.search_dto import SearchIntentQuery, SearchItemDto
 from mova.domain.value_objects.movie_catalog import resolve_canonical_slug
 from mova.app.ports.input.search_use_case import SearchUseCase
 from mova.app.ports.output.search_repository import SearchHit, SearchRepository
@@ -12,18 +10,12 @@ class SearchInteractor(SearchUseCase):
     def __init__(self, repository: SearchRepository) -> None:
         self._repository = repository
 
-    def _to_item(self, hit: SearchHit) -> MovaSearchItemSchema:
+    def _to_item(self, hit: SearchHit) -> SearchItemDto:
         movie = hit.movie
-        return MovaSearchItemSchema(
-            id=resolve_canonical_slug(movie.slug, title=movie.title),
-            title=movie.title,
-            year=movie.release_year or "",
-            rating=float(movie.rating or 0),
-            poster=movie.poster_url or "",
-            match_type=hit.match_type,
-        )
+        slug = resolve_canonical_slug(movie.slug, title=movie.title)
+        return SearchItemDto.from_hit(hit, slug=slug)
 
-    async def search(self, query: str, *, limit: int = 12) -> list[MovaSearchItemSchema]:
+    async def search(self, query: str, *, limit: int = 12) -> list[SearchItemDto]:
         q = query.strip()
         if not q:
             return []
@@ -36,33 +28,39 @@ class SearchInteractor(SearchUseCase):
         refined_query: str,
         keywords: list[str],
         intent_type: str,
-        search_filters: dict[str, Any] | None,
+        search_filters: dict | None,
         limit: int = 12,
-    ) -> list[MovaSearchItemSchema]:
-        filters = search_filters if isinstance(search_filters, dict) else {}
-        structured = await self._repository.search_by_filters(
-            filters,
+    ) -> list[SearchItemDto]:
+        query = SearchIntentQuery(
+            refined_query=refined_query,
+            keywords=keywords,
             intent_type=intent_type or "mood",
+            search_filters=search_filters if isinstance(search_filters, dict) else {},
             limit=limit,
+        )
+        structured = await self._repository.search_by_filters(
+            query.search_filters,
+            intent_type=query.intent_type,
+            limit=query.limit,
         )
         if structured:
             return [self._to_item(hit) for hit in structured]
 
         seen: set[str] = set()
-        out: list[MovaSearchItemSchema] = []
+        out: list[SearchItemDto] = []
         queries: list[str] = []
-        if refined_query.strip():
-            queries.append(refined_query.strip())
-        for keyword in keywords:
+        if query.refined_query.strip():
+            queries.append(query.refined_query.strip())
+        for keyword in query.keywords:
             key = keyword.strip()
             if key and key not in queries:
                 queries.append(key)
-        for q in queries[:limit]:
+        for q in queries[: query.limit]:
             for item in await self.search(q, limit=8):
                 if item.id in seen:
                     continue
                 seen.add(item.id)
                 out.append(item)
-                if len(out) >= limit:
+                if len(out) >= query.limit:
                     return out
         return out

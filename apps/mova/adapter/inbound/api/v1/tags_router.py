@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
+from mova.adapter.inbound.api.http_errors import invoke
 from mova.adapter.inbound.api.schemas.tags_schema import (
     MoviesByTagSchema,
     TagCatalogSchema,
@@ -13,6 +14,7 @@ from mova.app.ports.input.tags_use_case import TagsUseCase
 from mova.dependencies.tags import get_tags_use_case
 
 tags_router = APIRouter(tags=["mova-tags"])
+_REPO_ERRORS = (TagsRepositoryError,)
 
 
 @tags_router.post("/tags", response_model=TagSchema, status_code=201)
@@ -20,12 +22,7 @@ async def attach_tag(
     req: TagCreateSchema,
     tags: TagsUseCase = Depends(get_tags_use_case),
 ) -> TagSchema:
-    try:
-        return await tags.attach(req)
-    except TagsRepositoryError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
+    return (await invoke(tags.attach(req), domain_errors=_REPO_ERRORS)).to_schema()
 
 
 @tags_router.get("/tags/catalog", response_model=list[TagCatalogSchema])
@@ -33,10 +30,8 @@ async def list_tag_catalog(
     limit: int = 100,
     tags: TagsUseCase = Depends(get_tags_use_case),
 ) -> list[TagCatalogSchema]:
-    try:
-        return await tags.list_catalog(limit=limit)
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
+    rows = await invoke(tags.list_catalog(limit=limit))
+    return [row.to_schema() for row in rows]
 
 
 @tags_router.delete("/tags/{link_id}", status_code=204)
@@ -44,12 +39,7 @@ async def unlink_tag(
     link_id: int,
     tags: TagsUseCase = Depends(get_tags_use_case),
 ) -> None:
-    try:
-        await tags.unlink(link_id)
-    except TagsRepositoryError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
+    await invoke(tags.unlink(link_id), domain_errors=_REPO_ERRORS)
 
 
 @tags_router.get("/movies/{movie_id}/tags", response_model=list[TagSchema])
@@ -58,12 +48,8 @@ async def list_tags_by_movie(
     limit: int = 50,
     tags: TagsUseCase = Depends(get_tags_use_case),
 ) -> list[TagSchema]:
-    try:
-        return await tags.list_by_movie(movie_id, limit=limit)
-    except TagsRepositoryError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
+    rows = await invoke(tags.list_by_movie(movie_id, limit=limit), domain_errors=_REPO_ERRORS)
+    return [row.to_schema() for row in rows]
 
 
 @tags_router.get("/tags/{slug}/movies", response_model=list[MoviesByTagSchema])
@@ -72,9 +58,5 @@ async def list_movies_by_tag_slug(
     limit: int = 50,
     tags: TagsUseCase = Depends(get_tags_use_case),
 ) -> list[MoviesByTagSchema]:
-    try:
-        return await tags.list_movies_by_slug(slug, limit=limit)
-    except TagsRepositoryError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message) from e
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
+    rows = await invoke(tags.list_movies_by_slug(slug, limit=limit), domain_errors=_REPO_ERRORS)
+    return [row.to_schema() for row in rows]

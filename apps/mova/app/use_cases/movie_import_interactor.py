@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import date
 
 from core.matrix.keymaker_api import get_keymaker
-from mova.adapter.inbound.api.schemas.movie_import_schema import MovieImportResultSchema
 from mova.adapter.inbound.api.schemas.rankings_schema import RankingBulkSchema, RankingItemCreateSchema
 from mova.domain.value_objects.ranking_source import RANKING_SOURCE_BOX_OFFICE
 from mova.adapter.outbound.http import (
@@ -12,6 +11,9 @@ from mova.adapter.outbound.http import (
     TmdbAdapter,
     TmdbAdapterError,
 )
+from mova.app.dtos.movie_import_dto import MovieImportResultDto, MoviePayloadCommand
+from mova.app.dtos.movies_dto import MovieTitleCommand, MovieUpsertCommand
+from mova.app.dtos.rankings_dto import RankingItemCommand
 from mova.app.ports.input.movie_import_use_case import MovieImportUseCase
 from mova.app.ports.input.rankings_use_case import RankingsUseCase
 from mova.app.ports.output.movies_repository import MoviesRepository
@@ -48,21 +50,9 @@ def _validate_week_gb(week_gb: str) -> str:
 class MovieImportInteractor(MovieImportUseCase):
     def __init__(
         self,
-        movies_repository: MoviesRepository | None = None,
-        rankings_use_case: RankingsUseCase | None = None,
+        movies_repository: MoviesRepository,
+        rankings_use_case: RankingsUseCase,
     ) -> None:
-        # LLM adapter는 enrichment 용으로만 이 interactor를 호출하는 경우가 많아서,
-        # 기본값 주입으로 adapter/outbound 계층 간 결합을 줄입니다.
-        if movies_repository is None:
-            from mova.adapter.outbound.pg.movies_pg_repository import MoviesPgRepository
-
-            movies_repository = MoviesPgRepository()
-        if rankings_use_case is None:
-            from mova.adapter.outbound.pg.rankings_pg_repository import RankingsPgRepository
-            from mova.app.use_cases.rankings_interactor import RankingsInteractor
-
-            rankings_use_case = RankingsInteractor(RankingsPgRepository())
-
         self._movies_repository = movies_repository
         self._rankings_use_case = rankings_use_case
 
@@ -91,7 +81,7 @@ class MovieImportInteractor(MovieImportUseCase):
         detail: dict,
         *,
         genre_map: dict[int, str] | None = None,
-    ) -> dict:
+    ) -> MoviePayloadCommand:
         tmdb_id = int(detail["id"])
         genres: list[str] = []
         for g in detail.get("genres") or []:
@@ -104,17 +94,17 @@ class MovieImportInteractor(MovieImportUseCase):
                     genres.append(name)
 
         adapter = self._adapter()
-        return {
-            "slug": tmdb_slug(tmdb_id),
-            "title": str(detail.get("title") or detail.get("original_title") or "").strip(),
-            "release_year": self._year_from_date(detail.get("release_date")),
-            "rating": round(float(detail.get("vote_average") or 0), 1),
-            "poster": adapter.poster_url(detail.get("poster_path")),
-            "genres": genres,
-        }
+        return MoviePayloadCommand(
+            slug=tmdb_slug(tmdb_id),
+            title=str(detail.get("title") or detail.get("original_title") or "").strip(),
+            release_year=self._year_from_date(detail.get("release_date")),
+            rating=round(float(detail.get("vote_average") or 0), 1),
+            poster=adapter.poster_url(detail.get("poster_path")),
+            genres=genres,
+        )
 
     @staticmethod
-    def _movie_payload_from_kofic(movie_info: dict, movie_cd: str) -> dict:
+    def _movie_payload_from_kofic(movie_info: dict, movie_cd: str) -> MoviePayloadCommand:
         title = str(movie_info.get("movieNm") or "").strip()
         open_dt = str(movie_info.get("openDt") or "").strip()
         release_year = open_dt[:4] if len(open_dt) >= 4 else ""
@@ -123,32 +113,31 @@ class MovieImportInteractor(MovieImportUseCase):
             for g in (movie_info.get("genres") or [])
             if str(g.get("genreNm") or "").strip()
         ]
-        return {
-            "slug": kofic_slug(movie_cd),
-            "title": title,
-            "release_year": release_year,
-            "rating": 0.0,
-            "poster": "",
-            "genres": genres,
-        }
+        return MoviePayloadCommand(
+            slug=kofic_slug(movie_cd),
+            title=title,
+            release_year=release_year,
+            rating=0.0,
+            poster="",
+            genres=genres,
+        )
 
-    async def enrich_payload_with_tmdb(self, payload: dict) -> dict:
-        """KOFIC는 포스터 URL이 없어 TMDB 검색으로 poster·평점을 보강한다."""
-        if str(payload.get("poster", "")).strip():
-            return payload
-        title = str(payload.get("title", "")).strip()
+    async def enrich_payload_with_tmdb(self, command: MoviePayloadCommand) -> MoviePayloadCommand:
+        if command.poster.strip():
+            return command
+        title = command.title.strip()
         if not title:
-            return payload
+            return command
         adapter = self._tmdb_adapter_optional()
         if adapter is None:
-            return payload
+            return command
 
         try:
             results = await adapter.search_movies(title, page=1)
             if not results:
-                return payload
+                return command
 
-            target_year = str(payload.get("release_year", "")).strip()
+            target_year = command.release_year.strip()
             pick = results[0]
             for candidate in results:
                 cand_title = str(candidate.get("title") or candidate.get("original_title") or "").strip()
@@ -159,86 +148,92 @@ class MovieImportInteractor(MovieImportUseCase):
 
             detail = await adapter.fetch_movie_detail(int(pick["id"]))
             poster = adapter.poster_url(detail.get("poster_path"))
+            rating = command.rating
+            release_year = command.release_year
+            genres = list(command.genres)
             if poster:
-                payload["poster"] = poster
-            if float(payload.get("rating") or 0) <= 0:
-                payload["rating"] = round(float(detail.get("vote_average") or 0), 1)
-            if not payload.get("release_year"):
-                payload["release_year"] = self._year_from_date(detail.get("release_date"))
-            if not payload.get("genres"):
-                payload["genres"] = [
+                command.poster = poster
+            if rating <= 0:
+                command.rating = round(float(detail.get("vote_average") or 0), 1)
+            if not release_year:
+                command.release_year = self._year_from_date(detail.get("release_date"))
+            if not genres:
+                command.genres = [
                     str(g.get("name")).strip()
                     for g in (detail.get("genres") or [])
                     if str(g.get("name") or "").strip()
                 ]
         except Exception:
             pass
-        return payload
+        return command
 
-    async def _upsert_kofic_payload(self, payload: dict) -> int:
-        enriched = await self.enrich_payload_with_tmdb(payload)
-        row = await self._movies_repository.upsert(enriched)
+    async def _upsert_payload(self, command: MoviePayloadCommand) -> int:
+        enriched = await self.enrich_payload_with_tmdb(command)
+        row = await self._movies_repository.upsert(MovieUpsertCommand.from_payload(enriched))
         return row.id
 
-    async def enrich_missing_posters(self, *, limit: int = 50) -> MovieImportResultSchema:
-        """포스터가 비어 있는 영화(주로 KOFIC)에 TMDB 포스터를 채운다."""
+    async def enrich_missing_posters(self, *, limit: int = 50) -> MovieImportResultDto:
         limit = _clamp(limit, 1, 100)
         rows = await self._movies_repository.list_movies(limit=max(limit * 3, 100))
         updated_ids: list[int] = []
         for row in rows:
             if row.poster_url:
                 continue
-            payload = {
-                "slug": row.slug,
-                "title": row.title,
-                "release_year": row.release_year,
-                "rating": row.rating,
-                "poster": "",
-                "genres": list(row.genres or []),
-            }
-            enriched = await self.enrich_payload_with_tmdb(payload)
-            if not enriched.get("poster"):
+            command = MoviePayloadCommand(
+                slug=row.slug,
+                title=row.title,
+                release_year=row.release_year or "",
+                rating=float(row.rating or 0),
+                poster="",
+                genres=list(row.genres or []),
+            )
+            enriched = await self.enrich_payload_with_tmdb(command)
+            if not enriched.poster:
                 continue
-            saved = await self._movies_repository.upsert(enriched)
+            saved = await self._movies_repository.upsert(
+                MovieUpsertCommand.from_payload(enriched),
+            )
             updated_ids.append(saved.id)
             if len(updated_ids) >= limit:
                 break
 
-        return MovieImportResultSchema(
+        return MovieImportResultDto(
             imported=len(updated_ids),
             movie_ids=updated_ids,
             message=f"TMDB 포스터 보강 {len(updated_ids)}편",
         )
 
     async def _upsert_tmdb_detail(self, detail: dict, *, genre_map: dict[int, str] | None) -> int:
-        payload = self._movie_payload_from_tmdb(detail, genre_map=genre_map)
-        if not payload["title"]:
+        command = self._movie_payload_from_tmdb(detail, genre_map=genre_map)
+        if not command.title:
             raise TmdbAdapterError("TMDB 영화 제목이 비어 있습니다.", status_code=400)
-        row = await self._movies_repository.upsert(payload)
+        row = await self._movies_repository.upsert(
+            MovieUpsertCommand.from_payload(command),
+        )
         return row.id
 
-    async def import_movie_by_tmdb_id(self, tmdb_id: int) -> MovieImportResultSchema:
+    async def import_movie_by_tmdb_id(self, tmdb_id: int) -> MovieImportResultDto:
         adapter = self._adapter()
         detail = await adapter.fetch_movie_detail(tmdb_id)
         genre_map = await adapter.genre_map()
         movie_id = await self._upsert_tmdb_detail(detail, genre_map=genre_map)
-        return MovieImportResultSchema(
+        return MovieImportResultDto(
             imported=1,
             movie_ids=[movie_id],
             message=f"TMDB {tmdb_id} 저장 완료",
         )
 
-    async def import_movie_by_kofic_cd(self, movie_cd: str) -> MovieImportResultSchema:
+    async def import_movie_by_kofic_cd(self, movie_cd: str) -> MovieImportResultDto:
         code = movie_cd.strip()
         if not code:
             raise KoficAdapterError("movie_cd가 비어 있습니다.", status_code=400)
         adapter = self._kofic_adapter()
         info = await adapter.fetch_movie_info(code)
-        payload = self._movie_payload_from_kofic(info, code)
-        if not payload["title"]:
+        command = self._movie_payload_from_kofic(info, code)
+        if not command.title:
             raise KoficAdapterError("KOFIC 영화 제목이 비어 있습니다.", status_code=400)
-        movie_id = await self._upsert_kofic_payload(payload)
-        return MovieImportResultSchema(
+        movie_id = await self._upsert_payload(command)
+        return MovieImportResultDto(
             imported=1,
             movie_ids=[movie_id],
             message=f"KOFIC {code} 저장 완료",
@@ -284,7 +279,7 @@ class MovieImportInteractor(MovieImportUseCase):
         pages: int = 2,
         setup_rankings: bool = True,
         ranking_limit: int = 10,
-    ) -> MovieImportResultSchema:
+    ) -> MovieImportResultDto:
         pages = _clamp(pages, 1, 5)
         adapter = self._adapter()
         summaries: list[dict] = []
@@ -298,7 +293,7 @@ class MovieImportInteractor(MovieImportUseCase):
                 movie_ids[:ranking_limit],
             )
 
-        return MovieImportResultSchema(
+        return MovieImportResultDto(
             imported=len(movie_ids),
             movie_ids=movie_ids,
             rankings_updated=rankings_updated,
@@ -311,7 +306,7 @@ class MovieImportInteractor(MovieImportUseCase):
         *,
         pages: int = 1,
         setup_rankings: bool = False,
-    ) -> MovieImportResultSchema:
+    ) -> MovieImportResultDto:
         query = query.strip()
         if not query:
             raise TmdbAdapterError("검색어 q가 비어 있습니다.", status_code=400)
@@ -326,39 +321,39 @@ class MovieImportInteractor(MovieImportUseCase):
         if setup_rankings and movie_ids:
             rankings_updated = await self._setup_rankings_from_movie_ids(movie_ids[:10])
 
-        return MovieImportResultSchema(
+        return MovieImportResultDto(
             imported=len(movie_ids),
             movie_ids=movie_ids,
             rankings_updated=rankings_updated,
             message=f"검색 '{query.strip()}' — {len(movie_ids)}편 저장",
         )
 
-    async def import_kofic_daily(
+    async def _import_kofic_boxoffice(
         self,
+        rows: list[dict],
         *,
-        target_date: str | None = None,
-        setup_rankings: bool = True,
-    ) -> MovieImportResultSchema:
-        date_arg = _resolve_kofic_target_date(target_date)
+        setup_rankings: bool,
+        message_prefix: str,
+        date_arg: str,
+    ) -> MovieImportResultDto:
         adapter = self._kofic_adapter()
-        rows = await adapter.fetch_daily_boxoffice(date_arg)
         movie_ids: list[int] = []
-        ranking_items: list[RankingItemCreateSchema] = []
+        ranking_items: list[RankingItemCommand] = []
 
         for item in rows[:10]:
             movie_cd = str(item.get("movieCd") or "").strip()
             if not movie_cd:
                 continue
             info = await adapter.fetch_movie_info(movie_cd)
-            payload = self._movie_payload_from_kofic(info, movie_cd)
-            if not payload["title"]:
+            command = self._movie_payload_from_kofic(info, movie_cd)
+            if not command.title:
                 continue
-            movie_id = await self._upsert_kofic_payload(payload)
+            movie_id = await self._upsert_payload(command)
             movie_ids.append(movie_id)
             rank = int(item.get("rank") or len(ranking_items) + 1)
             rank_badge = str(item.get("rankOldAndNew") or "").strip().upper()
             ranking_items.append(
-                RankingItemCreateSchema(
+                RankingItemCommand(
                     rank=rank,
                     movie_id=movie_id,
                     badge="NEW" if rank_badge == "NEW" else None,
@@ -371,16 +366,41 @@ class MovieImportInteractor(MovieImportUseCase):
                 RankingBulkSchema(
                     ranked_at=date.today(),
                     source=RANKING_SOURCE_BOX_OFFICE,
-                    items=ranking_items,
+                    items=[
+                        RankingItemCreateSchema(
+                            rank=item.rank,
+                            movie_id=item.movie_id,
+                            chat_id=item.chat_id,
+                            score=item.score,
+                            badge=item.badge,
+                        )
+                        for item in ranking_items
+                    ],
                 ),
             )
             rankings_updated = True
 
-        return MovieImportResultSchema(
+        return MovieImportResultDto(
             imported=len(movie_ids),
             movie_ids=movie_ids,
             rankings_updated=rankings_updated,
-            message=f"KOFIC 일간 박스오피스 {len(movie_ids)}편 반영 ({date_arg})",
+            message=f"{message_prefix} {len(movie_ids)}편 반영 ({date_arg})",
+        )
+
+    async def import_kofic_daily(
+        self,
+        *,
+        target_date: str | None = None,
+        setup_rankings: bool = True,
+    ) -> MovieImportResultDto:
+        date_arg = _resolve_kofic_target_date(target_date)
+        adapter = self._kofic_adapter()
+        rows = await adapter.fetch_daily_boxoffice(date_arg)
+        return await self._import_kofic_boxoffice(
+            rows,
+            setup_rankings=setup_rankings,
+            message_prefix="KOFIC 일간 박스오피스",
+            date_arg=date_arg,
         )
 
     async def import_kofic_weekly(
@@ -389,50 +409,16 @@ class MovieImportInteractor(MovieImportUseCase):
         target_date: str | None = None,
         week_gb: str = "0",
         setup_rankings: bool = True,
-    ) -> MovieImportResultSchema:
+    ) -> MovieImportResultDto:
         date_arg = _resolve_kofic_target_date(target_date)
         week_gb = _validate_week_gb(week_gb)
         adapter = self._kofic_adapter()
         rows = await adapter.fetch_weekly_boxoffice(date_arg, week_gb=week_gb)
-        movie_ids: list[int] = []
-        ranking_items: list[RankingItemCreateSchema] = []
-
-        for item in rows[:10]:
-            movie_cd = str(item.get("movieCd") or "").strip()
-            if not movie_cd:
-                continue
-            info = await adapter.fetch_movie_info(movie_cd)
-            payload = self._movie_payload_from_kofic(info, movie_cd)
-            if not payload["title"]:
-                continue
-            movie_id = await self._upsert_kofic_payload(payload)
-            movie_ids.append(movie_id)
-            rank = int(item.get("rank") or len(ranking_items) + 1)
-            rank_badge = str(item.get("rankOldAndNew") or "").strip().upper()
-            ranking_items.append(
-                RankingItemCreateSchema(
-                    rank=rank,
-                    movie_id=movie_id,
-                    badge="NEW" if rank_badge == "NEW" else None,
-                ),
-            )
-
-        rankings_updated = False
-        if setup_rankings and ranking_items:
-            await self._rankings_use_case.save_rankings(
-                RankingBulkSchema(
-                    ranked_at=date.today(),
-                    source=RANKING_SOURCE_BOX_OFFICE,
-                    items=ranking_items,
-                ),
-            )
-            rankings_updated = True
-
-        return MovieImportResultSchema(
-            imported=len(movie_ids),
-            movie_ids=movie_ids,
-            rankings_updated=rankings_updated,
-            message=f"KOFIC 주간 박스오피스 {len(movie_ids)}편 반영 ({date_arg})",
+        return await self._import_kofic_boxoffice(
+            rows,
+            setup_rankings=setup_rankings,
+            message_prefix="KOFIC 주간 박스오피스",
+            date_arg=date_arg,
         )
 
     async def _setup_rankings_from_movie_ids(self, movie_ids: list[int]) -> bool:
@@ -446,7 +432,7 @@ class MovieImportInteractor(MovieImportUseCase):
 
         rows.sort(key=lambda x: x[1], reverse=True)
         items = [
-            RankingItemCreateSchema(
+            RankingItemCommand(
                 rank=idx,
                 movie_id=row.id,
                 badge="NEW" if idx <= 3 else None,
@@ -459,7 +445,16 @@ class MovieImportInteractor(MovieImportUseCase):
             RankingBulkSchema(
                 ranked_at=date.today(),
                 source=RANKING_SOURCE_BOX_OFFICE,
-                items=items,
+                items=[
+                    RankingItemCreateSchema(
+                        rank=item.rank,
+                        movie_id=item.movie_id,
+                        chat_id=item.chat_id,
+                        score=item.score,
+                        badge=item.badge,
+                    )
+                    for item in items
+                ],
             ),
         )
         return True
@@ -469,8 +464,7 @@ class MovieImportInteractor(MovieImportUseCase):
         *,
         min_movies: int = 12,
         pages: int = 2,
-    ) -> MovieImportResultSchema | None:
-        """DB 영화가 적으면 TMDB 인기 목록으로 자동 채운다."""
+    ) -> MovieImportResultDto | None:
         existing = await self._movies_repository.list_movies(limit=min_movies + 1)
         if len(existing) >= min_movies:
             return None
@@ -479,8 +473,8 @@ class MovieImportInteractor(MovieImportUseCase):
             return None
         return await self.import_popular(pages=pages, setup_rankings=True)
 
-    async def import_by_tmdb_id(self, tmdb_id: int) -> MovieImportResultSchema:
+    async def import_by_tmdb_id(self, tmdb_id: int) -> MovieImportResultDto:
         return await self.import_movie_by_tmdb_id(tmdb_id)
 
-    async def import_by_kofic_cd(self, movie_cd: str) -> MovieImportResultSchema:
+    async def import_by_kofic_cd(self, movie_cd: str) -> MovieImportResultDto:
         return await self.import_movie_by_kofic_cd(movie_cd)

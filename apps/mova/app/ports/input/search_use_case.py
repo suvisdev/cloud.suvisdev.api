@@ -3,14 +3,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-from mova.adapter.inbound.api.schemas.search_schema import MovaSearchItemSchema
+from mova.app.dtos.search_dto import SearchItemDto
 
 
 class SearchUseCase(ABC):
     """검색(search) 입력 포트."""
 
     @abstractmethod
-    async def search(self, query: str, *, limit: int = 12) -> list[MovaSearchItemSchema]:
+    async def search(self, query: str, *, limit: int = 12) -> list[SearchItemDto]:
         pass
 
     @abstractmethod
@@ -22,5 +22,5 @@ class SearchUseCase(ABC):
         intent_type: str,
         search_filters: dict[str, Any] | None,
         limit: int = 12,
-    ) -> list[MovaSearchItemSchema]:
+    ) -> list[SearchItemDto]:
         pass

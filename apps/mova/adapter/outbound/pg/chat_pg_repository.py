@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from mova.adapter.outbound.llm.intent_extraction import MAX_CHAT_KEYWORDS, merge_keyword_lists
 from mova.adapter.outbound.orm.chat_orm import MovaChat
 from mova.adapter.outbound.pg.pg_session import run_pg
+from mova.app.dtos.chat_dto import ChatUpsertCommand
 from mova.app.ports.output.chat_repository import ChatRepository
 from viewer.app.dtos.user_model import secom_user_exists
 
@@ -19,17 +20,15 @@ class ChatPgRepository(ChatRepository):
     def __init__(self, session: AsyncSession | None = None) -> None:
         self._session = session
 
-    async def upsert(
-        self,
-        raw_message: str,
-        refined_query: str,
-        keywords: list[str] | None = None,
-        *,
-        intent_type: str = "mood",
-        search_filters: dict | None = None,
-        user_id: int | None = None,
-        assistant_id: int | None = None,
-    ) -> int:
+    async def upsert(self, command: ChatUpsertCommand) -> int:
+        raw_message = command.raw_message
+        refined_query = command.refined_query
+        keywords = command.keywords
+        intent_type = command.intent_type
+        search_filters = command.search_filters
+        user_id = command.user_id
+        assistant_id = command.assistant_id
+
         refined = refined_query.strip()[:255]
         if not refined:
             refined = raw_message.strip()[:255]

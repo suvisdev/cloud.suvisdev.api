@@ -26,7 +26,7 @@ async def record_review_activity(
     req: ReviewActivityCreateSchema,
     reviews: ReviewsUseCase = Depends(get_reviews_use_case),
 ) -> ReviewActivitySchema:
-    return await invoke(reviews.record_activity(req), domain_errors=_REPO_ERRORS)
+    return (await invoke(reviews.record_activity(req), domain_errors=_REPO_ERRORS)).to_schema()
 
 
 @reviews_router.get("/reviews/activity", response_model=list[ReviewActivitySchema])
@@ -36,10 +36,11 @@ async def list_review_activities(
     limit: int = 100,
     reviews: ReviewsUseCase = Depends(get_reviews_use_case),
 ) -> list[ReviewActivitySchema]:
-    return await invoke(
+    rows = await invoke(
         reviews.list_activities_by_user(user_id, action_type=action_type, limit=limit),
         domain_errors=_REPO_ERRORS,
     )
+    return [row.to_schema() for row in rows]
 
 
 @reviews_router.get(
@@ -52,7 +53,7 @@ async def list_user_review_activities(
     limit: int = 100,
     reviews: ReviewsUseCase = Depends(get_reviews_use_case),
 ) -> list[ReviewActivityWithMovieSchema]:
-    return await invoke(
+    rows = await invoke(
         reviews.list_activities_by_user_with_movies(
             user_id,
             action_type=action_type,
@@ -60,6 +61,7 @@ async def list_user_review_activities(
         ),
         domain_errors=_REPO_ERRORS,
     )
+    return [row.to_schema() for row in rows]
 
 
 @reviews_router.post("/reviews", response_model=ReviewSchema, status_code=201)
@@ -67,7 +69,7 @@ async def save_review(
     req: ReviewCreateSchema,
     reviews: ReviewsUseCase = Depends(get_reviews_use_case),
 ) -> ReviewSchema:
-    return await invoke(reviews.save_rating_review(req), domain_errors=_REPO_ERRORS)
+    return (await invoke(reviews.save_rating_review(req), domain_errors=_REPO_ERRORS)).to_schema()
 
 
 @reviews_router.patch("/reviews/{review_id}", response_model=ReviewSchema)
@@ -76,10 +78,12 @@ async def update_review(
     req: ReviewUpdateSchema,
     reviews: ReviewsUseCase = Depends(get_reviews_use_case),
 ) -> ReviewSchema:
-    return await invoke(
-        reviews.update_rating_review(review_id, req),
-        domain_errors=_REPO_ERRORS,
-    )
+    return (
+        await invoke(
+            reviews.update_rating_review(review_id, req),
+            domain_errors=_REPO_ERRORS,
+        )
+    ).to_schema()
 
 
 @reviews_router.get("/reviews", response_model=list[ReviewSchema])
@@ -89,10 +93,11 @@ async def list_reviews(
     limit: int = 50,
     reviews: ReviewsUseCase = Depends(get_reviews_use_case),
 ) -> list[ReviewSchema]:
-    return await invoke(
+    rows = await invoke(
         reviews.list_rating_reviews(user_id=user_id, movie_id=movie_id, limit=limit),
         domain_errors=_REPO_ERRORS,
     )
+    return [row.to_schema() for row in rows]
 
 
 @reviews_router.get(
@@ -104,10 +109,11 @@ async def list_movie_reviews(
     limit: int = 50,
     reviews: ReviewsUseCase = Depends(get_reviews_use_case),
 ) -> list[ReviewWithUserSchema]:
-    return await invoke(
+    rows = await invoke(
         reviews.list_rating_reviews_by_movie_with_users(movie_id, limit=limit),
         domain_errors=_REPO_ERRORS,
     )
+    return [row.to_schema() for row in rows]
 
 
 @reviews_router.get(
@@ -118,7 +124,9 @@ async def movie_rating_summary(
     movie_id: int,
     reviews: ReviewsUseCase = Depends(get_reviews_use_case),
 ) -> MovieRatingSummarySchema:
-    return await invoke(
-        reviews.get_movie_rating_summary(movie_id),
-        domain_errors=_REPO_ERRORS,
-    )
+    return (
+        await invoke(
+            reviews.get_movie_rating_summary(movie_id),
+            domain_errors=_REPO_ERRORS,
+        )
+    ).to_schema()

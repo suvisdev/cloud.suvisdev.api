@@ -26,6 +26,7 @@ class ReviewsRepositoryError(Exception):
         self.status_code = status_code
 
 
+from mova.app.dtos.reviews_dto import RatingReviewCommand, ReviewActivityCommand
 from mova.app.ports.output.reviews_repository import ReviewsRepository
 
 
@@ -53,13 +54,12 @@ class ReviewsPgRepository(ReviewsRepository):
 
     async def record_activity(
         self,
-        *,
-        user_id: int,
-        movie_id: int,
-        action_type: str,
+        command: ReviewActivityCommand,
         action_at: datetime | None = None,
     ) -> MovaReview:
-        normalized = action_type.strip().lower()
+        normalized = command.action_type.strip().lower()
+        user_id = command.user_id
+        movie_id = command.movie_id
         if normalized not in EVENT_ACTION_TYPES:
             raise ReviewsRepositoryError(
                 "action_type은 favorite, watched, click, not_interested 중 하나여야 합니다. "
@@ -102,12 +102,12 @@ class ReviewsPgRepository(ReviewsRepository):
 
     async def upsert_rating_review(
         self,
-        *,
-        user_id: int,
-        movie_id: int,
-        rating: float,
-        body: str,
+        command: RatingReviewCommand,
     ) -> tuple[MovaReview, float, int]:
+        user_id = command.user_id
+        movie_id = command.movie_id
+        rating = command.rating
+        body = command.body
         if rating < 1 or rating > 5:
             raise ReviewsRepositoryError("별점은 1~5 사이여야 합니다.", status_code=400)
 

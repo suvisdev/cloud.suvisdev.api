@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from mova.domain.value_objects.movie_catalog import resolve_canonical_slug
 from mova.adapter.outbound.orm.movies_orm import MovaMovie, slugify_movie
 from mova.adapter.outbound.pg.pg_session import run_pg
+from mova.app.dtos.movies_dto import MovieTitleCommand, MovieUpsertCommand
 from mova.app.ports.output.movies_repository import MoviesRepository
 
 logger = logging.getLogger(__name__)
@@ -62,13 +63,13 @@ class MoviesPgRepository(MoviesRepository):
 
         return await run_pg(self._session, work)
 
-    async def upsert(self, data: dict) -> MovaMovie:
-        title = str(data.get("title", "")).strip()
+    async def upsert(self, command: MovieUpsertCommand) -> MovaMovie:
+        title = command.title.strip()
         if not title:
             raise MoviesRepositoryError("영화 제목이 비어 있습니다.", status_code=400)
 
         slug = (
-            str(data.get("slug") or "").strip()
+            str(command.slug or "").strip()
             or resolve_canonical_slug(title)
             or slugify_movie(title)
         )
@@ -83,24 +84,24 @@ class MoviesPgRepository(MoviesRepository):
                 row = MovaMovie(
                     slug=slug,
                     title=title[:255],
-                    release_year=str(data.get("release_year", "")).strip()[:8],
-                    rating=float(data.get("rating", 0)),
-                    poster_url=str(data.get("poster", "")).strip(),
-                    platform=data.get("platform"),
-                    genres=list(data.get("genres") or []),
+                    release_year=command.release_year.strip()[:8],
+                    rating=float(command.rating),
+                    poster_url=command.poster.strip(),
+                    platform=command.platform,
+                    genres=list(command.genres or []),
                 )
                 session.add(row)
             else:
                 row.title = title[:255]
-                row.release_year = str(data.get("release_year", row.release_year)).strip()[:8]
-                row.rating = float(data.get("rating", row.rating))
-                new_poster = str(data.get("poster", "")).strip()
+                row.release_year = command.release_year.strip()[:8] or row.release_year
+                row.rating = float(command.rating)
+                new_poster = command.poster.strip()
                 if new_poster:
                     row.poster_url = new_poster
-                if data.get("platform") is not None:
-                    row.platform = data.get("platform")
-                if data.get("genres") is not None:
-                    row.genres = list(data.get("genres") or [])
+                if command.platform is not None:
+                    row.platform = command.platform
+                if command.genres is not None:
+                    row.genres = list(command.genres or [])
 
             try:
                 await session.flush()
@@ -115,19 +116,19 @@ class MoviesPgRepository(MoviesRepository):
 
         return await run_pg(self._session, work)
 
-    async def upsert_title(self, title: str) -> int:
-        row = await self.upsert({"title": title})
+    async def upsert_title(self, command: MovieTitleCommand) -> int:
+        row = await self.upsert(MovieUpsertCommand(title=command.title))
         return row.id
 
-    async def upsert_titles(self, titles: list[str]) -> list[int]:
+    async def upsert_titles(self, commands: list[MovieTitleCommand]) -> list[int]:
         ids: list[int] = []
         seen: set[str] = set()
-        for raw in titles:
-            key = raw.strip()
+        for command in commands:
+            key = command.title.strip()
             if not key or key in seen:
                 continue
             seen.add(key)
-            ids.append(await self.upsert_title(key))
+            ids.append(await self.upsert_title(MovieTitleCommand(title=key)))
         return ids
 
     async def list_movies(self, limit: int = 100) -> list[MovaMovie]:

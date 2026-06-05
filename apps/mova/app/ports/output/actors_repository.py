@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from mova.adapter.outbound.orm.actors_orm import MovaActor
+from mova.app.dtos.actors_dto import ActorUpsertCommand
 
 
 class ActorsRepository(ABC):
@@ -13,15 +14,15 @@ class ActorsRepository(ABC):
         pass
 
     @abstractmethod
-    async def upsert(self, data: dict) -> MovaActor:
+    async def upsert(self, command: ActorUpsertCommand) -> MovaActor:
         pass
 
     @abstractmethod
-    async def upsert_name(self, name: str) -> int:
+    async def upsert_name(self, command: ActorUpsertCommand) -> int:
         pass
 
     @abstractmethod
-    async def upsert_names(self, names: list[str]) -> list[int]:
+    async def upsert_names(self, commands: list[ActorUpsertCommand]) -> list[int]:
         pass
 
     @abstractmethod

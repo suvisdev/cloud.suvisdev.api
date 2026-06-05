@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
+from mova.adapter.inbound.api.http_errors import invoke
 from mova.adapter.inbound.api.schemas.search_schema import MovaSearchItemSchema
 from mova.app.ports.input.search_use_case import SearchUseCase
 from mova.dependencies.search import get_search_use_case
@@ -19,7 +20,5 @@ async def search(
     if not query:
         return []
     capped = min(max(limit, 1), 50)
-    try:
-        return await search.search(query, limit=capped)
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
+    rows = await invoke(search.search(query, limit=capped))
+    return [row.to_schema() for row in rows]

@@ -3,21 +3,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from mova.adapter.outbound.orm.chat_orm import MovaChat
+from mova.app.dtos.chat_dto import ChatUpsertCommand
 
 
 class ChatRepository(ABC):
     @abstractmethod
-    async def upsert(
-        self,
-        raw_message: str,
-        refined_query: str,
-        keywords: list[str] | None = None,
-        *,
-        intent_type: str = "mood",
-        search_filters: dict | None = None,
-        user_id: int | None = None,
-        assistant_id: int | None = None,
-    ) -> int:
+    async def upsert(self, command: ChatUpsertCommand) -> int:
         pass
 
     @abstractmethod

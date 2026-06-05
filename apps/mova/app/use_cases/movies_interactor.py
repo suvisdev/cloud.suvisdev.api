@@ -1,24 +1,26 @@
 from __future__ import annotations
 
-from mova.adapter.inbound.api.schemas.search_schema import (
-    MovaTitleCastSchema,
-    MovaTitleDetailSchema,
-)
 from mova.adapter.inbound.api.schemas.movies_schema import (
     MovieCreateSchema,
-    MovieSchema,
     MovieTitleCreateSchema,
-    MovieTitleSchema,
 )
 from mova.adapter.outbound.pg.movies_pg_repository import MoviesRepositoryError
-from mova.domain.value_objects.movie_catalog import (
-    resolve_canonical_slug,
-    title_for_canonical_slug,
+from mova.app.dtos.movies_dto import (
+    MovieDto,
+    MovieTitleCommand,
+    MovieTitleDto,
+    MovieUpsertCommand,
+    TitleCastDto,
+    TitleDetailDto,
 )
 from mova.app.ports.input.characters_use_case import CharactersUseCase
 from mova.app.ports.input.movies_use_case import MoviesUseCase
 from mova.app.ports.input.reviews_use_case import ReviewsUseCase
 from mova.app.ports.output.movies_repository import MoviesRepository
+from mova.domain.value_objects.movie_catalog import (
+    resolve_canonical_slug,
+    title_for_canonical_slug,
+)
 
 
 class MoviesInteractor(MoviesUseCase):
@@ -32,80 +34,38 @@ class MoviesInteractor(MoviesUseCase):
         self._characters_use_case = characters_use_case
         self._reviews_use_case = reviews_use_case
 
-    def _to_schema(self, row) -> MovieSchema:
-        return MovieSchema(
-            id=row.id,
-            slug=row.slug,
-            title=row.title,
-            release_year=row.release_year,
-            rating=row.rating,
-            poster=row.poster_url,
-            platform=row.platform,
-            genres=list(row.genres or []),
-        )
+    async def save_movie(self, payload: MovieCreateSchema) -> MovieDto:
+        command = MovieUpsertCommand.from_schema(payload)
+        row = await self._repository.upsert(command)
+        return MovieDto.from_orm(row)
 
-    def _create_to_dict(self, payload: MovieCreateSchema) -> dict:
-        return {
-            "title": payload.title,
-            "slug": payload.slug,
-            "release_year": payload.release_year,
-            "rating": payload.rating,
-            "poster": payload.poster,
-            "platform": payload.platform,
-            "genres": payload.genres,
-        }
+    async def save_title(self, payload: MovieTitleCreateSchema) -> MovieTitleDto:
+        command = MovieTitleCommand.from_schema(payload)
+        movie_id = await self._repository.upsert_title(command)
+        return MovieTitleDto(id=movie_id, title=command.title)
 
-    async def save_movie(self, payload: MovieCreateSchema) -> MovieSchema:
-        row = await self._repository.upsert(self._create_to_dict(payload))
-        return self._to_schema(row)
-
-    async def save_title(self, payload: MovieTitleCreateSchema) -> MovieTitleSchema:
-        title = payload.title.strip()
-        movie_id = await self._repository.upsert_title(title)
-        return MovieTitleSchema(id=movie_id, title=title)
-
-    async def list_movies(self, limit: int = 100) -> list[MovieSchema]:
+    async def list_movies(self, limit: int = 100) -> list[MovieDto]:
         rows = await self._repository.list_movies(limit=limit)
-        return [self._to_schema(row) for row in rows]
+        return [MovieDto.from_orm(row) for row in rows]
 
-    async def list_titles(self, limit: int = 100) -> list[MovieTitleSchema]:
+    async def list_titles(self, limit: int = 100) -> list[MovieTitleDto]:
         rows = await self._repository.list_titles(limit=limit)
-        return [MovieTitleSchema(id=row.id, title=row.title) for row in rows]
+        return [MovieTitleDto(id=row.id, title=row.title) for row in rows]
 
-    async def get_movie(self, movie_id: int) -> MovieSchema:
+    async def get_movie(self, movie_id: int) -> MovieDto:
         row = await self._repository.get_by_id(movie_id)
         if row is None:
             raise MoviesRepositoryError(
                 f"영화 ID {movie_id}를 찾을 수 없습니다.",
                 status_code=404,
             )
-        return self._to_schema(row)
+        return MovieDto.from_orm(row)
 
-    async def get_title_by_slug(self, slug: str) -> MovaTitleDetailSchema:
-        key = slug.strip()
-        row = None
-        if key.startswith("tmdb-"):
-            row = await self._repository.get_by_slug(key)
-        canonical = resolve_canonical_slug(key)
-        if row is None:
-            row = await self._repository.get_by_slug(canonical)
-        if row is None and canonical != key:
-            row = await self._repository.get_by_slug(key)
-        if row is None:
-            row = await self._repository.find_by_title(key)
-        if row is None:
-            catalog_title = title_for_canonical_slug(canonical)
-            if catalog_title:
-                row = await self._repository.find_by_title(catalog_title)
-        if row is None:
-            raise MoviesRepositoryError(
-                f"영화 slug '{slug}'를 찾을 수 없습니다.",
-                status_code=404,
-            )
-
+    async def get_title_by_slug(self, slug: str) -> TitleDetailDto:
+        row = await self._resolve_movie_row(slug)
         cast_rows = await self._characters_use_case.list_actors_by_movie(row.id, limit=50)
         cast = [
-            MovaTitleCastSchema(
+            TitleCastDto(
                 name=actor.actor_name,
                 role="감독" if actor.role_type == "director" else "출연",
                 photo=actor.profile_photo or "",
@@ -128,7 +88,7 @@ class MoviesInteractor(MoviesUseCase):
             if row.slug.startswith("tmdb-")
             else resolve_canonical_slug(row.slug, title=row.title)
         )
-        return MovaTitleDetailSchema(
+        return TitleDetailDto(
             id=response_id,
             title=row.title,
             year=row.release_year or "",
@@ -137,6 +97,29 @@ class MoviesInteractor(MoviesUseCase):
             poster=poster,
             backdrop=poster,
             rating=rating,
-            ratingCount=rating_count,
+            rating_count=rating_count,
             cast=cast,
         )
+
+    async def _resolve_movie_row(self, slug: str):
+        key = slug.strip()
+        row = None
+        if key.startswith("tmdb-"):
+            row = await self._repository.get_by_slug(key)
+        canonical = resolve_canonical_slug(key)
+        if row is None:
+            row = await self._repository.get_by_slug(canonical)
+        if row is None and canonical != key:
+            row = await self._repository.get_by_slug(key)
+        if row is None:
+            row = await self._repository.find_by_title(key)
+        if row is None:
+            catalog_title = title_for_canonical_slug(canonical)
+            if catalog_title:
+                row = await self._repository.find_by_title(catalog_title)
+        if row is None:
+            raise MoviesRepositoryError(
+                f"영화 slug '{slug}'를 찾을 수 없습니다.",
+                status_code=404,
+            )
+        return row

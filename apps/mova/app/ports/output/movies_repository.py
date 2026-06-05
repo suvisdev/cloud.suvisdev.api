@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from mova.adapter.outbound.orm.movies_orm import MovaMovie
+from mova.app.dtos.movies_dto import MovieTitleCommand, MovieUpsertCommand
 
 
 class MoviesRepository(ABC):
@@ -21,15 +22,15 @@ class MoviesRepository(ABC):
         pass
 
     @abstractmethod
-    async def upsert(self, data: dict) -> MovaMovie:
+    async def upsert(self, command: MovieUpsertCommand) -> MovaMovie:
         pass
 
     @abstractmethod
-    async def upsert_title(self, title: str) -> int:
+    async def upsert_title(self, command: MovieTitleCommand) -> int:
         pass
 
     @abstractmethod
-    async def upsert_titles(self, titles: list[str]) -> list[int]:
+    async def upsert_titles(self, commands: list[MovieTitleCommand]) -> list[int]:
         pass
 
     @abstractmethod
