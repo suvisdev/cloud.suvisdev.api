@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from mova.adapter.inbound.api.http_errors import invoke
 from mova.adapter.inbound.api.schemas.rankings_schema import HotRankingDisplaySchema
-from mova.adapter.outbound.pg.rankings_pg_repository import RankingsRepositoryError
-from mova.domain.value_objects.ranking_source import DEFAULT_HOT_RANKING_SOURCE
 from mova.app.ports.input.rankings_use_case import RankingsUseCase
 from mova.dependencies.rankings_provider import get_rankings_use_case
+from mova.domain.value_objects.ranking_source import DEFAULT_HOT_RANKING_SOURCE
 
 rankings_router = APIRouter(tags=["mova-rankings"])
 
@@ -20,13 +18,10 @@ async def list_hot_rankings(
     rankings: RankingsUseCase = Depends(get_rankings_use_case),
 ) -> list[HotRankingDisplaySchema]:
     """Mova HOT 랭킹 — 기본 `source=chat_trend` (채팅·추천 집계)."""
-    rows = await invoke(
-        rankings.list_hot_rankings_from_query(
-            source=source,
-            ranked_at=ranked_at,
-            limit=limit,
-        ),
-        domain_errors=(RankingsRepositoryError,),
+    rows = await rankings.list_hot_rankings_from_query(
+        source=source,
+        ranked_at=ranked_at,
+        limit=limit,
     )
     return [row.to_schema() for row in rows]
 
@@ -38,8 +33,5 @@ async def refresh_chat_trend_rankings(
     rankings: RankingsUseCase = Depends(get_rankings_use_case),
 ) -> list[HotRankingDisplaySchema]:
     """chat·picks 집계로 `source=chat_trend` 랭킹 스냅샷 갱신."""
-    rows = await invoke(
-        rankings.refresh_chat_trend_rankings(window_days=window_days, limit=limit),
-        domain_errors=(RankingsRepositoryError,),
-    )
+    rows = await rankings.refresh_chat_trend_rankings(window_days=window_days, limit=limit)
     return [row.to_schema() for row in rows]

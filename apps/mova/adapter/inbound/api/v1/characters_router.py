@@ -2,19 +2,16 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from mova.adapter.inbound.api.http_errors import invoke
 from mova.adapter.inbound.api.schemas.characters_schema import (
     CharacterLinkCreateSchema,
     CharacterLinkSchema,
     CharacterWithActorSchema,
     CharacterWithMovieSchema,
 )
-from mova.adapter.outbound.pg.characters_pg_repository import CharactersRepositoryError
 from mova.app.ports.input.characters_use_case import CharactersUseCase
 from mova.dependencies.characters_provider import get_characters_use_case
 
 characters_router = APIRouter(tags=["mova-characters"])
-_REPO_ERRORS = (CharactersRepositoryError,)
 
 
 @characters_router.post("/characters", response_model=CharacterLinkSchema, status_code=201)
@@ -22,7 +19,7 @@ async def link_character(
     req: CharacterLinkCreateSchema,
     characters: CharactersUseCase = Depends(get_characters_use_case),
 ) -> CharacterLinkSchema:
-    return (await invoke(characters.link(req), domain_errors=_REPO_ERRORS)).to_schema()
+    return (await characters.link(req)).to_schema()
 
 
 @characters_router.delete("/characters/{link_id}", status_code=204)
@@ -30,7 +27,7 @@ async def unlink_character(
     link_id: int,
     characters: CharactersUseCase = Depends(get_characters_use_case),
 ) -> None:
-    await invoke(characters.unlink(link_id), domain_errors=_REPO_ERRORS)
+    await characters.unlink(link_id)
 
 
 @characters_router.get("/characters", response_model=list[CharacterLinkSchema])
@@ -40,9 +37,7 @@ async def list_character_links(
     limit: int = 100,
     characters: CharactersUseCase = Depends(get_characters_use_case),
 ) -> list[CharacterLinkSchema]:
-    rows = await invoke(
-        characters.list_links(movie_id=movie_id, actor_id=actor_id, limit=limit),
-    )
+    rows = await characters.list_links(movie_id=movie_id, actor_id=actor_id, limit=limit)
     return [row.to_schema() for row in rows]
 
 
@@ -55,10 +50,7 @@ async def list_characters_by_movie(
     limit: int = 100,
     characters: CharactersUseCase = Depends(get_characters_use_case),
 ) -> list[CharacterWithActorSchema]:
-    rows = await invoke(
-        characters.list_actors_by_movie(movie_id, limit=limit),
-        domain_errors=_REPO_ERRORS,
-    )
+    rows = await characters.list_actors_by_movie(movie_id, limit=limit)
     return [row.to_schema() for row in rows]
 
 
@@ -71,8 +63,5 @@ async def list_movies_by_actor(
     limit: int = 100,
     characters: CharactersUseCase = Depends(get_characters_use_case),
 ) -> list[CharacterWithMovieSchema]:
-    rows = await invoke(
-        characters.list_movies_by_actor(actor_id, limit=limit),
-        domain_errors=_REPO_ERRORS,
-    )
+    rows = await characters.list_movies_by_actor(actor_id, limit=limit)
     return [row.to_schema() for row in rows]

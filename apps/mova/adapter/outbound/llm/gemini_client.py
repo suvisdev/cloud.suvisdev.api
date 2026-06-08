@@ -1,13 +1,10 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
-import logging
 from typing import Literal
 
 from fastapi import HTTPException
 
 from core.matrix.keymaker_api import get_keymaker
-
-logger = logging.getLogger(__name__)
 
 
 def gemini_reply(prompt: str, model_key: Literal["flash", "flash15", "pro"] | None) -> str:

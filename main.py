@@ -33,7 +33,7 @@ from core.matrix.weather_reader import (
 from viewer.adapter.inbound.api import login_router, signup_router
 from viewer.app.dtos.user_model import seed_secom_if_empty
 from mova.adapter.inbound.api import mova_router
-from mova.adapter.inbound.api.gemini_reply import gemini_reply
+from mova.adapter.outbound.llm.gemini_client import gemini_reply
 from titanic.adapter.inbound.api import titanic_router
 
 keymaker = get_keymaker()

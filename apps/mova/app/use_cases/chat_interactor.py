@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from mova.adapter.inbound.api.gemini_reply import gemini_reply
+from mova.adapter.outbound.llm.gemini_client import gemini_reply
 from mova.adapter.inbound.api.schemas.chat_schema import MovaChatRequest
 from mova.adapter.inbound.api.schemas.movies_schema import MovieTitleCreateSchema
 from mova.adapter.outbound.llm.chat_prompt import ChatPromptBuilder

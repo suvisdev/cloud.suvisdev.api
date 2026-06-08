@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from mova.adapter.inbound.api.http_errors import invoke
 from mova.adapter.inbound.api.schemas.chat_schema import MovaChatRequest, MovaChatResponseSchema
 from mova.app.ports.input.chat_use_case import ChatUseCase
 from mova.dependencies.chat_provider import get_chat_use_case
@@ -16,4 +15,4 @@ async def mova_chat(
     chat: ChatUseCase = Depends(get_chat_use_case),
 ) -> MovaChatResponseSchema:
     """Mova AI 영화 추천 채팅."""
-    return (await invoke(chat.chat_from_request(req), chat=True)).to_schema()
+    return (await chat.chat_from_request(req)).to_schema()
