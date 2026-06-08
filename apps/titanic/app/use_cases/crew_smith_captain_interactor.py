@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
+from titanic.adapter.inbound.api.schemas.crew_smith_captain_schema import SmithCaptainSchema
+from titanic.app.dtos.crew_smith_captain_dto import SmithCaptainQuery, SmithCaptainResponse
 from titanic.app.ports.input.crew_smith_captain_use_case import SmithCaptainUseCase
 from titanic.app.ports.output.crew_smith_captain_repository import SmithCaptainRepository
 
@@ -13,6 +14,11 @@ class SmithCaptainInteractor(SmithCaptainUseCase):
     def __init__(self, repository: SmithCaptainRepository) -> None:
         self._repository = repository
 
-    async def get_captain(self, request: dict[str, Any]) -> int:
-        logger.info("[%s] %s", "SmithCaptainInteractor", "get_captain")
-        return await self._repository.get_captain(request)
+    async def introduce_myself(self, schemas: SmithCaptainSchema) -> SmithCaptainResponse:
+        query = SmithCaptainQuery(
+            id=schemas.id,
+            name=schemas.name,
+        )
+        logger.info("🤖 [SmithCaptainUseCase] 라우터에서 가져온 스미스 정보 — id=%s", query.id)
+        self._repository.introduce_myself(query)
+        return SmithCaptainResponse(id=query.id, name=query.name)

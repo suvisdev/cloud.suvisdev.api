@@ -1,19 +1,25 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from titanic.app.ports.output.crew_andrews_architect_repository import AndrewsBlueprintRepository
+from titanic.app.dtos.crew_andrews_architect_dto import AndrewsArchitectQuery, AndrewsArchitectResponse
+from titanic.app.ports.output.crew_andrews_architect_repository import (
+    AndrewsArchitectRepository,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class AndrewsBlueprintPgRepository(AndrewsBlueprintRepository):
+class AndrewsArchitectPgRepository(AndrewsArchitectRepository):
     def __init__(self, session: AsyncSession | None = None) -> None:
         self._session = session
 
-    async def get_blueprint(self, request: dict[str, Any]) -> int:
-        logger.info("[%s] %s request=%s", "AndrewsBlueprintPgRepository", "get_blueprint", request)
-        return 0
+    async def introduce_myself(self, query: AndrewsArchitectQuery) -> AndrewsArchitectResponse:
+        
+        logger.info(f"[AndrewsArchitectPgRepository] introduce_myself 진입 | request_data={query}")
+
+        response = AndrewsArchitectResponse(id=query.id * 10000, name=query.name + "가 레포지토리에 다녀옴")
+        
+        return response

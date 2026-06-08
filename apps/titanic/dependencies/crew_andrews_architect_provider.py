@@ -1,0 +1,14 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.matrix.oracle_database import get_db
+from fastapi import Depends
+
+from titanic.adapter.outbound.pg.crew_andrews_architect_pg_repository import AndrewsArchitectPgRepository
+from titanic.app.ports.input.crew_andrews_architect_use_case import AndrewsArchitectUseCase
+from titanic.app.ports.output.crew_andrews_architect_repository import AndrewsArchitectRepository
+from titanic.app.use_cases.crew_andrews_architect_interactor import AndrewsArchitectInteractor
+
+
+def get_andrews_architect_use_case(db: AsyncSession = Depends(get_db)) -> AndrewsArchitectUseCase:
+    repository: AndrewsArchitectRepository = AndrewsArchitectPgRepository(session=db)
+    return AndrewsArchitectInteractor(repository=repository)

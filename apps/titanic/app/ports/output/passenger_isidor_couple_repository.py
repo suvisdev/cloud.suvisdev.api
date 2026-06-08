@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+
+from titanic.app.dtos.passenger_isidor_couple_dto import IsidorCoupleQuery
 
 
-class IsidorBedRepository(ABC):
+class IsidorCoupleRepository(ABC):
     """passenger_isidor_couple output port."""
 
     @abstractmethod
-    async def get_bed(self, request: dict[str, Any]) -> int:
+    def introduce_myself(self, query: IsidorCoupleQuery):
         pass

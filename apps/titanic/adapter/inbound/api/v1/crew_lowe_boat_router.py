@@ -1,15 +1,19 @@
-from __future__ import annotations
-
 from fastapi import APIRouter, Depends
-
+from titanic.adapter.inbound.api.schemas.crew_lowe_boat_schema import LoweBoatSchema
 from titanic.app.ports.input.crew_lowe_boat_use_case import LoweBoatUseCase
-from titanic.dependencies.crew_lowe_boat import get_crew_lowe_boat_use_case
+from titanic.dependencies.crew_lowe_boat_provider import get_lowe_boat_use_case
+from titanic.app.dtos.crew_lowe_boat_dto import LoweBoatResponse
 
-crew_lowe_boat_router = APIRouter(prefix="/titanic/boat", tags=["boat"])
+lowe_boat_router = APIRouter(prefix="/lowe", tags=["lowe"])
 
 
-@crew_lowe_boat_router.get("/boat", response_model=int)
-async def get_boat(
-    use_case: LoweBoatUseCase = Depends(get_crew_lowe_boat_use_case),
-) -> int:
-    return await use_case.get_boat({})
+@lowe_boat_router.get("/myself")
+async def introduce_myself(
+    lowe: LoweBoatUseCase = Depends(get_lowe_boat_use_case),
+) -> LoweBoatResponse:
+    return await lowe.introduce_myself(
+        LoweBoatSchema(
+            id=3,
+            name="로우 보트 주인공"
+        )
+    )

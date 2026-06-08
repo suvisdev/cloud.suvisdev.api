@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from titanic.adapter.inbound.api.schemas.passenger_rose_model_schema import RoseModelSchema
 
 
-class RoseDiamondUseCase(ABC):
-    """passenger_rose_model input port."""
+class RoseModelUseCase(ABC):
+    """rose_model input port."""
 
     @abstractmethod
-    async def get_diamond(self, request: dict[str, Any]) -> int:
+    async def introduce_myself(self, schemas: list["RoseModelSchema"]):
         pass

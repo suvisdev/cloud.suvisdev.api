@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from titanic.adapter.inbound.api.schemas.passenger_isidor_couple_schema import IsidorCoupleSchema
 
 
-class IsidorBedUseCase(ABC):
-    """passenger_isidor_couple input port."""
+class IsidorCoupleUseCase(ABC):
+    """isidor_couple input port."""
 
     @abstractmethod
-    async def get_bed(self, request: dict[str, Any]) -> int:
+    async def introduce_myself(self, schemas: list["IsidorCoupleSchema"]):
         pass

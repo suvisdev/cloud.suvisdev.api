@@ -1,15 +1,20 @@
-from __future__ import annotations
+﻿from fastapi import APIRouter, Depends
 
-from fastapi import APIRouter, Depends
+from titanic.adapter.inbound.api.schemas.passenger_rose_model_schema import RoseModelSchema
+from titanic.app.ports.input.passenger_rose_model_use_case import RoseModelUseCase
+from titanic.dependencies.passenger_rose_model_provider import get_rose_model_use_case
+from titanic.app.dtos.passenger_rose_model_dto import RoseModelResponse
 
-from titanic.app.ports.input.passenger_rose_model_use_case import RoseDiamondUseCase
-from titanic.dependencies.passenger_rose_model import get_passenger_rose_model_use_case
-
-passenger_rose_model_router = APIRouter(prefix="/titanic/diamond", tags=["diamond"])
+rose_model_router = APIRouter(prefix="/rose", tags=["rose"])
 
 
-@passenger_rose_model_router.get("/diamond", response_model=int)
-async def get_diamond(
-    use_case: RoseDiamondUseCase = Depends(get_passenger_rose_model_use_case),
-) -> int:
-    return await use_case.get_diamond({})
+@rose_model_router.get("/myself")
+async def introduce_myself(
+    rose: RoseModelUseCase = Depends(get_rose_model_use_case),
+) -> RoseModelResponse:
+    return await rose.introduce_myself(
+        RoseModelSchema(
+            id=10,
+            name="로즈 모델 주인공"
+        )
+    )

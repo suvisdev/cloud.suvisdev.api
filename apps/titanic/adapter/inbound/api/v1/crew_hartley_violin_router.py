@@ -1,15 +1,21 @@
-from __future__ import annotations
+﻿from fastapi import APIRouter, Depends
 
-from fastapi import APIRouter, Depends
-
+from titanic.adapter.inbound.api.schemas.crew_hartley_violin_schema import HartleyViolinSchema
 from titanic.app.ports.input.crew_hartley_violin_use_case import HartleyViolinUseCase
-from titanic.dependencies.crew_hartley_violin import get_crew_hartley_violin_use_case
+from titanic.dependencies.crew_hartley_violin_provider import get_hartley_violin_use_case
+from titanic.app.dtos.crew_hartley_violin_dto import HartleyViolinResponse
 
-crew_hartley_violin_router = APIRouter(prefix="/titanic/violin", tags=["violin"])
+
+hartley_violin_router = APIRouter(prefix="/hartley", tags=["hartley"])
 
 
-@crew_hartley_violin_router.get("/violin", response_model=int)
-async def get_violin(
-    use_case: HartleyViolinUseCase = Depends(get_crew_hartley_violin_use_case),
-) -> int:
-    return await use_case.get_violin({})
+@hartley_violin_router.get("/myself")
+async def introduce_myself(
+    hartley: HartleyViolinUseCase = Depends(get_hartley_violin_use_case),
+) -> HartleyViolinResponse:
+    return await hartley.introduce_myself(
+        HartleyViolinSchema(
+            id=2,
+            name="하트리 바이올린 주인공"
+        )
+    )

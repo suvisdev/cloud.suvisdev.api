@@ -1,15 +1,19 @@
-from __future__ import annotations
-
-from fastapi import APIRouter, Depends
-
+﻿from fastapi import APIRouter, Depends
+from titanic.adapter.inbound.api.schemas.crew_smith_captain_schema import SmithCaptainSchema
 from titanic.app.ports.input.crew_smith_captain_use_case import SmithCaptainUseCase
-from titanic.dependencies.crew_smith_captain import get_crew_smith_captain_use_case
+from titanic.dependencies.crew_smith_captain_provider import get_smith_captain_use_case
+from titanic.app.dtos.crew_smith_captain_dto import SmithCaptainResponse
 
-crew_smith_captain_router = APIRouter(prefix="/titanic/captain", tags=["captain"])
+smith_captain_router = APIRouter(prefix="/smith", tags=["smith"])
 
 
-@crew_smith_captain_router.get("/captain", response_model=int)
-async def get_captain(
-    use_case: SmithCaptainUseCase = Depends(get_crew_smith_captain_use_case),
-) -> int:
-    return await use_case.get_captain({})
+@smith_captain_router.get("/myself")
+async def introduce_myself(
+    smith: SmithCaptainUseCase = Depends(get_smith_captain_use_case),
+) -> SmithCaptainResponse:
+    return await smith.introduce_myself(
+        SmithCaptainSchema(
+            id=4,
+            name="스미스 캡틴 주인공"
+        )
+    )

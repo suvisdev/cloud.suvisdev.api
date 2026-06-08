@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+
+from titanic.app.dtos.passenger_jack_trainer_dto import JackTrainerQuery
 
 
-class JackSketchRepository(ABC):
+class JackTrainerRepository(ABC):
     """passenger_jack_trainer output port."""
 
     @abstractmethod
-    async def get_sketch(self, request: dict[str, Any]) -> int:
+    def introduce_myself(self, query: JackTrainerQuery):
         pass

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+
+from titanic.app.dtos.passenger_molly_scaler_dto import MollyScalerQuery
 
 
 class MollyScalerRepository(ABC):
     """passenger_molly_scaler output port."""
 
     @abstractmethod
-    async def get_scaler(self, request: dict[str, Any]) -> int:
+    def introduce_myself(self, query: MollyScalerQuery):
         pass

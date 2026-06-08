@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+
+from titanic.app.dtos.crew_andrews_architect_dto import AndrewsArchitectQuery
 
 
-class AndrewsBlueprintRepository(ABC):
+class AndrewsArchitectRepository(ABC):
     """crew_andrews_architect output port."""
 
     @abstractmethod
-    async def get_blueprint(self, request: dict[str, Any]) -> int:
+    def introduce_myself(self, query: AndrewsArchitectQuery):
         pass

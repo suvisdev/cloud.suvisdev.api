@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from titanic.adapter.inbound.api.schemas.crew_james_director_schema import TitanicRowSchema
-from titanic.app.dtos.crew_james_director_dto import BookingCommand, JamesResponse, PersonCommand
+from typing import TYPE_CHECKING
+
+from titanic.app.dtos.crew_james_director_dto import BookingCommand, JamesResponse, PassengerCommand
 from titanic.app.ports.input.crew_james_director_use_case import JamesUseCase
 from titanic.app.ports.output.crew_james_director_repository import JamesRepository
+from titanic.adapter.inbound.api.schemas.crew_james_director_schema import JamesSchema
 
 
 class JamesInteractor(JamesUseCase):
@@ -13,10 +15,11 @@ class JamesInteractor(JamesUseCase):
         self._repository = repository
 
     async def receive_uploaded_records(
-        self, schemas: list[TitanicRowSchema]
+        self,
+        schemas: list[JamesSchema],
     ) -> JamesResponse:
         person_commands = [
-            PersonCommand(
+            PassengerCommand(
                 passenger_id=schema.passenger_id,
                 name=schema.name,
                 gender=schema.gender,

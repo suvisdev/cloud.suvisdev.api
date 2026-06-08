@@ -9,5 +9,5 @@ class WalterRepository(ABC):
     """Walter 소개 출력 포트 (ABC)."""
 
     @abstractmethod
-    def introduce_myself(self, query: WalterQuery) -> None:
+    def introduce_myself(self, query: WalterQuery):
         pass

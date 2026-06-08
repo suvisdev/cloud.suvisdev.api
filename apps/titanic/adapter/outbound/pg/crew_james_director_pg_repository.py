@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.matrix.oracle_database import ensure_titanic_tables, get_mova_session_factory
 from titanic.adapter.outbound.orm.passenger_jack_trainer_orm import Booking
 from titanic.adapter.outbound.orm.passenger_rose_model_orm import Person
-from titanic.app.dtos.crew_james_director_dto import BookingCommand, PersonCommand
+from titanic.app.dtos.crew_james_director_dto import BookingCommand, PassengerCommand
 from titanic.app.ports.output.crew_james_director_repository import JamesRepository
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class JamesPgRepository(JamesRepository):
 
     async def receive_uploaded_records(
         self,
-        person_commands: list[PersonCommand],
+        person_commands: list[PassengerCommand],
         booking_commands: list[BookingCommand],
     ) -> int:
         await ensure_titanic_tables()
@@ -37,7 +37,7 @@ class JamesPgRepository(JamesRepository):
     async def _persist(
         self,
         session: AsyncSession,
-        person_commands: list[PersonCommand],
+        person_commands: list[PassengerCommand],
         booking_commands: list[BookingCommand],
     ) -> int:
         if len(person_commands) != len(booking_commands):

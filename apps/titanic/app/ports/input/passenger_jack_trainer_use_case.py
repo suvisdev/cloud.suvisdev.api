@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from titanic.adapter.inbound.api.schemas.passenger_jack_trainer_schema import JackTrainerSchema
 
 
-class JackSketchUseCase(ABC):
-    """passenger_jack_trainer input port."""
+class JackTrainerUseCase(ABC):
+    """jack_trainer input port."""
 
     @abstractmethod
-    async def get_sketch(self, request: dict[str, Any]) -> int:
+    async def introduce_myself(self, schemas: list["JackTrainerSchema"]):
         pass

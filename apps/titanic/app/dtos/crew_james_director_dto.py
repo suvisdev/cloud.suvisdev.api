@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class PersonCommand:
+class PassengerCommand:
     """ERD Person — 승객 1명."""
 
     passenger_id: str

@@ -9,6 +9,6 @@ from titanic.app.ports.output.crew_james_director_repository import JamesReposit
 from titanic.app.use_cases.crew_james_director_interactor import JamesInteractor
 
 
-def get_crew_james_director_use_case(db: AsyncSession = Depends(get_db)) -> JamesUseCase:
+def get_james_director_use_case(db: AsyncSession = Depends(get_db)) -> JamesUseCase:
     repository: JamesRepository = JamesPgRepository(session=db)
     return JamesInteractor(repository=repository)

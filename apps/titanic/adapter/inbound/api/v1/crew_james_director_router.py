@@ -4,38 +4,38 @@ import logging
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
-from titanic.adapter.inbound.api.schemas.crew_james_director_schema import TitanicRowSchema
+from titanic.adapter.inbound.api.schemas.crew_james_director_schema import JamesSchema
 from titanic.app.dtos.crew_james_director_dto import JamesResponse
 from titanic.app.ports.input.crew_james_director_use_case import JamesUseCase
-from titanic.dependencies.crew_james_director import get_crew_james_director_use_case
+from titanic.dependencies.crew_james_director_provider import get_james_director_use_case
 
-crew_james_director_router = APIRouter(prefix="/james", tags=["james"])
+james_director_router = APIRouter(prefix="/james", tags=["james"])
 logger = logging.getLogger(__name__)
 
 
-@crew_james_director_router.post("/upload")
+@james_director_router.post("/upload")
 async def receive_uploaded_records(
     file: UploadFile = File(...),
-    james: JamesUseCase = Depends(get_crew_james_director_use_case),
+    james: JamesUseCase = Depends(get_james_director_use_case),
 ) -> JamesResponse:
     return await james.receive_uploaded_records(
         _parse_csv((await file.read()).decode("utf-8-sig", errors="replace"))
     )
 
 
-def _parse_csv(text: str) -> list[TitanicRowSchema]:
+def _parse_csv(text: str) -> list[JamesSchema]:
     if not text.strip():
         raise HTTPException(status_code=400, detail="빈 CSV 파일입니다.")
     reader = csv.DictReader(StringIO(text))
     if reader.fieldnames is None:
         raise HTTPException(status_code=400, detail="CSV 헤더를 읽을 수 없습니다.")
     return [
-        TitanicRowSchema(**_normalize_titanic_row(row))
+        JamesSchema(**_normalize_james_row(row))
         for row in reader
     ]
 
 
-def _normalize_titanic_row(row: dict) -> dict:
+def _normalize_james_row(row: dict) -> dict:
     normalized: dict[str, str] = {}
     for raw_key, value in row.items():
         if raw_key is None:

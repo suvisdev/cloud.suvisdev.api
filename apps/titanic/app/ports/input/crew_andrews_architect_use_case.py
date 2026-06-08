@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from titanic.adapter.inbound.api.schemas.crew_andrews_architect_schema import (
+        AndrewsArchitectSchema,
+    )
 
 
-class AndrewsBlueprintUseCase(ABC):
-    """crew_andrews_architect input port."""
+class AndrewsArchitectUseCase(ABC):
+    """AndrewsArchitect input port."""
 
     @abstractmethod
-    async def get_blueprint(self, request: dict[str, Any]) -> int:
+    async def introduce_myself(
+        self,
+        schemas: "AndrewsArchitectSchema | None" = None,
+    ):
         pass

@@ -9,6 +9,6 @@ from titanic.app.ports.output.crew_lowe_boat_repository import LoweBoatRepositor
 from titanic.app.use_cases.crew_lowe_boat_interactor import LoweBoatInteractor
 
 
-def get_crew_lowe_boat_use_case(db: AsyncSession = Depends(get_db)) -> LoweBoatUseCase:
+def get_lowe_boat_use_case(db: AsyncSession = Depends(get_db)) -> LoweBoatUseCase:
     repository: LoweBoatRepository = LoweBoatPgRepository(session=db)
     return LoweBoatInteractor(repository=repository)

@@ -109,7 +109,7 @@ MODULES = [
         "router_var": "passenger_rose_model_router",
     },
     {
-        "base": "passenger_ruth_survivor",
+        "base": "passenger_ruth_validation",
         "old": "ruth_corset",
         "use_case": "RuthCorsetUseCase",
         "interactor": "RuthCorsetInteractor",
@@ -123,7 +123,7 @@ MODULES = [
         "response": "int",
         "returns": "0",
         "dep_fn": "get_ruth_corset_use_case",
-        "router_var": "passenger_ruth_survivor_router",
+        "router_var": "passenger_ruth_validation_router",
     },
     {
         "base": "crew_smith_captain",
@@ -313,7 +313,7 @@ def {m["dep_fn"]}(db: AsyncSession = Depends(get_db)) -> {m["use_case"]}:
 from fastapi import APIRouter, Depends
 
 from titanic.app.ports.input.{base}_use_case import {m["use_case"]}
-from titanic.dependencies.{base} import {m["dep_fn"]}
+from titanic.dependencies.{base}_provider import {m["dep_fn"]}
 
 {m["router_var"]} = APIRouter(prefix="{m["prefix"]}", tags=["{m["tags"]}"])
 
@@ -353,7 +353,7 @@ async def {m["handler"]}(
         "passenger_isidor_couple_router",
         "passenger_jack_trainer_router",
         "passenger_rose_model_router",
-        "passenger_ruth_survivor_router",
+        "passenger_ruth_validation_router",
         "crew_smith_captain_router",
         "crew_lowe_boat_router",
         "passenger_molly_scaler_router",

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from titanic.adapter.inbound.api.schemas.passenger_molly_scaler_schema import MollyScalerSchema
 
 
 class MollyScalerUseCase(ABC):
-    """passenger_molly_scaler input port."""
+    """molly_scaler input port."""
 
     @abstractmethod
-    async def get_scaler(self, request: dict[str, Any]) -> int:
+    async def introduce_myself(self, schemas: list["MollyScalerSchema"]):
         pass

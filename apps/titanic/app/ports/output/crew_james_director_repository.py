@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from titanic.app.dtos.crew_james_director_dto import BookingCommand, PersonCommand
+from titanic.app.dtos.crew_james_director_dto import BookingCommand, PassengerCommand
 
 
 class JamesRepository(ABC):
@@ -11,7 +11,7 @@ class JamesRepository(ABC):
     @abstractmethod
     async def receive_uploaded_records(
         self,
-        person_commands: list[PersonCommand],
+        person_commands: list[PassengerCommand],
         booking_commands: list[BookingCommand],
     ) -> int:
         pass

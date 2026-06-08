@@ -9,6 +9,6 @@ from titanic.app.ports.output.crew_walter_roaster_repository import WalterReposi
 from titanic.app.use_cases.crew_walter_roaster_interactor import WalterInteractor
 
 
-def get_crew_walter_roaster_use_case(db: AsyncSession = Depends(get_db)) -> WalterUseCase:
+def get_walter_roaster_use_case(db: AsyncSession = Depends(get_db)) -> WalterUseCase:
     repository: WalterRepository = WalterPgRepository(session=db)
     return WalterInteractor(repository=repository)

@@ -1,9 +1,16 @@
-from __future__ import annotations
+from pydantic import BaseModel, Field
 
-from pydantic import BaseModel, ConfigDict
-
-
-class CrewAndrewsArchitectSchema(BaseModel):
-    """crew_andrews_architect schema (extend later)."""
-
-    model_config = ConfigDict(extra="allow")
+class AndrewsArchitectSchema(BaseModel):
+    
+    id: int = Field(0, description="Architect ID")
+    name: str = Field("토마스 앤드류스", description="Architect's name")
+    # 타이타닉 설계자 , 배가 침몰할 것을 수학적으로 확신하고 사람들을 도움
+    
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "id": 1,
+                "name": "Thomas Andrews",
+            }
+        }
+    }

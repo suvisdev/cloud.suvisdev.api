@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from titanic.adapter.inbound.api.schemas.crew_smith_captain_schema import SmithCaptainSchema
 
 
 class SmithCaptainUseCase(ABC):
-    """crew_smith_captain input port."""
+    """smith_captain input port."""
 
     @abstractmethod
-    async def get_captain(self, request: dict[str, Any]) -> int:
+    async def introduce_myself(self, schemas: list["SmithCaptainSchema"]):
         pass

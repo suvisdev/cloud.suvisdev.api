@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+
+from titanic.app.dtos.passenger_cal_tester_dto import CalTesterQuery
 
 
-class CalPistolRepository(ABC):
+class CalTesterRepository(ABC):
     """passenger_cal_tester output port."""
 
     @abstractmethod
-    async def get_pistol(self, request: dict[str, Any]) -> None:
+    def introduce_myself(self, query: CalTesterQuery):
         pass

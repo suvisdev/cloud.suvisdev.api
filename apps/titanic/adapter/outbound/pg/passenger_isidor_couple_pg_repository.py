@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from titanic.app.ports.output.passenger_isidor_couple_repository import IsidorBedRepository
+from titanic.app.dtos.passenger_isidor_couple_dto import IsidorCoupleQuery, IsidorCoupleResponse
+from titanic.app.ports.output.passenger_isidor_couple_repository import (
+    IsidorCoupleRepository,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class IsidorBedPgRepository(IsidorBedRepository):
+class IsidorCouplePgRepository(IsidorCoupleRepository):
     def __init__(self, session: AsyncSession | None = None) -> None:
         self._session = session
 
-    async def get_bed(self, request: dict[str, Any]) -> int:
-        logger.info("[%s] %s request=%s", "IsidorBedPgRepository", "get_bed", request)
-        return 0
+    async def introduce_myself(self, query: IsidorCoupleQuery) -> IsidorCoupleResponse:
+        logger.info(f"[IsidorCouplePgRepository] introduce_myself 진입 | request_data={query}")
+        response = IsidorCoupleResponse(id=query.id * 10000, name=query.name + "가 레포지토리에 다녀옴")
+        return response

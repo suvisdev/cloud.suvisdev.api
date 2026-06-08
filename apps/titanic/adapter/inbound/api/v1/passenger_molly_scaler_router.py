@@ -1,15 +1,20 @@
-from __future__ import annotations
-
 from fastapi import APIRouter, Depends
 
+from titanic.adapter.inbound.api.schemas.passenger_molly_scaler_schema import MollyScalerSchema
 from titanic.app.ports.input.passenger_molly_scaler_use_case import MollyScalerUseCase
-from titanic.dependencies.passenger_molly_scaler import get_passenger_molly_scaler_use_case
+from titanic.dependencies.passenger_molly_scaler_provider import get_molly_scaler_use_case
+from titanic.app.dtos.passenger_molly_scaler_dto import MollyScalerResponse
 
-passenger_molly_scaler_router = APIRouter(prefix="/titanic/scaler", tags=["scaler"])
+molly_scaler_router = APIRouter(prefix="/molly", tags=["molly"])
 
 
-@passenger_molly_scaler_router.get("/scaler", response_model=int)
-async def get_scaler(
-    use_case: MollyScalerUseCase = Depends(get_passenger_molly_scaler_use_case),
-) -> int:
-    return await use_case.get_scaler({})
+@molly_scaler_router.get("/myself")
+async def introduce_myself(
+    molly: MollyScalerUseCase = Depends(get_molly_scaler_use_case),
+) -> MollyScalerResponse:
+    return await molly.introduce_myself(
+        MollyScalerSchema(
+            id=9,
+            name="몰리 스케일러 주인공"
+        )
+    )

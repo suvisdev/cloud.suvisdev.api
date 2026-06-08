@@ -4,11 +4,11 @@ from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.matrix.oracle_database import TitanicBase
-from titanic.app.dtos.crew_james_director_dto import PersonCommand
+from titanic.app.dtos.crew_james_director_dto import PassengerCommand
 
 
 class Person(TitanicBase):
-    """PersonCommand → titanic_persons (ENTITY_RULE: int PK `id`)."""
+    """PassengerCommand → titanic_persons (ENTITY_RULE: int PK `id`)."""
 
     __tablename__ = "titanic_persons"
 
@@ -22,7 +22,7 @@ class Person(TitanicBase):
     survived: Mapped[str] = mapped_column(String(8), nullable=False, default="")
 
     @classmethod
-    def from_command(cls, command: PersonCommand) -> Person:
+    def from_command(cls, command: PassengerCommand) -> Person:
         return cls(
             passenger_id=command.passenger_id,
             name=command.name,

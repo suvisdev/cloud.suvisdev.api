@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+
+from titanic.app.dtos.crew_lowe_boat_dto import LoweBoatQuery
 
 
 class LoweBoatRepository(ABC):
     """crew_lowe_boat output port."""
 
     @abstractmethod
-    async def get_boat(self, request: dict[str, Any]) -> int:
+    def introduce_myself(self, query: LoweBoatQuery):
         pass
