@@ -1,9 +1,9 @@
-"""tags.character_id FK (characters.id) 추가, actor_id 제거.
+﻿"""tags.character_id FK (characters.id) 추가, actor_id 제거.
 
 cast 태그는 영화–인물 연결(characters)을 검색 키워드로 노출한다.
 기존 actor_id 컬럼이 있으면 characters와 조인해 backfill 후 삭제한다.
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/add_tags_character_id.py
 """
 

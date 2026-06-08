@@ -19,8 +19,8 @@ from dotenv import load_dotenv
 load_dotenv(_BACKEND_ROOT / ".env")
 
 from core.matrix.oracle_database import TitanicBase, _normalize_database_url  # noqa: E402
-import titanic.adapter.outbound.orm.preson_orm  # noqa: F401,E402
-import titanic.adapter.outbound.orm.booking_orm  # noqa: F401,E402
+import titanic.adapter.outbound.orm.passenger_rose_model_orm  # noqa: F401,E402
+import titanic.adapter.outbound.orm.passenger_jack_trainer_orm  # noqa: F401,E402
 
 config = context.config
 if config.config_file_name is not None:

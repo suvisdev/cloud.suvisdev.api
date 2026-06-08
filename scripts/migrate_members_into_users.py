@@ -1,9 +1,9 @@
-"""members → users 프로필 흡수, chat.member_id 제거.
+﻿"""members → users 프로필 흡수, chat.member_id 제거.
 
 groups/user_groups는 사용하지 않음 — 권한은 users.role. 이후:
   python scripts/drop_groups_tables.py
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/migrate_members_into_users.py
 """
 

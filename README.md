@@ -1,4 +1,4 @@
-# com.ragwatson
+# cloud.suvisdev
 
 이 저장소는 애플리케이션·문서 등 작업물과 함께, **코딩 에이전트용 하네스 엔지니어링**을 [Andrej Karpathy의 관찰](https://x.com/karpathy/status/2015883857489522876)에 맞춰 정리해 둔 프로젝트이다. “똑똑해져라”가 아니라 **반복 적용되는 짧은 규칙**으로 묵시적 가정·과도한 복잡도·직교 수정·모호한 목표를 줄이는 것이 목적이다.
 
@@ -20,10 +20,10 @@ Karpathy가 지적한 패턴을 네 가지 원칙으로 맞춘다.
 | 경로 | 역할 |
 |------|------|
 | [`CLAUDE.md`](CLAUDE.md) | 네 원칙 **전문**, 배경 인용, 예시 표, 프로젝트별 지침 병합 방법. 근거 문서. |
-| [`.cursorrules`](.cursorrules) | Cursor에 걸리는 **짧은 하네스**(요약 규칙). |
-| [`CURSOR.md`](CURSOR.md) | Cursor에서 규칙을 어디에 두는지, `CLAUDE.md`와의 관계, 다른 저장소로 옮기는 방법. |
+| [`.cursorrules`](../.cursorrules) | Cursor에 걸리는 **하네스**(PKS · SOLID · 아키텍처 + 한국어 요약). |
+| [`.cursorignore`](../.cursorignore) | 인덱스·검색 제외 경로 (삭제된 파일·외부 agora 등). |
 
-원칙을 바꿀 때는 **`CLAUDE.md`와 `.cursorrules`를 한 세트로** 맞춘다. Cursor는 기본적으로 `CLAUDE.md`를 자동으로 읽지 않으므로, 상세는 `CLAUDE.md`를 열어두거나 [`.cursor/rules`](CURSOR.md)로 끌어오는 방식을 [`CURSOR.md`](CURSOR.md)에서 안내한다.
+원칙을 바꿀 때는 **`CLAUDE.md`와 `.cursorrules`를 한 세트로** 맞춘다. Cursor는 `CLAUDE.md`를 자동으로 읽지 않으므로, 상세는 `@CLAUDE.md`로 명시 참조하거나 `.cursor/rules/*.mdc`에 `alwaysApply: true`로 끌어온다.
 
 ## 빠른 시작 (Cursor)
 

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import logging
 from typing import Literal
@@ -15,7 +15,7 @@ def gemini_reply(prompt: str, model_key: Literal["flash", "flash15", "pro"] | No
     if not keymaker.is_gemini_ready():
         raise HTTPException(
             status_code=503,
-            detail="GEMINI_API_KEY가 설정되지 않았습니다. backend/.env 에 키를 설정하세요.",
+            detail="GEMINI_API_KEY가 설정되지 않았습니다. suvisdev/.env 에 키를 설정하세요.",
         )
     gemini = keymaker.get_gemini_model(model_key)
     if gemini is None:

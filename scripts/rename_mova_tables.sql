@@ -1,5 +1,5 @@
--- Neon SQL Editor에서 실행하거나:
---   cd backend && python scripts/apply_table_rename.py
+﻿-- Neon SQL Editor에서 실행하거나:
+--   cd suvisdev && python scripts/apply_table_rename.py
 --
 -- Secom 미사용 시 user_groups / users 제거 후 mova_* → 짧은 이름으로 RENAME.
 -- 이미 rename 된 환경에서는 apply_table_rename.py 가 건너뜁니다.

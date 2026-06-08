@@ -1,6 +1,6 @@
-"""`users.role` 제거 → `groups` + `admins` + `users.group_id` 3테이블 구조.
+﻿"""`users.role` 제거 → `groups` + `admins` + `users.group_id` 3테이블 구조.
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/migrate_users_role_to_groups_admins.py
 """
 

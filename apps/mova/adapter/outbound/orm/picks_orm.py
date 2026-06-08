@@ -1,4 +1,4 @@
-"""@see docs/DevOps/Backend/ENTITY_RULE.md — AI 채팅 추천 작품 기록 (`picks`)."""
+﻿"""@see docs/DevOps/suvisdev/ENTITY_RULE.md — AI 채팅 추천 작품 기록 (`picks`)."""
 
 from datetime import datetime
 

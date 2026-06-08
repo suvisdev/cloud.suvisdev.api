@@ -1,6 +1,6 @@
-"""Mova 추천용 카탈로그 시드: tags.label, movies.genres, actors+characters.
+﻿"""Mova 추천용 카탈로그 시드: tags.label, movies.genres, actors+characters.
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/seed_mova_recommendation_catalog.py
 """
 

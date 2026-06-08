@@ -3,7 +3,7 @@ import os
 
 TRANSCRIPT = os.environ.get(
     "TRANSCRIPT",
-    r"C:\Users\hi\.cursor\projects\c-Users-hi-Documents-com-ragwatson\agent-transcripts"
+    r"C:\Users\hi\.cursor\projects\c-Users-hi-Documents-cloud-suvisdev\agent-transcripts"
     r"\28f8454d-09f0-4e1f-bc66-c2a6face1ab6\28f8454d-09f0-4e1f-bc66-c2a6face1ab6.jsonl",
 )
 BASE = os.path.join(

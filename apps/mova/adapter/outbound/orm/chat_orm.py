@@ -1,4 +1,4 @@
-"""@see docs/DevOps/Backend/ENTITY_RULE.md — Mova AI 채팅 검색·취향 의도 로그."""
+﻿"""@see docs/DevOps/suvisdev/ENTITY_RULE.md — Mova AI 채팅 검색·취향 의도 로그."""
 
 from datetime import datetime
 

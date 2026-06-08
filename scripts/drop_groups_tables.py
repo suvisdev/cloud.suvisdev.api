@@ -1,6 +1,6 @@
-"""groups·user_groups 테이블 제거 — 권한은 users.role(admin/user)만 사용.
+﻿"""groups·user_groups 테이블 제거 — 권한은 users.role(admin/user)만 사용.
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/drop_groups_tables.py
 """
 

@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import logging
 import sys
 from contextlib import asynccontextmanager
@@ -120,7 +120,7 @@ async def lifespan(app: FastAPI):
                 await dispose_engine()
         else:
             logger.warning(
-                "DB ?? ?? ? Mova/Secom DB API ???. backend/.env DATABASE_URL ??: %s",
+                "DB ?? ?? ? Mova/Secom DB API ???. suvisdev/.env DATABASE_URL ??: %s",
                 err,
             )
         yield
@@ -175,7 +175,7 @@ async def read_weather(city: str | None = None) -> WeatherResponse:
     if not keymaker.is_openweather_ready():
         raise HTTPException(
             status_code=503,
-            detail="OPENWEATHERMAP_API_KEY? ???? ?????. backend/.env ? ?????.",
+            detail="OPENWEATHERMAP_API_KEY? ???? ?????. suvisdev/.env ? ?????.",
         )
     try:
         data = await fetch_current_weather(
@@ -193,7 +193,7 @@ async def read_weather_forecast(city: str | None = None) -> ForecastResponse:
     if not keymaker.is_openweather_ready():
         raise HTTPException(
             status_code=503,
-            detail="OPENWEATHERMAP_API_KEY? ???? ?????. backend/.env ? ?????.",
+            detail="OPENWEATHERMAP_API_KEY? ???? ?????. suvisdev/.env ? ?????.",
         )
     try:
         data = await fetch_weekly_forecast(

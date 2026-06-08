@@ -1,6 +1,6 @@
-"""chat.intent_type, chat.search_filters 컬럼 추가.
+﻿"""chat.intent_type, chat.search_filters 컬럼 추가.
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/add_chat_intent_columns.py
 """
 

@@ -1,6 +1,6 @@
-"""`tags` + `movie_tags`(tag_id) → `movie_tags`(slug, label) 단일 테이블로 병합 (재실행 안전).
+﻿"""`tags` + `movie_tags`(tag_id) → `movie_tags`(slug, label) 단일 테이블로 병합 (재실행 안전).
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/merge_tags_tables.py
 """
 

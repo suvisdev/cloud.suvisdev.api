@@ -1,4 +1,4 @@
-"""@see docs/DevOps/Backend/ENTITY_RULE.md — 인물(감독·배우) 정보."""
+﻿"""@see docs/DevOps/suvisdev/ENTITY_RULE.md — 인물(감독·배우) 정보."""
 
 from sqlalchemy import String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column

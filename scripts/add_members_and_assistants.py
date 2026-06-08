@@ -1,6 +1,6 @@
-"""assistants·groups·admin 시드.
+﻿"""assistants·groups·admin 시드.
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/add_members_and_assistants.py
 """
 

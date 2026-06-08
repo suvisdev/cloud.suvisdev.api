@@ -1,6 +1,6 @@
-"""movie_tags -> tags, movie_characters -> characters (재실행 안전).
+﻿"""movie_tags -> tags, movie_characters -> characters (재실행 안전).
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/rename_movie_tags_and_characters.py
 """
 

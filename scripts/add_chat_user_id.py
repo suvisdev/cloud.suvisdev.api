@@ -1,6 +1,6 @@
-"""chat.user_id 컬럼 추가 (Secom users 논리 참조, nullable).
+﻿"""chat.user_id 컬럼 추가 (Secom users 논리 참조, nullable).
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/add_chat_user_id.py
 """
 

@@ -1,4 +1,4 @@
-"""KOFIC(KOBIS) Open API 클라이언트."""
+﻿"""KOFIC(KOBIS) Open API 클라이언트."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ class KoficAdapter:
         self.api_key = api_key.strip()
         if not self.api_key:
             raise KoficAdapterError(
-                "KOFIC_API_KEY가 없습니다. backend/.env 에 키를 설정하세요.",
+                "KOFIC_API_KEY가 없습니다. suvisdev/.env 에 키를 설정하세요.",
                 status_code=503,
             )
 

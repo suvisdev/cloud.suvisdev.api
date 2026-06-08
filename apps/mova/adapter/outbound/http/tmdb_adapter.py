@@ -1,4 +1,4 @@
-"""TMDB(The Movie Database) v3 API 클라이언트."""
+﻿"""TMDB(The Movie Database) v3 API 클라이언트."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ class TmdbAdapter:
         self.language = language
         if not self.api_key:
             raise TmdbAdapterError(
-                "TMDB_API_KEY가 없습니다. backend/.env 에 키를 설정하세요.",
+                "TMDB_API_KEY가 없습니다. suvisdev/.env 에 키를 설정하세요.",
                 status_code=503,
             )
 

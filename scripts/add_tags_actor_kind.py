@@ -1,6 +1,6 @@
-"""tags.actor_id, tags.tag_kind 컬럼 및 FK (actors.id) 추가.
+﻿"""tags.actor_id, tags.tag_kind 컬럼 및 FK (actors.id) 추가.
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/add_tags_actor_kind.py
 """
 

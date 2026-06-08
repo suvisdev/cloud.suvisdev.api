@@ -1,6 +1,6 @@
-"""`reviews` → `interactions`(action_type=review) 병합 (재실행 안전).
+﻿"""`reviews` → `interactions`(action_type=review) 병합 (재실행 안전).
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/merge_reviews_into_interactions.py
 """
 

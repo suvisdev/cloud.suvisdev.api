@@ -1,6 +1,6 @@
-"""chat / reviews / picks.user_id -> users.id FK (동일 DB 전제).
+﻿"""chat / reviews / picks.user_id -> users.id FK (동일 DB 전제).
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/add_mova_user_id_fk.py
 
 전제: SECOM_DATABASE_URL 비움 또는 MOVA_DATABASE_URL 과 동일.

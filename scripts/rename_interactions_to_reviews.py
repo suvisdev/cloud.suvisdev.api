@@ -1,6 +1,6 @@
-"""`interactions` 테이블을 `reviews`로 rename (재실행 안전).
+﻿"""`interactions` 테이블을 `reviews`로 rename (재실행 안전).
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/rename_interactions_to_reviews.py
 """
 

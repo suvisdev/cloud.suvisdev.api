@@ -1,4 +1,4 @@
-"""@see docs/DevOps/Backend/ENTITY_RULE.md — Mova HOT 랭킹 (영화·chat FK)."""
+﻿"""@see docs/DevOps/suvisdev/ENTITY_RULE.md — Mova HOT 랭킹 (영화·chat FK)."""
 
 from datetime import date
 

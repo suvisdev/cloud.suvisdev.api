@@ -1,6 +1,6 @@
-"""`user_groups` + `users.user_group_id` → `users.role` 단일 컬럼 (재실행 안전).
+﻿"""`user_groups` + `users.user_group_id` → `users.role` 단일 컬럼 (재실행 안전).
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/merge_user_groups_into_users.py
 """
 

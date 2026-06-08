@@ -1,4 +1,4 @@
-"""@see docs/DevOps/Backend/ENTITY_RULE.md — 영화↔인물(배우) 연결."""
+﻿"""@see docs/DevOps/suvisdev/ENTITY_RULE.md — 영화↔인물(배우) 연결."""
 
 from sqlalchemy import ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column

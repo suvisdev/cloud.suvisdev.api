@@ -1,6 +1,6 @@
-"""rankings — chat_id, source, score 컬럼 및 UNIQUE (rank, ranked_at, source).
+﻿"""rankings — chat_id, source, score 컬럼 및 UNIQUE (rank, ranked_at, source).
 
-Usage (backend 폴더에서):
+Usage (suvisdev 폴더에서):
   python scripts/add_rankings_chat_source.py
 """
 
