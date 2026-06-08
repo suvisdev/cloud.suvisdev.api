@@ -18,9 +18,9 @@ from mova.app.ports.output.chat_repository import ChatRepository
 from mova.app.ports.output.movies_repository import MoviesRepository
 from mova.app.ports.output.picks_repository import PicksRepository
 from mova.app.use_cases.chat_interactor import ChatInteractor
-from mova.dependencies.movies import get_movies_use_case
-from mova.dependencies.rankings import get_rankings_use_case
-from mova.dependencies.search import get_search_use_case
+from mova.dependencies.movies_provider import get_movies_use_case
+from mova.dependencies.rankings_provider import get_rankings_use_case
+from mova.dependencies.search_provider import get_search_use_case
 
 
 def get_chat_use_case(

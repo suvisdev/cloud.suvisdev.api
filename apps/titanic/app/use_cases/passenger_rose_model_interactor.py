@@ -15,10 +15,8 @@ class RoseModelInteractor(RoseModelUseCase):
         self._repository = repository
 
     async def introduce_myself(self, schemas: RoseModelSchema) -> RoseModelResponse:
-        query = RoseModelQuery(
+       
+        return await self._repository.introduce_myself(RoseModelQuery(
             id=schemas.id,
             name=schemas.name,
-        )
-        logger.info("🤖 [RoseModelUseCase] 라우터에서 가져온 로즈 정보 — id=%s", query.id)
-        self._repository.introduce_myself(query)
-        return RoseModelResponse(id=query.id, name=query.name)
+        ))

@@ -30,3 +30,15 @@ class BookingCommand:
 @dataclass
 class JamesResponse:
     answer: str
+
+
+@dataclass(frozen=True)
+class JamesIntroduceQuery:
+    id: int
+    name: str
+
+
+@dataclass(frozen=True)
+class JamesIntroduceResponse:
+    id: int
+    name: str

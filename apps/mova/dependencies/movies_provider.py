@@ -9,8 +9,8 @@ from mova.app.ports.input.movies_use_case import MoviesUseCase
 from mova.app.ports.input.reviews_use_case import ReviewsUseCase
 from mova.app.ports.output.movies_repository import MoviesRepository
 from mova.app.use_cases.movies_interactor import MoviesInteractor
-from mova.dependencies.characters import get_characters_use_case
-from mova.dependencies.reviews import get_reviews_use_case
+from mova.dependencies.characters_provider import get_characters_use_case
+from mova.dependencies.reviews_provider import get_reviews_use_case
 
 
 def get_movies_use_case(

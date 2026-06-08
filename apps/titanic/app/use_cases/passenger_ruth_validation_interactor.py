@@ -15,10 +15,10 @@ class RuthValidationInteractor(RuthValidationUseCase):
         self._repository = repository
 
     async def introduce_myself(self, schemas: RuthValidationSchema) -> RuthValidationResponse:
-        query = RuthValidationQuery(
+       
+       
+         return await self._repository.introduce_myself(RuthValidationQuery(
             id=schemas.id,
             name=schemas.name,
-        )
-        logger.info("🤖 [RuthValidationUseCase] 라우터에서 가져온 루스 정보 — id=%s", query.id)
-        self._repository.introduce_myself(query)
-        return RuthValidationResponse(id=query.id, name=query.name)
+        ))
+      

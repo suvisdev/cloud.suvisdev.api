@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from titanic.app.dtos.crew_james_director_dto import BookingCommand, PassengerCommand
-
+from titanic.app.dtos.crew_james_director_dto import (
+    BookingCommand,
+    JamesIntroduceQuery,
+    JamesIntroduceResponse,
+    PassengerCommand,
+)
+from titanic.app.dtos.crew_james_director_dto import JamesResponse
 
 class JamesRepository(ABC):
     """James 업로드 데이터를 외부로 보내는 아웃바운드 포트 (ABC)."""
@@ -13,5 +18,9 @@ class JamesRepository(ABC):
         self,
         person_commands: list[PassengerCommand],
         booking_commands: list[BookingCommand],
-    ) -> int:
+    ) -> JamesResponse:
+        pass
+
+    @abstractmethod
+    async def introduce_myself(self, query: JamesIntroduceQuery) -> JamesIntroduceResponse:
         pass

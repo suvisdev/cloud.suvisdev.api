@@ -15,11 +15,9 @@ class WalterInteractor(WalterUseCase):
         self._repository = repository
 
     async def introduce_myself(self, schemas: WalterSchema) -> WalterResponse:
-        query = WalterQuery(
+      
+        return await self._repository.introduce_myself(WalterQuery(
             id=schemas.id,
             name=schemas.name,
             memo=schemas.memo,
-        )
-        logger.info("🤖 [WalterUseCase] 라우터에서 가져온 월터 정보 — id=%s", query.id)
-        self._repository.introduce_myself(query)
-        return WalterResponse(id=query.id, name=query.name, memo=query.memo)
+        ))

@@ -15,10 +15,8 @@ class CalTesterInteractor(CalTesterUseCase):
         self._repository = repository
 
     async def introduce_myself(self, schemas: CalTesterSchema) -> CalTesterResponse:
-        query = CalTesterQuery(
+     
+        return await self._repository.introduce_myself(CalTesterQuery(
             id=schemas.id,
             name=schemas.name,
-        )
-        logger.info("🤖 [CalTesterUseCase] 라우터에서 가져온 칼 정보 — id=%s", query.id)
-        self._repository.introduce_myself(query)
-        return CalTesterResponse(id=query.id, name=query.name)
+        ))

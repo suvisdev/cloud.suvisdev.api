@@ -5,9 +5,7 @@ import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from titanic.app.dtos.crew_andrews_architect_dto import AndrewsArchitectQuery, AndrewsArchitectResponse
-from titanic.app.ports.output.crew_andrews_architect_repository import (
-    AndrewsArchitectRepository,
-)
+from titanic.app.ports.output.crew_andrews_architect_repository import AndrewsArchitectRepository
 
 logger = logging.getLogger(__name__)
 

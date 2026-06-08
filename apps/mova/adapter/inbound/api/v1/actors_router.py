@@ -6,7 +6,7 @@ from mova.adapter.inbound.api.http_errors import invoke
 from mova.adapter.inbound.api.schemas.actors_schema import ActorCreateSchema, ActorSchema
 from mova.adapter.outbound.pg.actors_pg_repository import ActorsRepositoryError
 from mova.app.ports.input.actors_use_case import ActorsUseCase
-from mova.dependencies.actors import get_actors_use_case
+from mova.dependencies.actors_provider import get_actors_use_case
 
 actors_router = APIRouter(tags=["mova-actors"])
 _REPO_ERRORS = (ActorsRepositoryError,)

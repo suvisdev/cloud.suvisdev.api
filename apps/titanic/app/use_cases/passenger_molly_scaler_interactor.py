@@ -15,10 +15,8 @@ class MollyScalerInteractor(MollyScalerUseCase):
         self._repository = repository
 
     async def introduce_myself(self, schemas: MollyScalerSchema) -> MollyScalerResponse:
-        query = MollyScalerQuery(
+     
+        return await self._repository.introduce_myself(MollyScalerQuery(
             id=schemas.id,
             name=schemas.name,
-        )
-        logger.info("🤖 [MollyScalerUseCase] 라우터에서 가져온 몰리 정보 — id=%s", query.id)
-        self._repository.introduce_myself(query)
-        return MollyScalerResponse(id=query.id, name=query.name)
+        ))

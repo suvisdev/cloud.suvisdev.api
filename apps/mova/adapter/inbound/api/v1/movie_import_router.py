@@ -6,7 +6,7 @@ from mova.adapter.inbound.api.http_errors import invoke
 from mova.adapter.inbound.api.schemas.movie_import_schema import MovieImportResultSchema
 from mova.adapter.outbound.http import KoficAdapterError, TmdbAdapterError
 from mova.app.ports.input.movie_import_use_case import MovieImportUseCase
-from mova.dependencies.movie_import import get_movie_import_use_case
+from mova.dependencies.movie_import_provider import get_movie_import_use_case
 
 movie_import_router = APIRouter(tags=["mova-import"])
 _ADAPTER_ERRORS = (TmdbAdapterError, KoficAdapterError)

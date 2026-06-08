@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from titanic.app.dtos.crew_james_director_dto import BookingCommand, JamesResponse, PassengerCommand
+from titanic.adapter.inbound.api.schemas.crew_james_director_schema import JamesIntroduceSchema, JamesSchema
+from titanic.app.dtos.crew_james_director_dto import (
+    BookingCommand,
+    JamesIntroduceQuery,
+    JamesIntroduceResponse,
+    JamesResponse,
+    PassengerCommand,
+)
 from titanic.app.ports.input.crew_james_director_use_case import JamesUseCase
 from titanic.app.ports.output.crew_james_director_repository import JamesRepository
-from titanic.adapter.inbound.api.schemas.crew_james_director_schema import JamesSchema
 
 
 class JamesInteractor(JamesUseCase):
@@ -45,3 +49,11 @@ class JamesInteractor(JamesUseCase):
             booking_commands,
         )
         return JamesResponse(answer=str(saved))
+
+    async def introduce_myself(
+        self,
+        schemas: JamesIntroduceSchema,
+    ) -> JamesIntroduceResponse:
+        return await self._repository.introduce_myself(
+            JamesIntroduceQuery(id=schemas.id, name=schemas.name),
+        )

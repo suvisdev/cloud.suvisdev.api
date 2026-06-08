@@ -15,7 +15,7 @@ from mova.adapter.inbound.api.schemas.reviews_schema import (
 )
 from mova.adapter.outbound.pg.reviews_pg_repository import ReviewsRepositoryError
 from mova.app.ports.input.reviews_use_case import ReviewsUseCase
-from mova.dependencies.reviews import get_reviews_use_case
+from mova.dependencies.reviews_provider import get_reviews_use_case
 
 reviews_router = APIRouter(tags=["mova-reviews"])
 _REPO_ERRORS = (ReviewsRepositoryError,)

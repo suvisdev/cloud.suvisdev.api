@@ -15,10 +15,8 @@ class JackTrainerInteractor(JackTrainerUseCase):
         self._repository = repository
 
     async def introduce_myself(self, schemas: JackTrainerSchema) -> JackTrainerResponse:
-        query = JackTrainerQuery(
+    
+        return await self._repository.introduce_myself(JackTrainerQuery(
             id=schemas.id,
             name=schemas.name,
-        )
-        logger.info("🤖 [JackTrainerUseCase] 라우터에서 가져온 잭 정보 — id=%s", query.id)
-        self._repository.introduce_myself(query)
-        return JackTrainerResponse(id=query.id, name=query.name)
+        ))

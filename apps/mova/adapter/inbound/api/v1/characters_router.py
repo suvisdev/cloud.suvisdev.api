@@ -11,7 +11,7 @@ from mova.adapter.inbound.api.schemas.characters_schema import (
 )
 from mova.adapter.outbound.pg.characters_pg_repository import CharactersRepositoryError
 from mova.app.ports.input.characters_use_case import CharactersUseCase
-from mova.dependencies.characters import get_characters_use_case
+from mova.dependencies.characters_provider import get_characters_use_case
 
 characters_router = APIRouter(tags=["mova-characters"])
 _REPO_ERRORS = (CharactersRepositoryError,)

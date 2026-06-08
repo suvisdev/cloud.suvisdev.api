@@ -11,7 +11,7 @@ from mova.adapter.inbound.api.schemas.tags_schema import (
 )
 from mova.adapter.outbound.pg.tags_pg_repository import TagsRepositoryError
 from mova.app.ports.input.tags_use_case import TagsUseCase
-from mova.dependencies.tags import get_tags_use_case
+from mova.dependencies.tags_provider import get_tags_use_case
 
 tags_router = APIRouter(tags=["mova-tags"])
 _REPO_ERRORS = (TagsRepositoryError,)

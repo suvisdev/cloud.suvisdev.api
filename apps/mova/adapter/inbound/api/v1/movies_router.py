@@ -12,7 +12,7 @@ from mova.adapter.inbound.api.schemas.movies_schema import (
 )
 from mova.adapter.outbound.pg.movies_pg_repository import MoviesRepositoryError
 from mova.app.ports.input.movies_use_case import MoviesUseCase
-from mova.dependencies.movies import get_movies_use_case
+from mova.dependencies.movies_provider import get_movies_use_case
 
 movies_router = APIRouter(tags=["mova-movies"])
 _REPO_ERRORS = (MoviesRepositoryError,)

@@ -8,7 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.matrix.oracle_database import ensure_titanic_tables, get_mova_session_factory
 from titanic.adapter.outbound.orm.passenger_jack_trainer_orm import Booking
 from titanic.adapter.outbound.orm.passenger_rose_model_orm import Person
-from titanic.app.dtos.crew_james_director_dto import BookingCommand, PassengerCommand
+from titanic.app.dtos.crew_james_director_dto import (
+    BookingCommand,
+    JamesIntroduceQuery,
+    JamesIntroduceResponse,
+    PassengerCommand,
+)
 from titanic.app.ports.output.crew_james_director_repository import JamesRepository
 
 logger = logging.getLogger(__name__)
@@ -17,6 +22,13 @@ logger = logging.getLogger(__name__)
 class JamesPgRepository(JamesRepository):
     def __init__(self, session: AsyncSession | None = None) -> None:
         self._session = session
+
+    async def introduce_myself(self, query: JamesIntroduceQuery) -> JamesIntroduceResponse:
+        logger.info("[JamesPgRepository] introduce_myself 진입 | request_data=%s", query)
+        return JamesIntroduceResponse(
+            id=query.id * 10000,
+            name=query.name + "가 레포지토리에 다녀옴",
+        )
 
     async def receive_uploaded_records(
         self,

@@ -3,11 +3,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from titanic.app.dtos.crew_hartley_violin_dto import HartleyViolinQuery
-
+from titanic.app.dtos.crew_hartley_violin_dto import HartleyViolinResponse
 
 class HartleyViolinRepository(ABC):
     """crew_hartley_violin output port."""
 
     @abstractmethod
-    def introduce_myself(self, query: HartleyViolinQuery):
+    def introduce_myself(self, query: HartleyViolinQuery)->HartleyViolinResponse:
         pass

@@ -7,7 +7,7 @@ from mova.adapter.inbound.api.schemas.rankings_schema import HotRankingDisplaySc
 from mova.adapter.outbound.pg.rankings_pg_repository import RankingsRepositoryError
 from mova.domain.value_objects.ranking_source import DEFAULT_HOT_RANKING_SOURCE
 from mova.app.ports.input.rankings_use_case import RankingsUseCase
-from mova.dependencies.rankings import get_rankings_use_case
+from mova.dependencies.rankings_provider import get_rankings_use_case
 
 rankings_router = APIRouter(tags=["mova-rankings"])
 

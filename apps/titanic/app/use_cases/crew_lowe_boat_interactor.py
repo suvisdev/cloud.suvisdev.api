@@ -15,10 +15,8 @@ class LoweBoatInteractor(LoweBoatUseCase):
         self._repository = repository
 
     async def introduce_myself(self, schemas: LoweBoatSchema) -> LoweBoatResponse:
-        query = LoweBoatQuery(
+     
+        return await self._repository.introduce_myself(LoweBoatQuery(
             id=schemas.id,
             name=schemas.name,
-        )
-        logger.info("🤖 [LoweBoatUseCase] 라우터에서 가져온 로우 정보 — id=%s", query.id)
-        self._repository.introduce_myself(query)
-        return LoweBoatResponse(id=query.id, name=query.name)
+        ))

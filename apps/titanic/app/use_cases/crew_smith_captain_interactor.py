@@ -15,10 +15,8 @@ class SmithCaptainInteractor(SmithCaptainUseCase):
         self._repository = repository
 
     async def introduce_myself(self, schemas: SmithCaptainSchema) -> SmithCaptainResponse:
-        query = SmithCaptainQuery(
+     
+        return await self._repository.introduce_myself(SmithCaptainQuery(
             id=schemas.id,
             name=schemas.name,
-        )
-        logger.info("🤖 [SmithCaptainUseCase] 라우터에서 가져온 스미스 정보 — id=%s", query.id)
-        self._repository.introduce_myself(query)
-        return SmithCaptainResponse(id=query.id, name=query.name)
+        ))
