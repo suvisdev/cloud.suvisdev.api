@@ -1,4 +1,6 @@
-﻿from __future__ import annotations
+"""@see vault/DevOps/Backend/ENTITY_RULE.md — 관리자 계정 (`admins`)."""
+
+from __future__ import annotations
 
 import hashlib
 import logging
@@ -8,9 +10,9 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, String, func, select
 from sqlalchemy.orm import Mapped, mapped_column
 
-from core.matrix.oracle_database import get_secom_session_factory
-from viewer.app.dtos.base import ViewerModel
-from viewer.app.dtos.group_model import get_group_id_by_code, seed_groups_if_empty
+from core.matrix.grid_oracle_database_manager import get_secom_session_factory
+from viewer.adapter.outbound.orm.base_orm import ViewerModel
+from viewer.adapter.outbound.orm.group_orm import get_group_id_by_code, seed_groups_if_empty
 from viewer.app.dtos.role import UserRole
 
 logger = logging.getLogger(__name__)
@@ -73,4 +75,4 @@ async def seed_admin_if_empty() -> None:
             ),
         )
         await session.commit()
-        logger.info("[AdminModel] default admin created — username=%s", username)
+        logger.info("[AdminOrm] default admin created — username=%s", username)

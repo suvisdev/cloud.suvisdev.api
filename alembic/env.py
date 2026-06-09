@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 load_dotenv(_BACKEND_ROOT / ".env")
 
-from core.matrix.oracle_database import TitanicBase, _normalize_database_url  # noqa: E402
+from core.matrix.grid_oracle_database_manager import TitanicBase, _normalize_database_url  # noqa: E402
 import titanic.adapter.outbound.orm.passenger_rose_model_orm  # noqa: F401,E402
 import titanic.adapter.outbound.orm.passenger_jack_trainer_orm  # noqa: F401,E402
 

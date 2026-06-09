@@ -20,7 +20,6 @@ async def introduce_myself(
     return await walter.introduce_myself(
         WalterSchema(
             id=5,
-            name="Walter",
-            memo="타이타닉의 일등 항해사, 승객 명단 관리 담당",
+            name="Walter"
         )
     )

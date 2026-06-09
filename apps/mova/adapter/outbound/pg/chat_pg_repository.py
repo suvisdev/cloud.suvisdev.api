@@ -11,7 +11,7 @@ from mova.adapter.outbound.orm.chat_orm import MovaChat
 from mova.adapter.outbound.pg.pg_session import run_pg
 from mova.app.dtos.chat_dto import ChatUpsertCommand
 from mova.app.ports.output.chat_repository import ChatRepository
-from viewer.app.dtos.user_model import secom_user_exists
+from viewer.adapter.outbound.orm.user_orm import secom_user_exists
 
 logger = logging.getLogger(__name__)
 

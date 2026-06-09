@@ -16,8 +16,8 @@ sys.path.insert(0, str(ROOT / "apps"))
 
 
 async def main() -> None:
-    from core.matrix.oracle_database import create_tables, dispose_engine, reload_env
-    from viewer.app.dtos.admin_model import seed_admin_if_empty
+    from core.matrix.grid_oracle_database_manager import create_tables, dispose_engine, reload_env
+    from viewer.adapter.outbound.orm.admin_orm import seed_admin_if_empty
 
     reload_env()
     await create_tables()

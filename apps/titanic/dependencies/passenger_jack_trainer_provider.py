@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.matrix.oracle_database import get_db
+from core.matrix.grid_oracle_database_manager import get_db
 from fastapi import Depends
 
 from titanic.adapter.outbound.pg.passenger_jack_trainer_pg_repository import JackTrainerPgRepository

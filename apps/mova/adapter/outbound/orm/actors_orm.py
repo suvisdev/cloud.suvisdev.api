@@ -1,4 +1,4 @@
-﻿"""@see docs/DevOps/suvisdev/ENTITY_RULE.md — 인물(감독·배우) 정보."""
+"""@see vault/DevOps/Backend/ENTITY_RULE.md — 인물(감독·배우) 정보."""
 
 from sqlalchemy import String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
@@ -7,7 +7,7 @@ from mova.adapter.outbound.orm.base_orm import MovaModel
 
 
 class MovaActor(MovaModel):
-    """인물 정보. PK `id` — 역할은 `role_type`(director|actor)."""
+    """�ι� ����. PK `id` ? ������ `role_type`(director|actor)."""
 
     __tablename__ = "actors"
     __table_args__ = (

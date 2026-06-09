@@ -1,4 +1,4 @@
-﻿"""@see docs/DevOps/suvisdev/ENTITY_RULE.md — 영화 정보 (HOT 랭킹·상세용)."""
+"""@see vault/DevOps/Backend/ENTITY_RULE.md — 영화 정보 (HOT 랭킹·상세용)."""
 
 import re
 
@@ -16,7 +16,7 @@ def slugify_movie(title: str) -> str:
 
 
 class MovaMovie(MovaModel):
-    """영화 정보. PK `id` — 상세·랭킹은 `movie_id` FK로 참조."""
+    """��ȭ ����. PK `id` ? �󼼡���ŷ�� `movie_id` FK�� ����."""
 
     __tablename__ = "movies"
 

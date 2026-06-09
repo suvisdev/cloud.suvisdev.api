@@ -17,8 +17,5 @@ class SignupInteractor(SignupUseCase):
         self._repository = repository
 
     async def signup(self, payload: SignupSchema) -> SignupResponseDto:
-        logger.info("🤖 [SignupInteractor] signup 진입")
-        command = SignupCommand.from_schema(payload)
-        user_id = await self._repository.save_user(command)
-        logger.info("🤖 [SignupInteractor] signup 완료 — user_id=%s", user_id)
-        return SignupResponseDto(user_id=user_id)
+        
+        return SignupResponseDto(user_id=await self._repository.save_user(SignupCommand.from_schema(payload)))

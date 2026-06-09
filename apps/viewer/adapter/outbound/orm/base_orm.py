@@ -1,8 +1,8 @@
-﻿"""@see docs/DevOps/suvisdev/ENTITY_RULE.md — secom 테이블 공통 int PK `id`."""
+"""@see vault/DevOps/Backend/ENTITY_RULE.md — secom 테이블 공통 int PK `id`."""
 
 from sqlalchemy.orm import Mapped, mapped_column
 
-from core.matrix.oracle_database import SecomBase
+from core.matrix.grid_oracle_database_manager import SecomBase
 
 
 class ViewerModel(SecomBase):

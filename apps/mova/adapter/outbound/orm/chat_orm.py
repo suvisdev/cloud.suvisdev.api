@@ -1,4 +1,4 @@
-﻿"""@see docs/DevOps/suvisdev/ENTITY_RULE.md — Mova AI 채팅 검색·취향 의도 로그."""
+"""@see vault/DevOps/Backend/ENTITY_RULE.md — Mova AI 채팅 검색·취향 의도 로그."""
 
 from datetime import datetime
 
@@ -7,11 +7,11 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from mova.adapter.outbound.orm.base_orm import MovaModel
-from viewer.app.dtos.user_model import User
+from viewer.adapter.outbound.orm.user_orm import User
 
 
 class MovaChat(MovaModel):
-    """Mova 채팅에서 추출한 취향·검색 의도. PK `id`."""
+    """Mova 채팅방 사용자 검색·의도 로그. PK `id`."""
 
     __tablename__ = "chat"
 
@@ -27,7 +27,7 @@ class MovaChat(MovaModel):
         ForeignKey("assistants.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
-        comment="응답 AI assistants.id",
+        comment="담당 AI assistants.id",
     )
     raw_message: Mapped[str] = mapped_column(Text, nullable=False)
     refined_query: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
@@ -43,7 +43,7 @@ class MovaChat(MovaModel):
         JSONB,
         nullable=False,
         default=dict,
-        comment="must(AND) / similar_to — 분류·검색용",
+        comment="must(AND) / similar_to 등 분류·검색용",
     )
     hit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     last_used_at: Mapped[datetime] = mapped_column(

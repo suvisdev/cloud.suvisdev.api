@@ -1,9 +1,22 @@
 ﻿from __future__ import annotations
 
-from viewer.adapter.inbound.api.v1 import login_router as login_router_module
-from viewer.adapter.inbound.api.v1 import signup_router as signup_router_module
+from typing import TYPE_CHECKING
 
-login_router = login_router_module.login_router
-signup_router = signup_router_module.signup_router
+if TYPE_CHECKING:
+    from fastapi import APIRouter
 
-__all__ = ["login_router", "signup_router"]
+__all__ = ["viewer_router"]
+
+
+def __getattr__(name: str) -> APIRouter:
+    if name == "viewer_router":
+        from fastapi import APIRouter
+
+        from viewer.adapter.inbound.api.v1.login_router import login_router
+        from viewer.adapter.inbound.api.v1.signup_router import signup_router
+
+        router = APIRouter(prefix="/viewer", tags=["viewer"])
+        router.include_router(login_router)
+        router.include_router(signup_router)
+        return router
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

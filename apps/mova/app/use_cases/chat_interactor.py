@@ -21,7 +21,7 @@ from mova.app.ports.output.assistants_repository import AssistantsRepository
 from mova.app.ports.output.chat_repository import ChatRepository
 from mova.app.ports.output.movies_repository import MoviesRepository
 from mova.app.ports.output.picks_repository import PicksRepository
-from viewer.app.dtos.user_model import get_secom_user_profile
+from viewer.adapter.outbound.orm.user_orm import get_secom_user_profile
 
 
 class ChatInteractor(ChatUseCase):
@@ -250,7 +250,7 @@ class ChatInteractor(ChatUseCase):
         raw = gemini_reply(prompt, model_key)
         return await self.build_response(raw, context)
 
-    async def chat_from_request(self, req: MovaChatRequest) -> MovaChatResponseSchema:
+    async def chat_from_request(self, req: MovaChatRequest) -> ChatResponseDto:
         command = ChatMessageCommand.from_request(req)
         return await self.chat(
             command.message,

@@ -6,10 +6,10 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.matrix.oracle_database import get_secom_session_factory
-from viewer.app.dtos.admin_model import Admin
+from core.matrix.grid_oracle_database_manager import get_secom_session_factory
+from viewer.adapter.outbound.orm.admin_orm import Admin
+from viewer.adapter.outbound.orm.user_orm import User
 from viewer.app.dtos.auth_command_dto import LoginUserCommand
-from viewer.app.dtos.user_model import User
 from viewer.app.ports.output.login_repository import LoginRepository
 
 logger = logging.getLogger(__name__)

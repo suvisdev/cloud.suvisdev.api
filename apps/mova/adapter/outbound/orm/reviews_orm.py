@@ -1,4 +1,4 @@
-﻿"""@see docs/DevOps/suvisdev/ENTITY_RULE.md — 사용자↔영화 반응·별점 리뷰(단일 테이블 `reviews`)."""
+"""@see vault/DevOps/Backend/ENTITY_RULE.md — 사용자↔영화 반응·별점 리뷰(단일 테이블 `reviews`)."""
 
 from datetime import datetime
 
@@ -6,7 +6,7 @@ from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from mova.adapter.outbound.orm.base_orm import MovaModel
-from viewer.app.dtos.user_model import User
+from viewer.adapter.outbound.orm.user_orm import User
 
 ACTION_FAVORITE = "favorite"
 ACTION_WATCHED = "watched"
@@ -25,7 +25,7 @@ EVENT_ACTION_TYPES = frozenset(
 
 
 class MovaReview(MovaModel):
-    """사용자의 영화 반응·리뷰. PK `id` — 이벤트는 중복 허용, 별점 리뷰는 user+movie당 1건."""
+    """사용자↔ 영화 반응·리뷰. PK `id` — 이벤트는 중복 허용, 별점 리뷰는 user+movie당 1건."""
 
     __tablename__ = "reviews"
 

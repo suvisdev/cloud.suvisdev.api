@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from core.matrix.keymaker_api import get_keymaker
+from core.matrix.vauly_keymaker_secret_manager import get_keymaker
 from mova.adapter.inbound.api.schemas.rankings_schema import RankingBulkSchema, RankingItemCreateSchema
 from mova.domain.value_objects.ranking_source import RANKING_SOURCE_BOX_OFFICE
 from mova.adapter.outbound.http import (

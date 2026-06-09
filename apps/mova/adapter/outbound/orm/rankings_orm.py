@@ -1,4 +1,4 @@
-﻿"""@see docs/DevOps/suvisdev/ENTITY_RULE.md — Mova HOT 랭킹 (영화·chat FK)."""
+"""@see vault/DevOps/Backend/ENTITY_RULE.md — Mova HOT 랭킹 (영화·chat FK)."""
 
 from datetime import date
 
@@ -10,7 +10,7 @@ from mova.domain.value_objects.ranking_source import RANKING_SOURCE_BOX_OFFICE
 
 
 class MovaRanking(MovaModel):
-    """HOT 랭킹 스냅샷. `source`별 일별 TOP N — chat_trend는 picks·chat 집계."""
+    """HOT ��ŷ ������. `source`�� �Ϻ� TOP N ? chat_trend�� picks��chat ����."""
 
     __tablename__ = "rankings"
     __table_args__ = (
@@ -29,7 +29,7 @@ class MovaRanking(MovaModel):
         ForeignKey("chat.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
-        comment="source=chat_trend — 대표 검색 의도 chat.id",
+        comment="source=chat_trend ? ��ǥ �˻� �ǵ� chat.id",
     )
     source: Mapped[str] = mapped_column(
         String(16),

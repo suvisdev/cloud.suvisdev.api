@@ -5,9 +5,9 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.matrix.oracle_database import ensure_titanic_tables, get_mova_session_factory
-from titanic.adapter.outbound.orm.passenger_jack_trainer_orm import Booking
-from titanic.adapter.outbound.orm.passenger_rose_model_orm import Person
+from core.matrix.grid_oracle_database_manager import ensure_titanic_tables, get_mova_session_factory
+from titanic.adapter.outbound.orm.passenger_jack_trainer_orm import JackTrainerOrm
+from titanic.adapter.outbound.orm.passenger_rose_model_orm import RoseModelOrm
 from titanic.app.dtos.crew_james_director_dto import (
     BookingCommand,
     JamesIntroduceQuery,
@@ -57,7 +57,7 @@ class JamesPgRepository(JamesRepository):
 
         passenger_ids = [cmd.passenger_id for cmd in person_commands]
         result = await session.execute(
-            select(Person).where(Person.passenger_id.in_(passenger_ids)),
+            select(JackTrainerOrm).where(JackTrainerOrm.passenger_id.in_(passenger_ids)),
         )
         existing_by_passenger_id = {
             person.passenger_id: person for person in result.scalars().all()
@@ -66,7 +66,15 @@ class JamesPgRepository(JamesRepository):
         for person_cmd in person_commands:
             person_row = existing_by_passenger_id.get(person_cmd.passenger_id)
             if person_row is None:
-                person_row = Person.from_command(person_cmd)
+                person_row = JackTrainerOrm(
+                    passenger_id=person_cmd.passenger_id,
+                    name=person_cmd.name,
+                    gender=person_cmd.gender,
+                    age=person_cmd.age,
+                    sib_sp=person_cmd.sib_sp,
+                    parch=person_cmd.parch,
+                    survived=person_cmd.survived,
+                )
                 session.add(person_row)
                 existing_by_passenger_id[person_cmd.passenger_id] = person_row
                 continue
@@ -83,7 +91,16 @@ class JamesPgRepository(JamesRepository):
         saved = 0
         for person_cmd, booking_cmd in zip(person_commands, booking_commands, strict=True):
             person_row = existing_by_passenger_id[person_cmd.passenger_id]
-            session.add(Booking.from_command(booking_cmd, person_id=person_row.id))
+            session.add(
+                RoseModelOrm(
+                    person_id=person_row.id,
+                    pclass=booking_cmd.pclass,
+                    ticket=booking_cmd.ticket,
+                    fare=booking_cmd.fare,
+                    cabin=booking_cmd.cabin,
+                    embarked=booking_cmd.embarked,
+                ),
+            )
             saved += 1
 
         if self._session is not None:

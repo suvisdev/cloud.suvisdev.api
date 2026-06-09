@@ -11,10 +11,9 @@ if sys.platform == "win32":
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:\t%(message)s", force=True)
 logger = logging.getLogger(__name__)
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from sqlalchemy.ext.asyncio import AsyncSession
 
 _BACKEND_ROOT = Path(__file__).resolve().parent
 _APPS_ROOT = _BACKEND_ROOT / "apps"
@@ -22,16 +21,15 @@ for _p in (_BACKEND_ROOT, _APPS_ROOT):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from adapters.db_health_adapter import DbHealthAdapter
-from core.matrix.keymaker_api import get_keymaker
-from core.matrix.oracle_database import create_tables, dispose_engine, get_db, verify_connection
+from core.matrix.vauly_keymaker_secret_manager import get_keymaker
+from core.matrix.grid_oracle_database_manager import create_tables, dispose_engine, verify_connection
 from core.matrix.weather_reader import (
     WeatherReaderError,
     fetch_current_weather,
     fetch_weekly_forecast,
 )
-from viewer.adapter.inbound.api import login_router, signup_router
-from viewer.app.dtos.user_model import seed_secom_if_empty
+from viewer.adapter.inbound.api import viewer_router
+from viewer.adapter.outbound.orm.user_orm import seed_secom_if_empty
 from mova.adapter.inbound.api import mova_router
 from mova.adapter.outbound.llm.gemini_client import gemini_reply
 from titanic.adapter.inbound.api import titanic_router
@@ -83,7 +81,7 @@ def _resolve_weather_city(city: str | None) -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from core.matrix.oracle_database import reload_env
+    from core.matrix.grid_oracle_database_manager import reload_env
 
     reload_env()
     try:
@@ -153,8 +151,7 @@ async def request_path_logger(request: Request, call_next):
 
 app.include_router(mova_router)
 app.include_router(titanic_router)
-app.include_router(login_router)
-app.include_router(signup_router)
+app.include_router(viewer_router)
 
 
 @app.get("/")
@@ -203,17 +200,6 @@ async def read_weather_forecast(city: str | None = None) -> ForecastResponse:
     except WeatherReaderError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e)) from e
     return ForecastResponse(**data)  # type: ignore[arg-type]
-
-
-@app.get("/db-check")
-async def check_db(db: AsyncSession = Depends(get_db)):
-    return await DbHealthAdapter.neon_time_check(db)
-
-
-@app.get("/db-check/domains")
-async def check_db_domains(db: AsyncSession = Depends(get_db)):
-    """Mova and Secom per-domain DB health check."""
-    return await DbHealthAdapter.check_all_domains(db)
 
 
 if __name__ == "__main__":

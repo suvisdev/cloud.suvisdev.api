@@ -6,7 +6,7 @@ from typing import TypeVar
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.matrix.oracle_database import get_session_factory
+from core.matrix.grid_oracle_database_manager import get_session_factory
 
 T = TypeVar("T")
 

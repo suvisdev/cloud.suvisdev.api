@@ -1,12 +1,14 @@
-﻿from __future__ import annotations
+"""@see vault/DevOps/Backend/ENTITY_RULE.md — 권한 그룹 (`groups`)."""
+
+from __future__ import annotations
 
 import logging
 
 from sqlalchemy import String, select
 from sqlalchemy.orm import Mapped, mapped_column
 
-from core.matrix.oracle_database import get_secom_session_factory
-from viewer.app.dtos.base import ViewerModel
+from core.matrix.grid_oracle_database_manager import get_secom_session_factory
+from viewer.adapter.outbound.orm.base_orm import ViewerModel
 from viewer.app.dtos.role import UserRole
 
 logger = logging.getLogger(__name__)
@@ -38,7 +40,7 @@ async def seed_groups_if_empty() -> None:
                 added = True
         if added:
             await session.commit()
-            logger.info("[GroupModel] default groups seeded — admin, user")
+            logger.info("[GroupOrm] default groups seeded — admin, user")
 
 
 async def get_group_id_by_code(code: str) -> int:

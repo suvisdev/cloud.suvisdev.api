@@ -254,9 +254,9 @@ async def create_tables() -> None:
     import mova.adapter.outbound.orm  # noqa: F401
 
     try:
-        import viewer.app.dtos.admin_model  # noqa: F401
-        import viewer.app.dtos.group_model  # noqa: F401
-        import viewer.app.dtos.user_model  # noqa: F401
+        import viewer.adapter.outbound.orm.admin_orm  # noqa: F401
+        import viewer.adapter.outbound.orm.group_orm  # noqa: F401
+        import viewer.adapter.outbound.orm.user_orm  # noqa: F401
         secom_engine = get_secom_engine()
         if secom_engine:
             async with secom_engine.begin() as conn:
@@ -272,7 +272,9 @@ async def create_tables() -> None:
 
 
 async def ensure_titanic_tables() -> None:
-    """titanic_persons·titanic_bookings 없으면 생성 (삭제 후 업로드 복구용)."""
+    """passengers·bookings 없으면 생성 (삭제 후 업로드 복구용)."""
+    from core.matrix.grid_neo_theone_base import Base
+
     import titanic.adapter.outbound.orm.passenger_rose_model_orm  # noqa: F401
     import titanic.adapter.outbound.orm.passenger_jack_trainer_orm  # noqa: F401
 
@@ -285,7 +287,7 @@ async def ensure_titanic_tables() -> None:
         raise RuntimeError("Mova engine not initialized")
 
     async with engine.begin() as conn:
-        await conn.run_sync(TitanicBase.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all)
 
 async def dispose_engine() -> None:
     global _mova_engine, _secom_engine, _mova_session_factory, _secom_session_factory

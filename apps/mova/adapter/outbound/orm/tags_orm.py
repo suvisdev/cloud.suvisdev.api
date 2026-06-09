@@ -1,4 +1,4 @@
-﻿"""@see docs/DevOps/suvisdev/ENTITY_RULE.md — 영화별 키워드 태그 (감성·장르·등장인물)."""
+"""@see vault/DevOps/Backend/ENTITY_RULE.md — 영화별 키워드 태그 (감성·장르·등장인물)."""
 
 import re
 
@@ -20,7 +20,7 @@ def slugify_tag(label: str) -> str:
 
 
 class MovaTag(MovaModel):
-    """영화 키워드: 감성(mood), 장르(genre), 등장인물(cast)."""
+    """��ȭ Ű����: ����(mood), �帣(genre), �����ι�(cast)."""
 
     __tablename__ = "tags"
     __table_args__ = (
@@ -39,7 +39,7 @@ class MovaTag(MovaModel):
         ForeignKey("characters.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
-        comment="cast 태그일 때 characters.id (영화–인물 연결)",
+        comment="cast �±��� �� characters.id (��ȭ?�ι� ����)",
     )
     tag_kind: Mapped[str] = mapped_column(
         String(16),

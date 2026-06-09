@@ -13,7 +13,7 @@ for p in (_BACKEND, _APPS):
 
 from sqlalchemy import text
 
-from core.matrix.oracle_database import (
+from core.matrix.grid_oracle_database_manager import (
     create_tables,
     dispose_engine,
     get_mova_engine,
@@ -21,7 +21,7 @@ from core.matrix.oracle_database import (
     reload_env,
     verify_connection,
 )
-from viewer.app.dtos.user_model import seed_secom_if_empty
+from viewer.adapter.outbound.orm.user_orm import seed_secom_if_empty
 
 SECOM_TABLES = ("groups", "admins", "users")
 MOVA_TABLES = (

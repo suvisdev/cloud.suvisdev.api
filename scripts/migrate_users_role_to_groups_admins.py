@@ -44,9 +44,9 @@ async def table_exists(conn, table: str) -> bool:
 async def main() -> None:
     from sqlalchemy import text
 
-    from core.matrix.oracle_database import create_tables, dispose_engine, get_secom_engine, reload_env
-    from viewer.app.dtos.admin_model import Admin, seed_admin_if_empty
-    from viewer.app.dtos.group_model import Group, seed_groups_if_empty
+    from core.matrix.grid_oracle_database_manager import create_tables, dispose_engine, get_secom_engine, reload_env
+    from viewer.adapter.outbound.orm.admin_orm import Admin, seed_admin_if_empty
+    from viewer.adapter.outbound.orm.group_orm import Group, seed_groups_if_empty
     from viewer.app.dtos.role import UserRole
 
     reload_env()

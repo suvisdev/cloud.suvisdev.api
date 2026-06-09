@@ -1,36 +1,21 @@
 from __future__ import annotations
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from core.matrix.oracle_database import TitanicBase
-from titanic.app.dtos.crew_james_director_dto import BookingCommand
+from titanic.app.dtos.crew_james_director_dto import PassengerCommand
+from core.matrix.grid_neo_theone_base import Base
 
+class JackTrainerOrm(Base):
+    """JackTrainerCommand → passengers (ENTITY_RULE: int PK `id`)."""
 
-class Booking(TitanicBase):
-    """BookingCommand → titanic_bookings (ENTITY_RULE: int PK `id`)."""
-
-    __tablename__ = "titanic_bookings"
+    __tablename__ = "passengers"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    person_id: Mapped[int] = mapped_column(
-        ForeignKey("titanic_persons.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    pclass: Mapped[str] = mapped_column(String(8), nullable=False, default="")
-    ticket: Mapped[str] = mapped_column(String(64), nullable=False, default="")
-    fare: Mapped[str] = mapped_column(String(32), nullable=False, default="")
-    cabin: Mapped[str] = mapped_column(String(32), nullable=False, default="")
-    embarked: Mapped[str] = mapped_column(String(8), nullable=False, default="")
-
-    @classmethod
-    def from_command(cls, command: BookingCommand, *, person_id: int) -> Booking:
-        return cls(
-            person_id=person_id,
-            pclass=command.pclass,
-            ticket=command.ticket,
-            fare=command.fare,
-            cabin=command.cabin,
-            embarked=command.embarked,
-        )
+    passenger_id: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    gender: Mapped[str] = mapped_column(String(16), nullable=False, default="")
+    age: Mapped[str] = mapped_column(String(16), nullable=False, default="")
+    sib_sp: Mapped[str] = mapped_column(String(16), nullable=False, default="")
+    parch: Mapped[str] = mapped_column(String(16), nullable=False, default="")
+    survived: Mapped[str] = mapped_column(String(8), nullable=False, default="")

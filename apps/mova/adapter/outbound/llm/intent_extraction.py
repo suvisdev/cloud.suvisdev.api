@@ -3,7 +3,7 @@ import logging
 import re
 from typing import Any
 
-from core.matrix.keymaker_api import get_keymaker
+from core.matrix.vauly_keymaker_secret_manager import get_keymaker
 
 logger = logging.getLogger(__name__)
 

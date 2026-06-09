@@ -1,4 +1,6 @@
-﻿from __future__ import annotations
+"""@see vault/DevOps/Backend/ENTITY_RULE.md — 일반 사용자 계정 (`users`)."""
+
+from __future__ import annotations
 
 from datetime import datetime
 
@@ -6,9 +8,10 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from core.matrix.oracle_database import get_secom_session_factory
-from viewer.app.dtos.base import ViewerModel
-from viewer.app.dtos.group_model import Group, get_group_id_by_code, seed_groups_if_empty
+from core.matrix.grid_oracle_database_manager import get_secom_session_factory
+from viewer.adapter.outbound.orm.admin_orm import seed_admin_if_empty
+from viewer.adapter.outbound.orm.base_orm import ViewerModel
+from viewer.adapter.outbound.orm.group_orm import Group, get_group_id_by_code, seed_groups_if_empty
 from viewer.app.dtos.role import UserRole
 from viewer.app.dtos.user_profile import UserAgeGroup, UserGender
 
@@ -102,8 +105,6 @@ async def get_secom_user_profile(user_id: int) -> dict:
 
 async def seed_secom_if_empty() -> None:
     """Secom 시드 — groups + admin."""
-    from viewer.app.dtos.admin_model import seed_admin_if_empty
-
     await seed_groups_if_empty()
     await seed_admin_if_empty()
 

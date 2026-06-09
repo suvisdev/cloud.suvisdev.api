@@ -19,5 +19,4 @@ class WalterInteractor(WalterUseCase):
         return await self._repository.introduce_myself(WalterQuery(
             id=schemas.id,
             name=schemas.name,
-            memo=schemas.memo,
         ))

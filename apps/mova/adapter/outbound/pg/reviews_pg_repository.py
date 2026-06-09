@@ -14,7 +14,7 @@ from mova.adapter.outbound.orm.reviews_orm import (
     MovaReview,
 )
 from mova.adapter.outbound.pg.pg_session import run_pg
-from viewer.app.dtos.user_model import get_secom_user_nicknames, secom_user_exists
+from viewer.adapter.outbound.orm.user_orm import get_secom_user_nicknames, secom_user_exists
 
 logger = logging.getLogger(__name__)
 
