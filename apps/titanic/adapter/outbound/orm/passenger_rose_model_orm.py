@@ -10,11 +10,12 @@ from titanic.app.dtos.crew_james_director_dto import BookingCommand
 class RoseModelOrm(Base):
     """RoseModelCommand → bookings (ENTITY_RULE: int PK `id`)."""
 
-    __tablename__ = "bookings"
+    __tablename__ = "titanic_bookings"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    person_id: Mapped[int] = mapped_column(
-        ForeignKey("passengers.id", ondelete="CASCADE"),
+    passenger_id: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("titanic_passengers.passenger_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

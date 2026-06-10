@@ -3,16 +3,14 @@ from __future__ import annotations
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from titanic.app.dtos.crew_james_director_dto import PassengerCommand
 from core.matrix.grid_neo_theone_base import Base
 
 class JackTrainerOrm(Base):
-    """JackTrainerCommand → passengers (ENTITY_RULE: int PK `id`)."""
+    """JackTrainerCommand → passengers (PK: `passenger_id` str)."""
 
-    __tablename__ = "passengers"
+    __tablename__ = "titanic_passengers"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    passenger_id: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
+    passenger_id: Mapped[str] = mapped_column(String(32), primary_key=True, unique=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     gender: Mapped[str] = mapped_column(String(16), nullable=False, default="")
     age: Mapped[str] = mapped_column(String(16), nullable=False, default="")

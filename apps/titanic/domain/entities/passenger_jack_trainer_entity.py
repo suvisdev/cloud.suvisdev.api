@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from titanic.domain.value_objects.passenger_jack_trainer_vo import (
     FamilyRelation,
@@ -17,15 +17,13 @@ class PassengerJackTrainer:
 
     동등성 기준 : passenger_id (비즈니스 키)
     ORM 매핑   : 인프라 계층(JackTrainerPgRepository)에서 담당 — 엔티티는 ORM을 모른다.
-    _db_id     : 인프라 전용 PK; 도메인 로직에서 직접 참조 금지.
+    PK         : passenger_id (ORM·DB와 동일 비즈니스 키).
     """
 
     passenger_id: PassengerId
     personal_info: PersonalInfo
     family_relation: FamilyRelation
     survival_status: SurvivalStatus
-
-    _db_id: int | None = field(default=None, repr=False, compare=False)
 
     # ── 동등성: passenger_id 기준 ─────────────────────────────────
     def __eq__(self, other: object) -> bool:

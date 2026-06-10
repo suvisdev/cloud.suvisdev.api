@@ -6,16 +6,16 @@ from typing import ClassVar
 
 @dataclass(frozen=True)
 class PersonId:
-    """persons.id FK를 감싸는 도메인 참조 VO (Cross-aggregate 참조는 ID로만)."""
+    """passengers.passenger_id FK를 감싸는 도메인 참조 VO (Cross-aggregate 참조는 ID로만)."""
 
-    value: int
+    value: str
 
     def __post_init__(self) -> None:
-        if self.value <= 0:
-            raise ValueError(f"PersonId는 양의 정수여야 합니다: {self.value!r}")
+        if not self.value or not self.value.strip():
+            raise ValueError(f"PersonId는 빈 문자열일 수 없습니다: {self.value!r}")
 
     def __str__(self) -> str:
-        return str(self.value)
+        return self.value
 
 
 @dataclass(frozen=True)

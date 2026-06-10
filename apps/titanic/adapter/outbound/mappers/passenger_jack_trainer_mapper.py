@@ -28,7 +28,6 @@ class PassengerJackTrainerMapper:
                 parch=orm.parch,
             ),
             survival_status=SurvivalStatus(orm.survived),
-            _db_id=orm.id,
         )
 
     @staticmethod

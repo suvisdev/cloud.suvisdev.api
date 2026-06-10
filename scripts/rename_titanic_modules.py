@@ -16,7 +16,7 @@ MODULES = [
         "method": "get_blueprint",
         "handler": "get_blueprint",
         "path": "/blueprint",
-        "prefix": "/titanic/andrews",
+        "prefix": "/api/titanic/andrews",
         "tags": "andrews",
         "response": "int",
         "returns": "0",
@@ -33,7 +33,7 @@ MODULES = [
         "method": "get_pistol",
         "handler": "get_pistol",
         "path": "/pistol",
-        "prefix": "/titanic/pistol",
+        "prefix": "/api/titanic/pistol",
         "tags": "pistol",
         "response": "None",
         "returns": "None",
@@ -50,7 +50,7 @@ MODULES = [
         "method": "get_violin",
         "handler": "get_violin",
         "path": "/violin",
-        "prefix": "/titanic/violin",
+        "prefix": "/api/titanic/violin",
         "tags": "violin",
         "response": "int",
         "returns": "0",
@@ -67,7 +67,7 @@ MODULES = [
         "method": "get_bed",
         "handler": "get_bed",
         "path": "/bed",
-        "prefix": "/titanic/bed",
+        "prefix": "/api/titanic/bed",
         "tags": "bed",
         "response": "int",
         "returns": "0",
@@ -84,7 +84,7 @@ MODULES = [
         "method": "get_sketch",
         "handler": "get_sketch",
         "path": "/sketch",
-        "prefix": "/titanic/sketch",
+        "prefix": "/api/titanic/sketch",
         "tags": "sketch",
         "response": "int",
         "returns": "0",
@@ -101,7 +101,7 @@ MODULES = [
         "method": "get_diamond",
         "handler": "get_diamond",
         "path": "/diamond",
-        "prefix": "/titanic/diamond",
+        "prefix": "/api/titanic/diamond",
         "tags": "diamond",
         "response": "int",
         "returns": "0",
@@ -118,7 +118,7 @@ MODULES = [
         "method": "get_corset",
         "handler": "get_corset",
         "path": "/corset",
-        "prefix": "/titanic/corset",
+        "prefix": "/api/titanic/corset",
         "tags": "corset",
         "response": "int",
         "returns": "0",
@@ -135,7 +135,7 @@ MODULES = [
         "method": "get_captain",
         "handler": "get_captain",
         "path": "/captain",
-        "prefix": "/titanic/captain",
+        "prefix": "/api/titanic/captain",
         "tags": "captain",
         "response": "int",
         "returns": "0",
@@ -152,7 +152,7 @@ MODULES = [
         "method": "get_boat",
         "handler": "get_boat",
         "path": "/boat",
-        "prefix": "/titanic/boat",
+        "prefix": "/api/titanic/boat",
         "tags": "boat",
         "response": "int",
         "returns": "0",
@@ -169,7 +169,7 @@ MODULES = [
         "method": "get_scaler",
         "handler": "get_scaler",
         "path": "/scaler",
-        "prefix": "/titanic/scaler",
+        "prefix": "/api/titanic/scaler",
         "tags": "scaler",
         "response": "int",
         "returns": "0",
@@ -368,7 +368,7 @@ async def {m["handler"]}(
 
 {imports}
 
-titanic_router = APIRouter(prefix="/titanic", tags=["titanic"])
+titanic_router = APIRouter(prefix="/api/titanic", tags=["titanic"])
 {includes}
 
 __all__ = ["titanic_router"]

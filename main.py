@@ -150,7 +150,7 @@ async def request_path_logger(request: Request, call_next):
 
 
 app.include_router(mova_router)
-app.include_router(titanic_router)
+app.include_router(titanic_router, prefix="/api")
 app.include_router(viewer_router)
 
 

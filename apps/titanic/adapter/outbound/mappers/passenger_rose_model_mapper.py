@@ -18,7 +18,7 @@ class PassengerRoseModelMapper:
     def to_entity(orm: RoseModelOrm) -> Booking:
         """ORM row → Domain Entity."""
         return Booking(
-            person_id=PersonId(orm.person_id),
+            person_id=PersonId(orm.passenger_id),
             passenger_class=PassengerClass(orm.pclass),
             ticket_info=TicketInfo(ticket=orm.ticket, fare=orm.fare),
             cabin=Cabin(orm.cabin),
@@ -27,10 +27,10 @@ class PassengerRoseModelMapper:
         )
 
     @staticmethod
-    def to_orm_fields(entity: Booking) -> dict[str, str | int]:
+    def to_orm_fields(entity: Booking) -> dict[str, str]:
         """Domain Entity → ORM 컬럼 dict (INSERT/UPDATE 시 사용)."""
         return {
-            "person_id": entity.person_id.value,
+            "passenger_id": entity.person_id.value,
             "pclass": entity.passenger_class.value,
             "ticket": entity.ticket_info.ticket,
             "fare": entity.ticket_info.fare,

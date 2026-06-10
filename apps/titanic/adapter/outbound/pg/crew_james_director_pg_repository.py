@@ -63,9 +63,17 @@ class JamesPgRepository(JamesRepository):
             person.passenger_id: person for person in result.scalars().all()
         }
 
-        for person_cmd in person_commands:
-            person_row = existing_by_passenger_id.get(person_cmd.passenger_id)
-            if person_row is None:
+        booking_result = await session.execute(
+            select(RoseModelOrm.passenger_id).where(RoseModelOrm.passenger_id.in_(passenger_ids)),
+        )
+        existing_booked_ids = {row for row in booking_result.scalars().all()}
+
+        new_pairs: list[tuple[PassengerCommand, BookingCommand]] = []
+        for person_cmd, booking_cmd in zip(person_commands, booking_commands, strict=True):
+            if person_cmd.passenger_id in existing_booked_ids:
+                continue
+
+            if person_cmd.passenger_id not in existing_by_passenger_id:
                 person_row = JackTrainerOrm(
                     passenger_id=person_cmd.passenger_id,
                     name=person_cmd.name,
@@ -77,23 +85,17 @@ class JamesPgRepository(JamesRepository):
                 )
                 session.add(person_row)
                 existing_by_passenger_id[person_cmd.passenger_id] = person_row
-                continue
 
-            person_row.name = person_cmd.name
-            person_row.gender = person_cmd.gender
-            person_row.age = person_cmd.age
-            person_row.sib_sp = person_cmd.sib_sp
-            person_row.parch = person_cmd.parch
-            person_row.survived = person_cmd.survived
+            new_pairs.append((person_cmd, booking_cmd))
 
         await session.flush()
 
         saved = 0
-        for person_cmd, booking_cmd in zip(person_commands, booking_commands, strict=True):
+        for person_cmd, booking_cmd in new_pairs:
             person_row = existing_by_passenger_id[person_cmd.passenger_id]
             session.add(
                 RoseModelOrm(
-                    person_id=person_row.id,
+                    passenger_id=person_row.passenger_id,
                     pclass=booking_cmd.pclass,
                     ticket=booking_cmd.ticket,
                     fare=booking_cmd.fare,
