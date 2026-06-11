@@ -1,15 +1,27 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from datetime import datetime
 
-@dataclass(frozen=True) # 생성 후 수정 불가하도록 설정
+from titanic.adapter.inbound.api.schemas.crew_smith_captain_schema import ChatSchema
+
+
+@dataclass(frozen=True)
 class SmithCaptainQuery:
-    
-    id: int   # 직관적인 타입 변경
+    id: int
     name: str
 
-@dataclass(frozen=True) # 생성 후 수정 불가하도록 설정
+
+@dataclass(frozen=True)
 class SmithCaptainResponse:
-    
-    id: int   # 직관적인 타입 변경
+    id: int
     name: str
+
+
+@dataclass(frozen=True)
+class SmithCaptainChatCommand:
+    message: str
+
+    @classmethod
+    def from_schema(cls, schema: ChatSchema) -> SmithCaptainChatCommand:
+        return cls(message=schema.message)
  

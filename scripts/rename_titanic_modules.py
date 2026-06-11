@@ -20,7 +20,7 @@ MODULES = [
         "tags": "andrews",
         "response": "int",
         "returns": "0",
-        "dep_fn": "get_andrews_blueprint_use_case",
+        "dep_fn": "get_andrews_blueprint",
         "router_var": "crew_andrews_architect_router",
     },
     {
@@ -37,7 +37,7 @@ MODULES = [
         "tags": "pistol",
         "response": "None",
         "returns": "None",
-        "dep_fn": "get_cal_pistol_use_case",
+        "dep_fn": "get_cal_pistol",
         "router_var": "passenger_cal_tester_router",
     },
     {
@@ -54,7 +54,7 @@ MODULES = [
         "tags": "violin",
         "response": "int",
         "returns": "0",
-        "dep_fn": "get_hartley_violin_use_case",
+        "dep_fn": "get_hartley_violin",
         "router_var": "crew_hartley_violin_router",
     },
     {
@@ -71,7 +71,7 @@ MODULES = [
         "tags": "bed",
         "response": "int",
         "returns": "0",
-        "dep_fn": "get_isidor_bed_use_case",
+        "dep_fn": "get_isidor_bed",
         "router_var": "passenger_isidor_couple_router",
     },
     {
@@ -88,7 +88,7 @@ MODULES = [
         "tags": "sketch",
         "response": "int",
         "returns": "0",
-        "dep_fn": "get_jack_sketch_use_case",
+        "dep_fn": "get_jack_sketch",
         "router_var": "passenger_jack_trainer_router",
     },
     {
@@ -105,7 +105,7 @@ MODULES = [
         "tags": "diamond",
         "response": "int",
         "returns": "0",
-        "dep_fn": "get_rose_diamond_use_case",
+        "dep_fn": "get_rose_diamond",
         "router_var": "passenger_rose_model_router",
     },
     {
@@ -122,7 +122,7 @@ MODULES = [
         "tags": "corset",
         "response": "int",
         "returns": "0",
-        "dep_fn": "get_ruth_corset_use_case",
+        "dep_fn": "get_ruth_corset",
         "router_var": "passenger_ruth_validation_router",
     },
     {
@@ -139,7 +139,7 @@ MODULES = [
         "tags": "captain",
         "response": "int",
         "returns": "0",
-        "dep_fn": "get_smith_captain_use_case",
+        "dep_fn": "get_smith_captain",
         "router_var": "crew_smith_captain_router",
     },
     {
@@ -156,7 +156,7 @@ MODULES = [
         "tags": "boat",
         "response": "int",
         "returns": "0",
-        "dep_fn": "get_lowe_boat_use_case",
+        "dep_fn": "get_lowe_boat",
         "router_var": "crew_lowe_boat_router",
     },
     {
@@ -173,7 +173,7 @@ MODULES = [
         "tags": "scaler",
         "response": "int",
         "returns": "0",
-        "dep_fn": "get_molly_scaler_use_case",
+        "dep_fn": "get_molly_scaler",
         "router_var": "passenger_molly_scaler_router",
     },
 ]
