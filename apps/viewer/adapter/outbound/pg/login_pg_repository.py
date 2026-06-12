@@ -6,7 +6,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.matrix.grid_oracle_database_manager import get_secom_session_factory
+from core.matrix.grid_oracle_database_manager import get_viewer_session_factory
 from viewer.adapter.outbound.orm.admin_orm import Admin
 from viewer.adapter.outbound.orm.user_orm import User
 from viewer.app.dtos.auth_command_dto import LoginUserCommand
@@ -37,7 +37,7 @@ class LoginPgRepository(LoginRepository):
         if self._session is not None:
             return await self._login_user(self._session, command)
 
-        factory = get_secom_session_factory()
+        factory = get_viewer_session_factory()
         async with factory() as session:
             return await self._login_user(session, command)
 

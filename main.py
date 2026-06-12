@@ -29,7 +29,7 @@ from core.matrix.weather_reader import (
     fetch_weekly_forecast,
 )
 from viewer.adapter.inbound.api import viewer_router
-from viewer.adapter.outbound.orm.user_orm import seed_secom_if_empty
+from viewer.adapter.outbound.orm.user_orm import seed_viewer_if_empty
 from mova.adapter.inbound.api import mova_router
 from mova.adapter.outbound.llm.gemini_client import gemini_reply
 from titanic.adapter.inbound.api import titanic_router
@@ -89,7 +89,7 @@ async def lifespan(app: FastAPI):
         if ok:
             try:
                 await create_tables()
-                await seed_secom_if_empty()
+                await seed_viewer_if_empty()
                 try:
                     from mova.adapter.outbound.pg.assistants_pg_repository import (
                         seed_assistants_if_empty,
@@ -118,7 +118,7 @@ async def lifespan(app: FastAPI):
                 await dispose_engine()
         else:
             logger.warning(
-                "DB ?? ?? ? Mova/Secom DB API ???. suvisdev/.env DATABASE_URL ??: %s",
+                "DB ?? ?? ? Mova/Viewer DB API ???. suvisdev/.env DATABASE_URL ??: %s",
                 err,
             )
         yield

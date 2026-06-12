@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.matrix.grid_oracle_database_manager import get_secom_session_factory
+from core.matrix.grid_oracle_database_manager import get_viewer_session_factory
 from viewer.adapter.outbound.orm.user_orm import User, resolve_user_group_id
 from viewer.app.dtos.auth_command_dto import SignupCommand
 from viewer.app.dtos.user_profile import UserAgeGroup, UserGender
@@ -37,7 +37,7 @@ class SignupPgRepository(SignupRepository):
         if self._session is not None:
             return await self._save_user(self._session, command)
 
-        factory = get_secom_session_factory()
+        factory = get_viewer_session_factory()
         async with factory() as session:
             user_id = await self._save_user(session, command)
             await session.commit()

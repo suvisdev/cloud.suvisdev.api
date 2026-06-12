@@ -7,7 +7,7 @@ import logging
 from sqlalchemy import String, select
 from sqlalchemy.orm import Mapped, mapped_column
 
-from core.matrix.grid_oracle_database_manager import get_secom_session_factory
+from core.matrix.grid_oracle_database_manager import get_viewer_session_factory
 from viewer.adapter.outbound.orm.base_orm import ViewerModel
 from viewer.app.dtos.role import UserRole
 
@@ -30,7 +30,7 @@ class Group(ViewerModel):
 
 
 async def seed_groups_if_empty() -> None:
-    factory = get_secom_session_factory()
+    factory = get_viewer_session_factory()
     async with factory() as session:
         added = False
         for code, name, description in _DEFAULT_GROUPS:
@@ -45,7 +45,7 @@ async def seed_groups_if_empty() -> None:
 
 async def get_group_id_by_code(code: str) -> int:
     await seed_groups_if_empty()
-    factory = get_secom_session_factory()
+    factory = get_viewer_session_factory()
     async with factory() as session:
         row = (
             await session.execute(select(Group.id).where(Group.code == code))

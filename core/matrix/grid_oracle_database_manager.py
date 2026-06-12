@@ -1,4 +1,4 @@
-"""Neon PostgreSQL — Mova·Secom·Titanic ORM 연결 (SQLAlchemy 2.0 최신 비동기)."""
+"""Neon PostgreSQL — Mova·Viewer·Titanic ORM 연결 (SQLAlchemy 2.0 최신 비동기)."""
 
 from __future__ import annotations
 
@@ -26,14 +26,14 @@ _BACKEND_ENV = _BACKEND_ROOT / ".env"
 
 # 타입 명시 강화
 _mova_engine: AsyncEngine | None = None
-_secom_engine: AsyncEngine | None = None
+_viewer_engine: AsyncEngine | None = None
 _mova_session_factory: async_sessionmaker[AsyncSession] | None = None
-_secom_session_factory: async_sessionmaker[AsyncSession] | None = None
+_viewer_session_factory: async_sessionmaker[AsyncSession] | None = None
 
 _mova_init_error: str | None = None
-_secom_init_error: str | None = None
+_viewer_init_error: str | None = None
 _active_mova_url: str | None = None
-_active_secom_url: str | None = None
+_active_viewer_url: str | None = None
 
 
 def reload_env() -> None:
@@ -45,8 +45,8 @@ class MovaBase(DeclarativeBase):
     pass
 
 
-class SecomBase(DeclarativeBase):
-    """Secom ORM (groups, admins, users)."""
+class ViewerBase(DeclarativeBase):
+    """Viewer ORM (groups, admins, users)."""
     pass
 
 
@@ -119,10 +119,10 @@ def ensure_mova_database() -> tuple[bool, str | None]:
     return factory is not None, err
 
 
-def ensure_secom_database() -> tuple[bool, str | None]:
-    global _secom_session_factory, _secom_engine, _secom_init_error, _active_secom_url
+def ensure_viewer_database() -> tuple[bool, str | None]:
+    global _viewer_session_factory, _viewer_engine, _viewer_init_error, _active_viewer_url
     reload_env()
-    explicit_url = (os.getenv("SECOM_DATABASE_URL") or "").strip()
+    explicit_url = (os.getenv("VIEWER_DATABASE_URL") or "").strip()
     if explicit_url:
         url = _normalize_database_url(explicit_url)
     else:
@@ -130,11 +130,11 @@ def ensure_secom_database() -> tuple[bool, str | None]:
             os.getenv("MOVA_DATABASE_URL") or os.getenv("DATABASE_URL") or "",
         )
 
-    if _secom_session_factory is not None and _active_secom_url == url:
+    if _viewer_session_factory is not None and _active_viewer_url == url:
         return True, None
 
-    engine, factory, err, active = _init_engine(url, "Secom", _active_secom_url)
-    _secom_engine, _secom_session_factory, _secom_init_error, _active_secom_url = engine, factory, err, active
+    engine, factory, err, active = _init_engine(url, "Viewer", _active_viewer_url)
+    _viewer_engine, _viewer_session_factory, _viewer_init_error, _active_viewer_url = engine, factory, err, active
     return factory is not None, err
 
 
@@ -153,12 +153,12 @@ async def get_mova_db() -> AsyncGenerator[AsyncSession, None]:
             await session.rollback()
             raise
 
-async def get_secom_db() -> AsyncGenerator[AsyncSession, None]:
-    ok, err = ensure_secom_database()
-    if not ok or _secom_session_factory is None:
+async def get_viewer_db() -> AsyncGenerator[AsyncSession, None]:
+    ok, err = ensure_viewer_database()
+    if not ok or _viewer_session_factory is None:
         raise HTTPException(status_code=503, detail=err)
-    
-    async with _secom_session_factory() as session:
+
+    async with _viewer_session_factory() as session:
         try:
             yield session
             await session.commit()
@@ -179,9 +179,9 @@ def get_mova_engine() -> AsyncEngine | None:
     return _mova_engine
 
 
-def get_secom_engine() -> AsyncEngine | None:
-    ensure_secom_database()
-    return _secom_engine
+def get_viewer_engine() -> AsyncEngine | None:
+    ensure_viewer_database()
+    return _viewer_engine
 
 
 def get_engine() -> AsyncEngine | None:
@@ -195,11 +195,11 @@ def get_mova_session_factory() -> async_sessionmaker[AsyncSession]:
     return _mova_session_factory
 
 
-def get_secom_session_factory() -> async_sessionmaker[AsyncSession]:
-    ok, err = ensure_secom_database()
-    if not ok or _secom_session_factory is None:
-        raise RuntimeError(err or "Secom database not initialized")
-    return _secom_session_factory
+def get_viewer_session_factory() -> async_sessionmaker[AsyncSession]:
+    ok, err = ensure_viewer_database()
+    if not ok or _viewer_session_factory is None:
+        raise RuntimeError(err or "Viewer database not initialized")
+    return _viewer_session_factory
 
 
 def get_session_factory() -> async_sessionmaker[AsyncSession]:
@@ -216,11 +216,11 @@ async def verify_connection() -> tuple[bool, str | None]:
     except Exception as e:
         return False, str(e)
 
-    ok_secom, err_secom = ensure_secom_database()
-    if not ok_secom or _secom_session_factory is None:
-        return False, err_secom or "Secom database not initialized"
+    ok_viewer, err_viewer = ensure_viewer_database()
+    if not ok_viewer or _viewer_session_factory is None:
+        return False, err_viewer or "Viewer database not initialized"
     try:
-        async with _secom_session_factory() as session:
+        async with _viewer_session_factory() as session:
             await session.execute(text("SELECT 1"))
     except Exception as e:
         return False, str(e)
@@ -244,7 +244,7 @@ async def _drop_legacy_mova_users_table(conn) -> None:
     if "group_id" in columns or "role" in columns:
         return
     if "preferred_genres" in columns or "nickname" in columns:
-        logger.warning("Legacy Mova users table detected. Dropping for Secom integration.")
+        logger.warning("Legacy Mova users table detected. Dropping for Viewer integration.")
         await conn.execute(text('DROP TABLE IF EXISTS "users" CASCADE'))
 
 
@@ -257,11 +257,11 @@ async def create_tables() -> None:
         import viewer.adapter.outbound.orm.admin_orm  # noqa: F401
         import viewer.adapter.outbound.orm.group_orm  # noqa: F401
         import viewer.adapter.outbound.orm.user_orm  # noqa: F401
-        secom_engine = get_secom_engine()
-        if secom_engine:
-            async with secom_engine.begin() as conn:
+        viewer_engine = get_viewer_engine()
+        if viewer_engine:
+            async with viewer_engine.begin() as conn:
                 await _drop_legacy_mova_users_table(conn)
-                await conn.run_sync(SecomBase.metadata.create_all)
+                await conn.run_sync(ViewerBase.metadata.create_all)
     except ModuleNotFoundError:
         logger.warning("Viewer models not found.")
 
@@ -290,12 +290,12 @@ async def ensure_titanic_tables() -> None:
         await conn.run_sync(Base.metadata.create_all)
 
 async def dispose_engine() -> None:
-    global _mova_engine, _secom_engine, _mova_session_factory, _secom_session_factory
+    global _mova_engine, _viewer_engine, _mova_session_factory, _viewer_session_factory
     if _mova_engine is not None:
         await _mova_engine.dispose()
-    if _secom_engine is not None:
-        await _secom_engine.dispose()
+    if _viewer_engine is not None:
+        await _viewer_engine.dispose()
     _mova_engine = None
-    _secom_engine = None
+    _viewer_engine = None
     _mova_session_factory = None
-    _secom_session_factory = None
+    _viewer_session_factory = None

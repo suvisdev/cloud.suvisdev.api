@@ -21,7 +21,7 @@ from mova.app.ports.output.assistants_repository import AssistantsRepository
 from mova.app.ports.output.chat_repository import ChatRepository
 from mova.app.ports.output.movies_repository import MoviesRepository
 from mova.app.ports.output.picks_repository import PicksRepository
-from viewer.adapter.outbound.orm.user_orm import get_secom_user_profile
+from viewer.adapter.outbound.orm.user_orm import get_viewer_user_profile
 
 
 class ChatInteractor(ChatUseCase):
@@ -114,7 +114,7 @@ class ChatInteractor(ChatUseCase):
         mova_user = None
         if user_id is not None:
             try:
-                mova_user = await get_secom_user_profile(user_id)
+                mova_user = await get_viewer_user_profile(user_id)
             except Exception:
                 pass
 

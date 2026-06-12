@@ -34,7 +34,7 @@ class MovaReview(MovaModel):
         ForeignKey(User.__table__.c.id, ondelete="CASCADE"),
         nullable=False,
         index=True,
-        comment="Secom users.id (동일 DB FK)",
+        comment="Viewer users.id (동일 DB FK)",
     )
     movie_id: Mapped[int] = mapped_column(
         Integer,

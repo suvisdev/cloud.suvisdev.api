@@ -50,16 +50,16 @@ async def main() -> None:
     from core.matrix.grid_oracle_database_manager import (
         create_tables,
         dispose_engine,
-        get_secom_engine,
+        get_viewer_engine,
         reload_env,
     )
 
     reload_env()
     await create_tables()
 
-    engine = get_secom_engine()
+    engine = get_viewer_engine()
     if engine is None:
-        print("Secom engine unavailable — skip.")
+        print("Viewer engine unavailable — skip.")
         return
 
     async with engine.begin() as conn:

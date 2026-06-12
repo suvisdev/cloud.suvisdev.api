@@ -14,7 +14,7 @@ from mova.adapter.outbound.orm.reviews_orm import (
     MovaReview,
 )
 from mova.adapter.outbound.pg.pg_session import run_pg
-from viewer.adapter.outbound.orm.user_orm import get_secom_user_nicknames, secom_user_exists
+from viewer.adapter.outbound.orm.user_orm import get_viewer_user_nicknames, viewer_user_exists
 
 logger = logging.getLogger(__name__)
 
@@ -75,9 +75,9 @@ class ReviewsPgRepository(ReviewsRepository):
         )
 
         async def work(session: AsyncSession) -> MovaReview:
-            if not await secom_user_exists(user_id):
+            if not await viewer_user_exists(user_id):
                 raise ReviewsRepositoryError(
-                    f"회원 ID {user_id}를 찾을 수 없습니다. (Secom users)",
+                    f"회원 ID {user_id}를 찾을 수 없습니다. (Viewer users)",
                     status_code=404,
                 )
             if await session.get(MovaMovie, movie_id) is None:
@@ -117,9 +117,9 @@ class ReviewsPgRepository(ReviewsRepository):
             movie_id,
             rating,
         )
-        if not await secom_user_exists(user_id):
+        if not await viewer_user_exists(user_id):
             raise ReviewsRepositoryError(
-                f"회원 ID {user_id}를 찾을 수 없습니다. (Secom users)",
+                f"회원 ID {user_id}를 찾을 수 없습니다. (Viewer users)",
                 status_code=404,
             )
 
@@ -182,9 +182,9 @@ class ReviewsPgRepository(ReviewsRepository):
         limit: int = 100,
     ) -> list[MovaReview]:
         async def work(session: AsyncSession) -> list[MovaReview]:
-            if not await secom_user_exists(user_id):
+            if not await viewer_user_exists(user_id):
                 raise ReviewsRepositoryError(
-                    f"회원 ID {user_id}를 찾을 수 없습니다. (Secom users)",
+                    f"회원 ID {user_id}를 찾을 수 없습니다. (Viewer users)",
                     status_code=404,
                 )
             stmt = (
@@ -213,9 +213,9 @@ class ReviewsPgRepository(ReviewsRepository):
         limit: int = 100,
     ) -> list[tuple[MovaReview, MovaMovie]]:
         async def work(session: AsyncSession) -> list[tuple[MovaReview, MovaMovie]]:
-            if not await secom_user_exists(user_id):
+            if not await viewer_user_exists(user_id):
                 raise ReviewsRepositoryError(
-                    f"회원 ID {user_id}를 찾을 수 없습니다. (Secom users)",
+                    f"회원 ID {user_id}를 찾을 수 없습니다. (Viewer users)",
                     status_code=404,
                 )
             stmt = (
@@ -260,7 +260,7 @@ class ReviewsPgRepository(ReviewsRepository):
             return list(result.scalars().all())
 
         reviews = await run_pg(self._session, work)
-        nicknames = await get_secom_user_nicknames({r.user_id for r in reviews})
+        nicknames = await get_viewer_user_nicknames({r.user_id for r in reviews})
         return [
             (review, nicknames.get(review.user_id, "회원"))
             for review in reviews
@@ -271,9 +271,9 @@ class ReviewsPgRepository(ReviewsRepository):
         user_id: int,
         limit: int = 50,
     ) -> list[MovaReview]:
-        if not await secom_user_exists(user_id):
+        if not await viewer_user_exists(user_id):
             raise ReviewsRepositoryError(
-                f"회원 ID {user_id}를 찾을 수 없습니다. (Secom users)",
+                f"회원 ID {user_id}를 찾을 수 없습니다. (Viewer users)",
                 status_code=404,
             )
 

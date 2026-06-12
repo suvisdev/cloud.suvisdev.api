@@ -8,7 +8,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from core.matrix.grid_oracle_database_manager import get_secom_session_factory
+from core.matrix.grid_oracle_database_manager import get_viewer_session_factory
 from viewer.adapter.outbound.orm.admin_orm import seed_admin_if_empty
 from viewer.adapter.outbound.orm.base_orm import ViewerModel
 from viewer.adapter.outbound.orm.group_orm import Group, get_group_id_by_code, seed_groups_if_empty
@@ -58,18 +58,18 @@ class User(ViewerModel):
     )
 
 
-async def secom_user_exists(user_id: int) -> bool:
-    factory = get_secom_session_factory()
+async def viewer_user_exists(user_id: int) -> bool:
+    factory = get_viewer_session_factory()
     async with factory() as session:
         result = await session.execute(select(User.id).where(User.id == user_id))
         return result.scalar_one_or_none() is not None
 
 
-async def get_secom_user_nicknames(user_ids: set[int]) -> dict[int, str]:
+async def get_viewer_user_nicknames(user_ids: set[int]) -> dict[int, str]:
     if not user_ids:
         return {}
 
-    factory = get_secom_session_factory()
+    factory = get_viewer_session_factory()
     async with factory() as session:
         result = await session.execute(
             select(User.id, User.nickname).where(User.id.in_(user_ids)),
@@ -77,8 +77,8 @@ async def get_secom_user_nicknames(user_ids: set[int]) -> dict[int, str]:
         return {row.id: row.nickname for row in result.all()}
 
 
-async def get_secom_user_profile(user_id: int) -> dict:
-    factory = get_secom_session_factory()
+async def get_viewer_user_profile(user_id: int) -> dict:
+    factory = get_viewer_session_factory()
     async with factory() as session:
         row = (
             await session.execute(
@@ -103,8 +103,8 @@ async def get_secom_user_profile(user_id: int) -> dict:
         }
 
 
-async def seed_secom_if_empty() -> None:
-    """Secom 시드 — groups + admin."""
+async def seed_viewer_if_empty() -> None:
+    """Viewer 시드 — groups + admin."""
     await seed_groups_if_empty()
     await seed_admin_if_empty()
 

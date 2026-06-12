@@ -25,7 +25,7 @@ class MovaPick(MovaModel):
         ForeignKey(User.__table__.c.id, ondelete="SET NULL"),
         nullable=True,
         index=True,
-        comment="Secom users.id (동일 DB FK, 비로그인은 NULL)",
+        comment="Viewer users.id (동일 DB FK, 비로그인은 NULL)",
     )
     movie_id: Mapped[int] = mapped_column(
         Integer,

@@ -1,4 +1,4 @@
-﻿"""Neon에서 mova_* 테이블 rename + Secom users 제거 (1회 실행, 재실행 안전).
+﻿"""Neon에서 mova_* 테이블 rename + Viewer users 제거 (1회 실행, 재실행 안전).
 
 Usage (suvisdev 폴더에서):
   python scripts/apply_table_rename.py
@@ -28,7 +28,7 @@ RENAME_PAIRS: tuple[tuple[str, str], ...] = (
     ("mova_users", "users"),
 )
 
-SECOM_DROP = ("user_groups",)
+VIEWER_DROP = ("user_groups",)
 
 
 async def table_exists(conn, name: str) -> bool:
@@ -44,8 +44,8 @@ async def table_exists(conn, name: str) -> bool:
     return r.scalar() is not None
 
 
-async def is_secom_users_table(conn) -> bool:
-    """Secom 회원 테이블만 제거 (Mova `users` 와 구분)."""
+async def is_viewer_users_table(conn) -> bool:
+    """Viewer 회원 테이블만 제거 (Mova `users` 와 구분)."""
     from sqlalchemy import text
 
     if not await table_exists(conn, "users"):
@@ -74,12 +74,12 @@ async def main() -> None:
     reload_env()
     engine = get_engine()
     async with engine.begin() as conn:
-        for table in SECOM_DROP:
+        for table in VIEWER_DROP:
             if await table_exists(conn, table):
-                print(f"DROP secom table: {table}")
+                print(f"DROP viewer table: {table}")
                 await conn.execute(text(f'DROP TABLE IF EXISTS "{table}" CASCADE'))
-        if await is_secom_users_table(conn):
-            print("DROP secom table: users (has user_group_id)")
+        if await is_viewer_users_table(conn):
+            print("DROP viewer table: users (has user_group_id)")
             await conn.execute(text('DROP TABLE IF EXISTS "users" CASCADE'))
 
         for old, new in RENAME_PAIRS:

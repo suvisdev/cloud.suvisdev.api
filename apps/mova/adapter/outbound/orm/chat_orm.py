@@ -20,7 +20,7 @@ class MovaChat(MovaModel):
         ForeignKey(User.__table__.c.id, ondelete="SET NULL"),
         nullable=True,
         index=True,
-        comment="Secom users.id (동일 DB FK, 비로그인은 NULL)",
+        comment="Viewer users.id (동일 DB FK, 비로그인은 NULL)",
     )
     assistant_id: Mapped[int | None] = mapped_column(
         Integer,

@@ -17,13 +17,13 @@ from core.matrix.grid_oracle_database_manager import (
     create_tables,
     dispose_engine,
     get_mova_engine,
-    get_secom_engine,
+    get_viewer_engine,
     reload_env,
     verify_connection,
 )
-from viewer.adapter.outbound.orm.user_orm import seed_secom_if_empty
+from viewer.adapter.outbound.orm.user_orm import seed_viewer_if_empty
 
-SECOM_TABLES = ("groups", "admins", "users")
+VIEWER_TABLES = ("groups", "admins", "users")
 MOVA_TABLES = (
     "movies",
     "actors",
@@ -79,37 +79,37 @@ async def main() -> None:
         print(f"FAIL: {err}")
         await dispose_engine()
         sys.exit(1)
-    print("OK: Mova + Secom SELECT 1 성공")
+    print("OK: Mova + Viewer SELECT 1 성공")
 
     print("\n=== 2. create_tables() 실행 ===")
     await create_tables()
     print("OK: create_tables 완료")
 
-    print("\n=== 3. seed_secom_if_empty() 실행 ===")
-    await seed_secom_if_empty()
-    print("OK: secom seed 완료")
+    print("\n=== 3. seed_viewer_if_empty() 실행 ===")
+    await seed_viewer_if_empty()
+    print("OK: viewer seed 완료")
 
     mova_engine = get_mova_engine()
-    secom_engine = get_secom_engine()
-    if mova_engine is None or secom_engine is None:
+    viewer_engine = get_viewer_engine()
+    if mova_engine is None or viewer_engine is None:
         print("FAIL: engine 초기화 실패")
         await dispose_engine()
         sys.exit(1)
 
     mova_tables = await _list_public_tables(mova_engine)
-    secom_tables = await _list_public_tables(secom_engine)
-    same_db = mova_tables == secom_tables
+    viewer_tables = await _list_public_tables(viewer_engine)
+    same_db = mova_tables == viewer_tables
 
     print(f"\n=== 4. public 테이블 목록 ({len(mova_tables)}개) ===")
     for name in mova_tables:
         print(f"  - {name}")
     if not same_db:
-        print(f"\n(Secom 별도 DB — {len(secom_tables)}개)")
+        print(f"\n(Viewer 별도 DB — {len(viewer_tables)}개)")
 
     print("\n=== 5. 필수 테이블 존재 여부 ===")
     all_ok = True
     for label, expected in (
-        ("Secom/Viewer", SECOM_TABLES),
+        ("Viewer", VIEWER_TABLES),
         ("Mova", MOVA_TABLES),
         ("Titanic", TITANIC_TABLES),
     ):
@@ -131,8 +131,8 @@ async def main() -> None:
             all_ok = False
         print(f"  {status}  {table}.{column} → users.id")
 
-    print("\n=== 7. Secom seed 데이터 ===")
-    async with secom_engine.connect() as conn:
+    print("\n=== 7. Viewer seed 데이터 ===")
+    async with viewer_engine.connect() as conn:
         for table in ("groups", "admins", "users"):
             count = (await conn.execute(text(f'SELECT COUNT(*) FROM "{table}"'))).scalar_one()
             print(f"  {table}: {count} rows")

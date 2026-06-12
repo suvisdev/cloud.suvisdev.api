@@ -11,7 +11,7 @@ from mova.adapter.outbound.orm.chat_orm import MovaChat
 from mova.adapter.outbound.pg.pg_session import run_pg
 from mova.app.dtos.chat_dto import ChatUpsertCommand
 from mova.app.ports.output.chat_repository import ChatRepository
-from viewer.adapter.outbound.orm.user_orm import secom_user_exists
+from viewer.adapter.outbound.orm.user_orm import viewer_user_exists
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +39,8 @@ class ChatPgRepository(ChatRepository):
         intent = (intent_type or "mood").strip()[:32] or "mood"
         now = datetime.now(timezone.utc)
 
-        if user_id is not None and not await secom_user_exists(user_id):
-            raise ValueError(f"회원 ID {user_id}를 찾을 수 없습니다. (Secom users)")
+        if user_id is not None and not await viewer_user_exists(user_id):
+            raise ValueError(f"회원 ID {user_id}를 찾을 수 없습니다. (Viewer users)")
 
         logger.info(
             "[ChatPgRepository] upsert — user_id=%s assistant_id=%s intent=%s",
