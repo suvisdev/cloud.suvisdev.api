@@ -4,7 +4,8 @@ import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from titanic.app.dtos.crew_smith_captain_dto import SmithCaptainQuery, SmithCaptainResponse, SmithCaptainChatCommand
+from mova.adapter.outbound.llm.gemini_client import gemini_reply
+from titanic.app.dtos.crew_smith_captain_dto import SmithCaptainQuery, SmithCaptainResponse, SmithCaptainChatCommand, SmithChatResponse
 from titanic.app.ports.output.crew_smith_captain_repository import SmithCaptainRepository
 
 logger = logging.getLogger(__name__)
@@ -14,9 +15,10 @@ class SmithCaptainPgRepository(SmithCaptainRepository):
     def __init__(self, session: AsyncSession | None = None) -> None:
         self._session = session
 
-    async def chat(self, command: SmithCaptainChatCommand) -> SmithCaptainResponse:
-        logger.info(f"[SmithCaptainPgRepository] chat 진입 | message={command.message}")
-        return SmithCaptainResponse(id=0, name=f"스미스 선장의 답변: {command.message}")
+    async def chat(self, command: SmithCaptainChatCommand) -> SmithChatResponse:
+        logger.info(f"[SmithCaptainPgRepository] chat | messages={len(command.messages)}개")
+        last = command.messages[-1].content if command.messages else ""
+        return SmithChatResponse(reply=f"(임시 응답) 질문을 받았습니다: {last}")
 
 
     async def introduce_myself(self, query: SmithCaptainQuery) -> SmithCaptainResponse:

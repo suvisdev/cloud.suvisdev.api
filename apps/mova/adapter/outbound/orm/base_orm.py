@@ -1,4 +1,4 @@
-"""@see vault/DevOps/Backend/ENTITY_RULE.md — mova 테이블 공통 int PK `id`."""
+﻿"""@see suvisdev/_claude/ENTITY_RULE.md — mova 테이블 공통 int PK `id`."""
 
 from sqlalchemy.orm import Mapped, mapped_column
 

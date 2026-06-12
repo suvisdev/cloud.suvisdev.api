@@ -1,0 +1,106 @@
+# Mova App Harness — `suvisdev/apps/mova/` (Cursor)
+
+> **역할:** 영화·채팅·리뷰·랭킹 등 Mova 도메인 API.  
+> **상세 SSOT:** [`CLAUDE.md`](CLAUDE.md)  
+> **레이어 기준선:** [`titanic/_docs/CLAUDE.md`](../titanic/_docs/CLAUDE.md) (James와 동일 구조)  
+> **상위:** [`suvisdev/_claude/CLAUDE.md`](../../../_claude/CLAUDE.md)
+
+본 파일은 Mova **특이점** 요약이다. 공통 헥사고날 규칙은 백엔드 `CLAUDE.md`를 따른다.
+
+---
+
+## Mandatory workflow (`apps/mova/` 수정 전)
+
+1. 본 폴더 [`CLAUDE.md`](CLAUDE.md)
+2. [`suvisdev/_claude/CLAUDE.md`](../../../_claude/CLAUDE.md)
+3. [`MOVA_ERD.md`](MOVA_ERD.md) (스키마·FK 변경 시)
+4. Viewer cross-FK 시 [`viewer/_docs/CLAUDE.md`](../viewer/_docs/CLAUDE.md)
+
+---
+
+## 참조 파일
+
+| 역할 | 파일 |
+|------|------|
+| Router | `adapter/inbound/api/v1/movies_router.py` |
+| Input Port | `app/ports/input/movies_use_case.py` |
+| Interactor | `app/use_cases/movies_interactor.py` |
+| Dto | `app/dtos/movies_dto.py`, `actors_dto.py` |
+| DI | `dependencies/movies_provider.py` |
+| LLM | `adapter/outbound/llm/gemini_client.py` |
+| Router 집약 | `adapter/inbound/api/__init__.py` → `mova_router` |
+
+---
+
+## Mova 특이점 (Titanic과 다름)
+
+### Dto → Schema 변환 **필수**
+
+Router에서 반드시 `Dto.to_schema()` 후 반환한다.
+
+```python
+return (await movies.save_movie(req)).to_schema()
+```
+
+`to_schema()`는 lazy import (`TYPE_CHECKING` + 메서드 내부 import).
+
+### DB 세션
+
+```python
+from core.matrix.grid_oracle_database_manager import get_mova_db
+```
+
+### Cross-metadata FK (Viewer `users`)
+
+`chat` / `picks` / `reviews` → `users.id` 참조 시:
+
+```python
+from viewer.app.dtos.user_model import User
+ForeignKey(User.__table__.c.id)
+```
+
+`"users.id"` 문자열 FK 금지. `create_tables()` 순서: **Viewer(Secom) → Mova**.
+
+### LLM (Gemini)
+
+- **Outbound adapter** (`gemini_client.py`)만 Gemini 호출.
+- Router·Interactor에서 Gemini API 직접 호출 금지 → **LLM Output Port** 경유.
+
+### 도메인·prefix
+
+| 도메인 | prefix |
+|--------|--------|
+| Movies | `/mova/movies` |
+| Characters | `/mova/characters` |
+| Reviews | `/mova/reviews` |
+| Picks | `/mova/picks` |
+| Chat | `/mova/chat` |
+| Ranking | `/mova/ranking` |
+
+`main.py`에서 `mova_router`를 `/mova`로 include.
+
+---
+
+## 금지 (Mova 추가)
+
+| ❌ | ✅ |
+|----|-----|
+| Router에서 Dto 직접 반환 | `Dto.to_schema()` |
+| Interactor에서 Gemini 직접 호출 | LLM Output Port |
+| Mova 테이블을 Viewer보다 먼저 생성 | `create_tables()` 순서 유지 |
+
+---
+
+## 충돌 시 우선순위
+
+1. 사용자 지시
+2. 본 폴더 [`CLAUDE.md`](CLAUDE.md) · [`MOVA_ERD.md`](MOVA_ERD.md)
+3. [`suvisdev/_claude/CLAUDE.md`](../../../_claude/CLAUDE.md)
+
+### Cursor 참조 예
+
+```
+@suvisdev/apps/mova/_docs/CLAUDE.md
+@suvisdev/apps/mova/_docs/MOVA_ERD.md
+@suvisdev/_claude/CLAUDE.md
+```

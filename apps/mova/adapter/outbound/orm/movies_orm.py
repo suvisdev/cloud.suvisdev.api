@@ -1,4 +1,4 @@
-"""@see vault/DevOps/Backend/ENTITY_RULE.md — 영화 정보 (HOT 랭킹·상세용)."""
+﻿"""@see suvisdev/_claude/ENTITY_RULE.md — 영화 정보 (HOT 랭킹·상세용)."""
 
 import re
 

@@ -1,4 +1,4 @@
-"""@see vault/DevOps/Backend/ENTITY_RULE.md — 관리자 계정 (`admins`)."""
+﻿"""@see suvisdev/_claude/ENTITY_RULE.md — 관리자 계정 (`admins`)."""
 
 from __future__ import annotations
 

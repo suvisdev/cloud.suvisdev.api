@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-from titanic.adapter.inbound.api.schemas.crew_smith_captain_schema import ChatSchema
+from titanic.adapter.inbound.api.schemas.crew_smith_captain_schema import MessageSchema
 
 
 @dataclass(frozen=True)
@@ -18,10 +18,13 @@ class SmithCaptainResponse:
 
 
 @dataclass(frozen=True)
-class SmithCaptainChatCommand:
-    message: str
+class SmithChatResponse:
+    reply: str
 
-    @classmethod
-    def from_schema(cls, schema: ChatSchema) -> SmithCaptainChatCommand:
-        return cls(message=schema.message)
+
+@dataclass(frozen=True)
+class SmithCaptainChatCommand:
+    messages: list[MessageSchema]
+    system_instruction: str | None = None
+    model: str | None = "flash"
  

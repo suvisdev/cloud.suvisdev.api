@@ -13,28 +13,29 @@ Karpathy가 지적한 패턴을 네 가지 원칙으로 맞춘다.
 | 정밀한 수정 | 요청과 직결된 줄만 바꾸고, 지나가며 “개선”하지 않는다. |
 | 목표 중심 실행 | “작동하게”보다 테스트·재현 등 **검증 가능한 성공 기준**으로 일을 맡긴다. |
 
-에이전트에게 **명령만 나열**하기보다 **성공 기준 + 검증 방법**을 주면, 기준을 만족할 때까지 루프하기 쉽다는 점이 Karpathy식 하네스의 핵심 통찰이다. 전체 문장·인용·표는 [`CLAUDE.md`](CLAUDE.md)에 있다.
+에이전트에게 **명령만 나열**하기보다 **성공 기준 + 검증 방법**을 주면, 기준을 만족할 때까지 루프하기 쉽다는 점이 Karpathy식 하네스의 핵심 통찰이다. 전체 문장·인용·표는 [`_claude/CLAUDE.md`](_claude/CLAUDE.md)에 있다.
 
 ## 문서와 규칙 파일
 
 | 경로 | 역할 |
 |------|------|
-| [`CLAUDE.md`](CLAUDE.md) | 네 원칙 **전문**, 배경 인용, 예시 표, 프로젝트별 지침 병합 방법. 근거 문서. |
+| [`_claude/CLAUDE.md`](_claude/CLAUDE.md) | 네 원칙 **전문**, 배경 인용, 예시 표, 프로젝트별 지침 병합 방법. 근거 문서. |
 | [`.cursorrules`](../.cursorrules) | Cursor에 걸리는 **하네스**(PKS · SOLID · 아키텍처 + 한국어 요약). |
 | [`.cursorignore`](../.cursorignore) | 인덱스·검색 제외 경로 (삭제된 파일·외부 agora 등). |
 
-원칙을 바꿀 때는 **`CLAUDE.md`와 `.cursorrules`를 한 세트로** 맞춘다. Cursor는 `CLAUDE.md`를 자동으로 읽지 않으므로, 상세는 `@CLAUDE.md`로 명시 참조하거나 `.cursor/rules/*.mdc`에 `alwaysApply: true`로 끌어온다.
+원칙을 바꿀 때는 **`_claude/CLAUDE.md`와 `.cursorrules`를 한 세트로** 맞춘다. Cursor는 `CLAUDE.md`를 자동으로 읽지 않으므로, 상세는 `@suvisdev/_claude/CLAUDE.md`로 명시 참조하거나 `.cursor/rules/*.mdc`에 `alwaysApply: true`로 끌어온다.
 
 ## 빠른 시작 (Cursor)
 
 1. 이 폴더를 Cursor로 연다.  
 2. 에이전트와 작업할 때는 가능한 한 **검증 가능한 목표**로 요청한다.  
-3. 규칙을 손보려면 [`CLAUDE.md`](CLAUDE.md)를 고치고, Cursor용 요약은 [`.cursorrules`](.cursorrules)에 맞춘다.
+3. 규칙을 손보려면 [`_claude/CLAUDE.md`](_claude/CLAUDE.md)를 고치고, Cursor용 요약은 [`.cursorrules`](../.cursorrules)에 맞춘다.
 
 ## 저장소 안의 다른 디렉터리 (요지)
 
 - `agora/` — 관련 애플리케이션·패키지가 하위에 있다.  
-- `vault/` — 코딩 규칙·ERD·도메인 위키 (SSOT).
+- `_claude/` — 백엔드 코딩 규칙·ENTITY_RULE (SSOT).
+- `apps/<app>/_docs/` — 앱별 ERD·도메인 위키.
 
 앱별 빌드·실행 방법은 각 하위 프로젝트의 README나 설정을 따른다.
 

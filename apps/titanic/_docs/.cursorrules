@@ -1,0 +1,90 @@
+# Titanic App Harness — `suvisdev/apps/titanic/` (Cursor)
+
+> **역할:** CSV 업로드(James)·조회(Walter)·Smith 채팅 — 백엔드 앱 **헥사고날 기준선**.  
+> **상세 SSOT:** [`CLAUDE.md`](CLAUDE.md)  
+> **상위:** [`suvisdev/_claude/CLAUDE.md`](../../../_claude/CLAUDE.md) · [루트 Karpathy](../../../CLAUDE.md)
+
+`mova`·`viewer` 신규/수정 시 **이 앱과 동일 레이어**를 따른다. 본 파일은 Titanic **특이점** 요약이다.
+
+---
+
+## Mandatory workflow (`apps/titanic/` 수정 전)
+
+1. 본 폴더 [`CLAUDE.md`](CLAUDE.md)
+2. [`suvisdev/_claude/CLAUDE.md`](../../../_claude/CLAUDE.md) §C–L
+3. [`ENTITY_RULE.md`](../../../_claude/ENTITY_RULE.md)
+4. [`TITANIC_ERD.md`](TITANIC_ERD.md) (스키마 변경 시)
+5. [`james_fastapi_context.md`](james_fastapi_context.md) (James/Walter 맥락)
+
+---
+
+## 기준선 참조 파일
+
+| 역할 | 파일 |
+|------|------|
+| Router | `adapter/inbound/api/v1/crew_james_director_router.py` |
+| Input Port | `app/ports/input/crew_james_director_use_case.py` |
+| Interactor | `app/use_cases/crew_james_director_interactor.py` |
+| PgRepository | `adapter/outbound/pg/crew_james_director_pg_repository.py` |
+| DI | `dependencies/crew_james_director_provider.py` |
+| DTO | `app/dtos/crew_james_director_dto.py` |
+| Router 집약 | `adapter/inbound/api/__init__.py` → `titanic_router` |
+
+---
+
+## Titanic 특이점 (Mova와 다름)
+
+### DTO = HTTP 계약
+
+`JamesResponse` / `WalterResponse`가 곧 OpenAPI 응답이다. Router에서 **`to_schema()` 없이** 반환한다.
+
+```python
+return await walter.introduce_myself(schema)  # WalterResponse 직접 반환
+```
+
+### DB 세션
+
+```python
+from core.matrix.grid_oracle_database_manager import get_db  # Titanic 전용
+```
+
+Mova → `get_mova_db()`, Viewer → `get_secom_db()`.
+
+### 라우터
+
+| 파일 | prefix | 담당 |
+|------|--------|------|
+| `crew_james_director_router.py` | `/api/titanic/james` | CSV 업로드 |
+| `crew_walter_director_router.py` | `/api/titanic/walter` | 승객 조회 |
+| `crew_smith_captain_router.py` | `/api/titanic/smith` | 선장 채팅 |
+
+(API prefix는 `adapter/inbound/api/__init__.py`의 `titanic_router` 기준 — 변경 시 프론트 `NEXT_PUBLIC_API_URL` 경로와 동기화)
+
+### Smith Captain
+
+- LLM은 `adapter/outbound/llm/` outbound adapter 경유 (Router·Interactor 직접 호출 금지).
+- `SmithCaptainInteractor`는 `JackTrainerUseCase`, `RoseModelUseCase`를 **DI**로 받음.
+
+---
+
+## 새 엔드포인트
+
+[`suvisdev/_claude/CLAUDE.md` §L 체크리스트](../../../_claude/CLAUDE.md) 따름.  
+응답은 Schema 대신 **`JamesResponse` / `WalterResponse` DTO** 직접 사용 가능.
+
+---
+
+## 충돌 시 우선순위
+
+1. 사용자 지시
+2. 본 폴더 [`CLAUDE.md`](CLAUDE.md)
+3. [`suvisdev/_claude/CLAUDE.md`](../../../_claude/CLAUDE.md)
+4. [루트 `.cursorrules`](../../../../.cursorrules)
+
+### Cursor 참조 예
+
+```
+@suvisdev/apps/titanic/_docs/CLAUDE.md
+@suvisdev/_claude/CLAUDE.md
+@suvisdev/apps/titanic/_docs/TITANIC_ERD.md
+```

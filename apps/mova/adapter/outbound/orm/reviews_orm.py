@@ -1,4 +1,4 @@
-"""@see vault/DevOps/Backend/ENTITY_RULE.md — 사용자↔영화 반응·별점 리뷰(단일 테이블 `reviews`)."""
+﻿"""@see suvisdev/_claude/ENTITY_RULE.md — 사용자↔영화 반응·별점 리뷰(단일 테이블 `reviews`)."""
 
 from datetime import datetime
 

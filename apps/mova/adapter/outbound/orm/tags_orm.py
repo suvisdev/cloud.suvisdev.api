@@ -1,4 +1,4 @@
-"""@see vault/DevOps/Backend/ENTITY_RULE.md — 영화별 키워드 태그 (감성·장르·등장인물)."""
+﻿"""@see suvisdev/_claude/ENTITY_RULE.md — 영화별 키워드 태그 (감성·장르·등장인물)."""
 
 import re
 

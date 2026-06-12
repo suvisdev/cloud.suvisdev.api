@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from titanic.app.dtos.crew_smith_captain_dto import SmithCaptainQuery, SmithCaptainResponse, SmithCaptainChatCommand
+from titanic.app.dtos.crew_smith_captain_dto import SmithCaptainQuery, SmithCaptainResponse, SmithCaptainChatCommand, SmithChatResponse
 
 
 class SmithCaptainRepository(ABC):
     """crew_smith_captain output port."""
-    
+
     @abstractmethod
-    async def chat(self, command: SmithCaptainChatCommand) -> SmithCaptainResponse:
+    async def chat(self, command: SmithCaptainChatCommand) -> SmithChatResponse:
         pass
 
     @abstractmethod

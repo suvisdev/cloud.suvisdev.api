@@ -1,15 +1,15 @@
 from pydantic import BaseModel, Field
 
-class ChatSchema(BaseModel):
-    message: str = Field(..., description="사용자가 채팅창에 입력한 자연어")
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "message": "타이타닉 생존율을 분석해줘.",
-            }
-        }
-    }
+class MessageSchema(BaseModel):
+    role: str
+    content: str
+
+
+class ChatSchema(BaseModel):
+    messages: list[MessageSchema] = Field(..., description="대화 이력 (role: user|assistant)")
+    systemInstruction: str | None = Field(None, description="선장 역할 시스템 프롬프트")
+    model: str | None = Field("flash", description="Gemini 모델 키")
 
 class SmithCaptainSchema(BaseModel):
 
