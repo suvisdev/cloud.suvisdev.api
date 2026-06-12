@@ -12,19 +12,22 @@ ModelKey = Literal["flash", "flash15", "pro"]
 
 # 프론트 선택값 → Gemini 모델 ID (list_models 기준, generateContent 지원)
 GEMINI_MODEL_MAP: dict[ModelKey, str] = {
-    "flash": "gemini-2.5-flash-lite",
-    "flash15": "gemini-2.5-flash",
-    "pro": "gemini-2.5-pro",
+    "flash": "gemini-3.1-flash-lite",
+    "flash15": "gemini-3.1-flash-lite",
+    "pro": "gemini-3.1-pro-preview",
 }
 
 DEFAULT_MODEL_KEY: ModelKey = "flash15"
 
 # v1beta에서 404 나는 구형 ID → 권장 모델로 대체
 _LEGACY_MODEL_ALIASES: dict[str, str] = {
-    "gemini-1.5-flash": "gemini-2.5-flash",
-    "gemini-1.5-flash-8b": "gemini-2.5-flash-lite",
-    "gemini-1.5-pro": "gemini-2.5-pro",
-    "gemini-2.0-flash": "gemini-2.5-flash",
+    "gemini-1.5-flash": "gemini-3.1-flash-lite",
+    "gemini-1.5-flash-8b": "gemini-3.1-flash-lite",
+    "gemini-1.5-pro": "gemini-3.1-pro-preview",
+    "gemini-2.0-flash": "gemini-3.1-flash-lite",
+    "gemini-2.5-flash": "gemini-3.1-flash-lite",
+    "gemini-2.5-flash-lite": "gemini-3.1-flash-lite",
+    "gemini-2.5-pro": "gemini-3.1-pro-preview",
 }
 
 

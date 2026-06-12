@@ -35,7 +35,7 @@ def run_korean_ai(user_text):
 
 # 실제 실행 테스트
 if __name__ == "__main__":
-    question = "클로드와의 차이점 알려줘"
+    question = "ollama, kiwipiepy, eeve-korean의 차이점을 알려줘"
     answer = run_korean_ai(question)
     
     print("\n--- [3단계] AI 최종 답변 ---")
