@@ -26,7 +26,8 @@ class SmithCaptainInteractor(SmithCaptainUseCase):
                  rose: RoseModelUseCase) -> SmithChatResponse:
         
         # schema 내용 로그로 출력
-        logger.info(f"[SmithCaptainInteractor] chat 진입 | messages={schema.messages}")
+        logger.info(f"[SmithCaptainInteractor] chat | schema={schema.json()}")
+        
         return "1309명이야"
     
     
