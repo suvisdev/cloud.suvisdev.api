@@ -1,0 +1,16 @@
+from pydantic import BaseModel, Field
+
+
+class MarketPicksSchema(BaseModel):
+
+    id: int = Field(0, description="Picks ID")
+    name: str = Field("ë°°ê¸‰ ?´ë‹¹??(Distributor)", description="Distributor's name")
+    # AIê°€ ? ì •???‘í’ˆ???¬ìš©?ì—ê²?ë°°ê¸‰?˜ëŠ” ?ë ˆ?´í„°. picks ?Œì´ë¸?ê´€ë¦?
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "id": 1,
+                "name": "ë°°ê¸‰ ?´ë‹¹??(Distributor)",
+            }
+        }
+    }

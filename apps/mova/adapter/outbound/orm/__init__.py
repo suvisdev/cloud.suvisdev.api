@@ -1,14 +1,14 @@
-"""Mova SQLAlchemy ORM models."""
+﻿"""Mova SQLAlchemy ORM models."""
 
-from mova.adapter.outbound.orm.actors_orm import MovaActor
-from mova.adapter.outbound.orm.assistants_orm import MovaAssistant
+from mova.adapter.outbound.orm.studio_actors_orm import MovaActor
+from mova.adapter.outbound.orm.platform_assistants_orm import MovaAssistant
 from mova.adapter.outbound.orm.base_orm import MovaModel
-from mova.adapter.outbound.orm.characters_orm import MovaCharacter
-from mova.adapter.outbound.orm.chat_orm import MovaChat
-from mova.adapter.outbound.orm.movies_orm import MovaMovie, slugify_movie
-from mova.adapter.outbound.orm.picks_orm import MovaPick
-from mova.adapter.outbound.orm.rankings_orm import MovaRanking
-from mova.adapter.outbound.orm.reviews_orm import (
+from mova.adapter.outbound.orm.studio_characters_orm import MovaCharacter
+from mova.adapter.outbound.orm.market_chat_orm import MovaChat
+from mova.adapter.outbound.orm.studio_movies_orm import MovaMovie, slugify_movie
+from mova.adapter.outbound.orm.market_picks_orm import MovaPick
+from mova.adapter.outbound.orm.market_rankings_orm import MovaRanking
+from mova.adapter.outbound.orm.market_reviews_orm import (
     ACTION_CLICK,
     ACTION_FAVORITE,
     ACTION_NOT_INTERESTED,
@@ -17,7 +17,7 @@ from mova.adapter.outbound.orm.reviews_orm import (
     EVENT_ACTION_TYPES,
     MovaReview,
 )
-from mova.adapter.outbound.orm.tags_orm import (
+from mova.adapter.outbound.orm.studio_tags_orm import (
     TAG_KIND_CAST,
     TAG_KIND_GENRE,
     TAG_KIND_MOOD,

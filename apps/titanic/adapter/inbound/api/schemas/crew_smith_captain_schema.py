@@ -1,16 +1,16 @@
 from pydantic import BaseModel, Field
 
 
-class MessageSchema(BaseModel):
-    role: str
-    content: str
-
-
 class ChatSchema(BaseModel):
-    messages: list[MessageSchema] = Field(..., description="대화 이력 (role: user|assistant)")
-    systemInstruction: str | None = Field(None, description="선장 역할 시스템 프롬프트")
-    model: str | None = Field("flash", description="Gemini 모델 키")
+    messages: str = Field(..., description="채팅 메시지 히스토리")
 
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "messages": "탑승객이 몇 명이야 ?",
+            }
+        }
+    }
 class SmithCaptainSchema(BaseModel):
 
     id: int = Field(0, description="Captain ID")

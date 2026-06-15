@@ -1,0 +1,10 @@
+﻿from __future__ import annotations
+
+from mova.adapter.inbound.api.schemas.l import a
+from mova.app.dtos.t import f
+from mova.app.ports.input.o import r
+
+
+class m(r):
+    async def introduce_myself(self, schemas: a) -> f:
+        return f(id=schemas.id, name=schemas.name)

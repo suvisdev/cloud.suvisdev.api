@@ -2,11 +2,13 @@ import json
 import logging
 import re
 
-from mova.adapter.inbound.api.schemas.chat_schema import MovaChatRecommendationSchema
-from mova.adapter.outbound.orm.movies_orm import slugify_movie
-from mova.adapter.outbound.pg.movies_pg_repository import MoviesPgRepository
-from mova.domain.value_objects.movie_catalog import resolve_canonical_slug
-from mova.app.use_cases.movie_import_interactor import MovieImportInteractor
+from core.matrix.vauly_keymaker_secret_manager import get_keymaker
+from mova.adapter.inbound.api.schemas.market_chat_schema import MovaChatRecommendationSchema
+from mova.adapter.inbound.api.schemas.studio_movies_schema import MovieCreateSchema
+from mova.adapter.outbound.http import TmdbAdapter
+from mova.adapter.outbound.orm.studio_movies_orm import slugify_movie
+from mova.adapter.outbound.pg.studio_movies_pg_repository import StudioMoviesPgRepository
+from mova.domain.value_objects.studio_movies_vo import resolve_canonical_slug
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +76,7 @@ class ChatReplyService:
     ) -> list[MovaChatRecommendationSchema]:
         if not recommendations:
             return []
-        repo = MoviesPgRepository()
-        import_interactor = MovieImportInteractor()
+        repo = StudioMoviesPgRepository()
         enriched: list[MovaChatRecommendationSchema] = []
         for rec in recommendations:
             canonical = resolve_canonical_slug(rec.id, title=rec.title)
@@ -98,30 +99,18 @@ class ChatReplyService:
                     platform = movie.platform
 
             if not poster:
-                tmdb_payload = await import_interactor.enrich_payload_with_tmdb(
-                    {
-                        "slug": slug,
-                        "title": rec.title,
-                        "release_year": year,
-                        "rating": float(movie.rating) if movie is not None else 0.0,
-                        "poster": "",
-                        "genres": list(movie.genres or []) if movie is not None else [],
-                    },
-                )
-                poster = str(tmdb_payload.get("poster") or "").strip()
+                poster = await self._fetch_tmdb_poster(rec.title, year)
                 if poster and movie is not None:
                     try:
-                        await repo.upsert(
-                            {
-                                "slug": movie.slug,
-                                "title": movie.title,
-                                "release_year": movie.release_year,
-                                "rating": movie.rating,
-                                "poster": poster,
-                                "platform": movie.platform,
-                                "genres": list(movie.genres or []),
-                            },
-                        )
+                        await repo.save_movie(MovieCreateSchema(
+                            slug=movie.slug,
+                            title=movie.title,
+                            release_year=movie.release_year or "",
+                            rating=float(movie.rating or 0),
+                            poster=poster,
+                            platform=movie.platform,
+                            genres=list(movie.genres or []),
+                        ))
                     except Exception:
                         logger.debug(
                             "[ChatReplyService] 포스터 DB 저장 스킵 — %r",
@@ -140,6 +129,26 @@ class ChatReplyService:
                 ),
             )
         return enriched
+
+    async def _fetch_tmdb_poster(self, title: str, year: str) -> str:
+        try:
+            key = get_keymaker().tmdb_api_key
+            if not key:
+                return ""
+            adapter = TmdbAdapter(key)
+            results = await adapter.search_movies(title, page=1)
+            if not results:
+                return ""
+            pick = results[0]
+            for c in results:
+                ct = str(c.get("title") or c.get("original_title") or "").strip()
+                cy = c.get("release_date", "")[:4]
+                if ct == title and (not year or cy == year):
+                    pick = c
+                    break
+            return adapter.poster_url(pick.get("poster_path")) or ""
+        except Exception:
+            return ""
 
     def _extract_json(self, raw: str) -> dict | None:
         text = raw.strip()

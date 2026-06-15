@@ -18,3 +18,4 @@ def get_jack_trainer_use_case(
         repository: JackTrainerRepository = Depends(get_jack_trainer_repository)
 ) -> JackTrainerUseCase:
     return JackTrainerInteractor(repository=repository)
+

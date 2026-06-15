@@ -34,9 +34,6 @@ Router에서 반드시 `Dto.to_schema()`를 호출한다.
 # mova router (표준)
 return (await movies.save_movie(req)).to_schema()
 ```
-
-- `to_schema()`는 **lazy import** (`TYPE_CHECKING` + 메서드 내부 import) 로 순환 import 방지.
-
 ### B.2 DB 세션
 
 ```python

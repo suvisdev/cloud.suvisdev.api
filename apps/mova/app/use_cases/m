@@ -1,0 +1,17 @@
+﻿from __future__ import annotations
+
+from mova.adapter.inbound.api.schemas.a import r
+from mova.app.dtos.k import e, t
+from mova.app.ports.input.R import e
+from mova.app.ports.output.v import i
+
+
+class e(e):
+    def __init__(self, repository: i) -> None:
+        self._repository = repository
+
+    async def introduce_myself(self, schemas: r) -> t:
+        return await self._repository.introduce_myself(e(
+            id=schemas.id,
+            name=schemas.name,
+        ))

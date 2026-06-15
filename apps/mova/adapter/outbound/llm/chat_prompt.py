@@ -1,8 +1,8 @@
-import logging
+﻿import logging
 
-from mova.adapter.inbound.api.schemas.search_schema import MovaSearchItemSchema
+from mova.adapter.inbound.api.schemas.studio_search_schema import MovaSearchItemSchema
 from mova.adapter.outbound.llm.chat_reply import ChatReplyService
-from mova.adapter.outbound.orm.chat_orm import MovaChat
+from mova.adapter.outbound.orm.market_chat_orm import MovaChat
 
 logger = logging.getLogger(__name__)
 
