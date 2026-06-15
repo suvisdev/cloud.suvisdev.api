@@ -9,6 +9,12 @@ from titanic.app.ports.output.passenger_molly_scaler_repository import MollyScal
 from titanic.app.use_cases.passenger_molly_scaler_interactor import MollyScalerInteractor
 
 
-def get_molly_scaler(db: AsyncSession = Depends(get_db)) -> MollyScalerUseCase:
-    repository: MollyScalerRepository = MollyScalerPgRepository(session=db)
+def get_molly_scaler_repository(
+        db: AsyncSession = Depends(get_db)
+) -> MollyScalerRepository:
+    return MollyScalerPgRepository(session=db)
+
+def get_molly_scaler_use_case(
+        repository: MollyScalerRepository = Depends(get_molly_scaler_repository)
+) -> MollyScalerUseCase:
     return MollyScalerInteractor(repository=repository)

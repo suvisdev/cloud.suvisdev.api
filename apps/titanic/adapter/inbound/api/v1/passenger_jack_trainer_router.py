@@ -2,7 +2,7 @@
 
 from titanic.adapter.inbound.api.schemas.passenger_jack_trainer_schema import JackTrainerSchema
 from titanic.app.ports.input.passenger_jack_trainer_use_case import JackTrainerUseCase
-from titanic.dependencies.passenger_jack_trainer_provider import get_jack_trainer
+from titanic.dependencies.passenger_jack_trainer_provider import get_jack_trainer_use_case
 from titanic.app.dtos.passenger_jack_trainer_dto import JackTrainerResponse
 
 jack_trainer_router = APIRouter(prefix="/jack", tags=["jack"])
@@ -10,7 +10,7 @@ jack_trainer_router = APIRouter(prefix="/jack", tags=["jack"])
 
 @jack_trainer_router.get("/myself")
 async def introduce_myself(
-    jack: JackTrainerUseCase = Depends(get_jack_trainer),
+    jack: JackTrainerUseCase = Depends(get_jack_trainer_use_case),
 ) -> JackTrainerResponse:
     return await jack.introduce_myself(
         JackTrainerSchema(

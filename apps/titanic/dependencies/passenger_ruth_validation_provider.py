@@ -9,6 +9,12 @@ from titanic.app.ports.output.passenger_ruth_validation_repository import RuthVa
 from titanic.app.use_cases.passenger_ruth_validation_interactor import RuthValidationInteractor
 
 
-def get_ruth_validation(db: AsyncSession = Depends(get_db)) -> RuthValidationUseCase:
-    repository: RuthValidationRepository = RuthValidationPgRepository(session=db)
+def get_ruth_validation_repository(
+        db: AsyncSession = Depends(get_db)
+) -> RuthValidationRepository:
+    return RuthValidationPgRepository(session=db)
+
+def get_ruth_validation_use_case(
+        repository: RuthValidationRepository = Depends(get_ruth_validation_repository)
+) -> RuthValidationUseCase:
     return RuthValidationInteractor(repository=repository)

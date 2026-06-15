@@ -8,6 +8,12 @@ from titanic.app.ports.input.passenger_rose_model_use_case import RoseModelUseCa
 from titanic.app.ports.output.passenger_rose_model_repository import RoseModelRepository
 from titanic.app.use_cases.passenger_rose_model_interactor import RoseModelInteractor
 
-def get_rose_model(db: AsyncSession = Depends(get_db)) -> RoseModelUseCase:
-    repository: RoseModelRepository = RoseModelPgRepository(session=db)
+def get_rose_model_repository(
+        db: AsyncSession = Depends(get_db)
+) -> RoseModelRepository:
+    return RoseModelPgRepository(session=db)
+
+def get_rose_model_use_case(
+        repository: RoseModelRepository = Depends(get_rose_model_repository)
+) -> RoseModelUseCase:
     return RoseModelInteractor(repository=repository)
