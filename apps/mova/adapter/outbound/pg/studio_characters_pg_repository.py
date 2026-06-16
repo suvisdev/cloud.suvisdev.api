@@ -1,19 +1,35 @@
+"""영화↔배우 연결 PgRepository — CharactersRepositoryPort 구현체."""
+
 from __future__ import annotations
 
 import logging
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mova.app.dtos.studio_characters_dto import StudioCharactersQuery, StudioCharactersResponse
-from mova.app.ports.output.studio_characters_repository import StudioCharactersRepository
+from mova.adapter.outbound.orm.studio_actors_orm import MovaActor
+from mova.adapter.outbound.orm.studio_characters_orm import MovaCharacter
+from mova.app.dtos.studio_characters_dto import CastListDto, CharacterWithActorDto
+from mova.app.ports.output.studio_characters_repository import CharactersRepositoryPort
 
 logger = logging.getLogger(__name__)
 
 
-class StudioCharactersPgRepository(StudioCharactersRepository):
-    def __init__(self, session: AsyncSession | None = None) -> None:
+class CharactersPgRepository(CharactersRepositoryPort):
+    def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def introduce_myself(self, query: StudioCharactersQuery) -> StudioCharactersResponse:
-        logger.info("[StudioCharactersPgRepository] introduce_myself | query=%s", query)
-        return StudioCharactersResponse(id=query.id * 10000, name=query.name + "가 레포지토리에 다녀옴")
+    async def get_cast_by_movie(self, movie_id: int) -> CastListDto:
+        rows = await self._session.execute(
+            select(MovaCharacter, MovaActor)
+            .join(MovaActor, MovaCharacter.actor_id == MovaActor.id)
+            .where(MovaCharacter.movie_id == movie_id)
+            .order_by(MovaActor.role_type, MovaActor.name)
+        )
+        pairs = rows.all()
+
+        logger.debug("[CharactersPgRepository] movie_id=%d cast=%d", movie_id, len(pairs))
+        return CastListDto(
+            movie_id=movie_id,
+            cast=[CharacterWithActorDto.from_orm(char, actor) for char, actor in pairs],
+        )

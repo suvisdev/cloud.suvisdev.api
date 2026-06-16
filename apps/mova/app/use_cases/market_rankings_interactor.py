@@ -1,17 +1,15 @@
+"""랭킹 Interactor — RankingsUseCase 구현체."""
+
 from __future__ import annotations
 
-from mova.adapter.inbound.api.schemas.market_rankings_schema import MarketRankingsSchema
-from mova.app.dtos.market_rankings_dto import MarketRankingsQuery, MarketRankingsResponse
-from mova.app.ports.input.market_rankings_use_case import MarketRankingsUseCase
-from mova.app.ports.output.market_rankings_repository import MarketRankingsRepository
+from mova.app.dtos.market_rankings_dto import RankingListDto
+from mova.app.ports.input.market_rankings_use_case import RankingsUseCase
+from mova.app.ports.output.market_rankings_repository import RankingsRepositoryPort
 
 
-class MarketRankingsInteractor(MarketRankingsUseCase):
-    def __init__(self, repository: MarketRankingsRepository) -> None:
+class RankingsInteractor(RankingsUseCase):
+    def __init__(self, repository: RankingsRepositoryPort) -> None:
         self._repository = repository
 
-    async def introduce_myself(self, schemas: MarketRankingsSchema) -> MarketRankingsResponse:
-        return await self._repository.introduce_myself(MarketRankingsQuery(
-            id=schemas.id,
-            name=schemas.name,
-        ))
+    async def get_hot(self, source: str, limit: int) -> RankingListDto:
+        return await self._repository.get_hot(source, limit)

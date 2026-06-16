@@ -1,12 +1,14 @@
+"""picks 출력 포트."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from mova.app.dtos.market_picks_dto import MarketPicksQuery, MarketPicksResponse
+from mova.app.dtos.market_picks_dto import PickFeedbackDto
 
 
-class MarketPicksRepository(ABC):
+class PicksRepositoryPort(ABC):
 
     @abstractmethod
-    async def introduce_myself(self, query: MarketPicksQuery) -> MarketPicksResponse:
-        pass
+    async def update_feedback(self, pick_id: int, feedback: str | None) -> PickFeedbackDto:
+        """like | dislike | null 피드백 업데이트."""

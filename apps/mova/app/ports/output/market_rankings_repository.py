@@ -1,12 +1,14 @@
+"""랭킹 출력 포트."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from mova.app.dtos.market_rankings_dto import MarketRankingsQuery, MarketRankingsResponse
+from mova.app.dtos.market_rankings_dto import RankingListDto
 
 
-class MarketRankingsRepository(ABC):
+class RankingsRepositoryPort(ABC):
 
     @abstractmethod
-    async def introduce_myself(self, query: MarketRankingsQuery) -> MarketRankingsResponse:
-        pass
+    async def get_hot(self, source: str, limit: int) -> RankingListDto:
+        """HOT 랭킹 조회 (rankings → movies LEFT JOIN chat)."""

@@ -1,51 +1,31 @@
-﻿from __future__ import annotations
+"""영화↔배우 연결 HTTP 스키마."""
 
-from pydantic import BaseModel, Field
+from __future__ import annotations
 
+from typing import Literal
 
-class CharacterLinkCreateSchema(BaseModel):
-    movie_id: int
-    actor_id: int
-
-
-class CharacterLinkSchema(BaseModel):
-    id: int
-    movie_id: int
-    actor_id: int
+from pydantic import BaseModel
 
 
 class CharacterWithActorSchema(BaseModel):
+    """출연진 한 줄 — characters + actors JOIN."""
+
     id: int
     movie_id: int
     actor_id: int
     actor_name: str
-    role_type: str
-    profile_photo: str
+    role_type: Literal["director", "actor"]
+    profile_photo_url: str
 
 
-class CharacterWithMovieSchema(BaseModel):
-    id: int
+class CastListSchema(BaseModel):
+    """영화 출연진 전체 목록 응답."""
+
+    movie_id: int
+    cast: list[CharacterWithActorSchema]
+
+
+# 연결 생성 요청 (import/admin 용)
+class CharacterLinkCreateSchema(BaseModel):
     movie_id: int
     actor_id: int
-    slug: str
-    movie_title: str
-    release_year: str
-    rating: float
-    poster: str
-    platform: str | None
-
-
-class StudioCharactersSchema(BaseModel):
-
-    id: int = Field(0, description="Characters ID")
-    name: str = Field("캐스팅 감독 (Casting Director)", description="Casting Director's name")
-    # 영화와 배우를 연결하는 중간자. characters 테이블로 movies ↔ actors N:M 중계
-
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "id": 1,
-                "name": "캐스팅 감독 (Casting Director)",
-            }
-        }
-    }

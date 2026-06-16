@@ -1,8 +1,7 @@
 # Mova 앱 — 영화·채팅·랭킹·리뷰 도메인
 
 > **역할:** 영화 저장·조회·채팅·리뷰·랭킹 등 Mova 도메인 API.  
-> **상위 문서:** [백엔드 CLAUDE.md](../../../_claude/CLAUDE.md) — 아키텍처 전체 규칙  
-> **Karpathy 원칙:** [루트 CLAUDE.md](../../../../CLAUDE.md)
+> **상위 문서:** [백엔드 CLAUDE.md](../../../../vault/suvisdev/CLAUDE.MD) — 아키텍처 전체 규칙
 
 Titanic(James)과 **동일한 레이어 규칙**을 따른다. 아래는 Mova만의 특이점만 기록한다.
 

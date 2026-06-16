@@ -1,12 +1,18 @@
+"""어시스턴트 입력 포트."""
+
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 
-from mova.adapter.inbound.api.schemas.platform_assistants_schema import PlatformAssistantsSchema
-from mova.app.dtos.platform_assistants_dto import PlatformAssistantsResponse
+from mova.app.dtos.platform_assistants_dto import AssistantDto, AssistantListDto
 
 
-class PlatformAssistantsUseCase(ABC):
+class AssistantsUseCase(ABC):
 
     @abstractmethod
-    async def introduce_myself(self, schemas: PlatformAssistantsSchema) -> PlatformAssistantsResponse:
+    async def list_assistants(self) -> AssistantListDto:
+        pass
+
+    @abstractmethod
+    async def get_assistant(self, slug: str) -> AssistantDto | None:
         pass

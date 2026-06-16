@@ -1,9 +1,15 @@
-﻿from __future__ import annotations
+"""검색 HTTP 스키마."""
 
-from pydantic import BaseModel, Field
+from __future__ import annotations
+
+from pydantic import BaseModel
+
+from mova.adapter.inbound.api.schemas.studio_movies_schema import MovieListItemSchema
 
 
 class MovaSearchItemSchema(BaseModel):
+    """채팅 프롬프트 태그 카탈로그용 — chat_prompt.py에서 사용."""
+
     id: str
     title: str
     year: str
@@ -12,17 +18,11 @@ class MovaSearchItemSchema(BaseModel):
     match_type: str
 
 
-class StudioSearchSchema(BaseModel):
+class SearchResultSchema(BaseModel):
+    """GET /mova/search 응답 스키마."""
 
-    id: int = Field(0, description="Search ID")
-    name: str = Field("검색 감독 (Search Director)", description="Search Director's name")
-    # 키워드·벡터 검색으로 영화를 찾아주는 검색 담당자
-
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "id": 1,
-                "name": "검색 감독 (Search Director)",
-            }
-        }
-    }
+    query: str
+    items: list[MovieListItemSchema]
+    total: int
+    limit: int
+    offset: int

@@ -51,3 +51,9 @@ class MovaPick(MovaModel):
         index=True,
         comment="동일 채팅 응답 3건 묶음 시각",
     )
+    feedback: Mapped[str | None] = mapped_column(
+        String(16),
+        nullable=True,
+        index=True,
+        comment="like|dislike|null — 추천 자체에 대한 사용자 반응",
+    )

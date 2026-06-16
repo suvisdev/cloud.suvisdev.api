@@ -1,8 +1,7 @@
 # Titanic 앱 — 헥사고날 기준선
 
 > **역할:** CSV 업로드(James)·조회(Walter) — 전체 백엔드 앱의 **레이어 기준선**.  
-> **상위 문서:** [백엔드 CLAUDE.md](../../../_claude/CLAUDE.md) — 아키텍처 전체 규칙  
-> **Karpathy 원칙:** [루트 CLAUDE.md](../../../../CLAUDE.md)
+> **상위 문서:** [백엔드 CLAUDE.md](../../../../vault/suvisdev/CLAUDE.MD) — 아키텍처 전체 규칙
 
 새 앱(mova, viewer 등)을 만들 때 이 앱의 레이어 구조를 그대로 복사한다.
 
@@ -79,5 +78,17 @@ Interactor 내부에서 직접 인스턴스화하지 않는다 (DIP).
 
 ## E. 새 Titanic 엔드포인트 추가 시
 
-백엔드 CLAUDE.md [체크리스트](../../../_claude/CLAUDE.md#l-새-api-추가-체크리스트)를 따르되,  
+백엔드 CLAUDE.md [체크리스트](../../../CLAUDE.md#l-새-api-추가-체크리스트)를 따르되,  
 `response_model`에 Schema 대신 **`JamesResponse` / `WalterResponse`** DTO를 직접 사용할 수 있다.
+
+
+
+## 타이타닉 도메인 문서 연결
+
+* 타이타닉 도메인 문서 연결
+* 타이타닉 피처 정리 : [[titanic-features]]
+* 타이타닉 머신 러닝 : [[titanic-machine-learning]]
+* 타이타닉 ERD : [[titanic-erd]]
+* 타이타닉 NF :  [[titanic-nf]]
+* 타이타닉 알고리즘 : [[titanic-algorithm]] 
+* 

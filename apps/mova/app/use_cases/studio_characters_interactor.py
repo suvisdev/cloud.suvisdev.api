@@ -1,17 +1,15 @@
+"""영화↔배우 연결 Interactor — CharactersUseCase 구현체."""
+
 from __future__ import annotations
 
-from mova.adapter.inbound.api.schemas.studio_characters_schema import StudioCharactersSchema
-from mova.app.dtos.studio_characters_dto import StudioCharactersQuery, StudioCharactersResponse
-from mova.app.ports.input.studio_characters_use_case import StudioCharactersUseCase
-from mova.app.ports.output.studio_characters_repository import StudioCharactersRepository
+from mova.app.dtos.studio_characters_dto import CastListDto
+from mova.app.ports.input.studio_characters_use_case import CharactersUseCase
+from mova.app.ports.output.studio_characters_repository import CharactersRepositoryPort
 
 
-class StudioCharactersInteractor(StudioCharactersUseCase):
-    def __init__(self, repository: StudioCharactersRepository) -> None:
+class CharactersInteractor(CharactersUseCase):
+    def __init__(self, repository: CharactersRepositoryPort) -> None:
         self._repository = repository
 
-    async def introduce_myself(self, schemas: StudioCharactersSchema) -> StudioCharactersResponse:
-        return await self._repository.introduce_myself(StudioCharactersQuery(
-            id=schemas.id,
-            name=schemas.name,
-        ))
+    async def get_cast_by_movie(self, movie_id: int) -> CastListDto:
+        return await self._repository.get_cast_by_movie(movie_id)

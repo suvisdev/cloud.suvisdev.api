@@ -1,5 +1,6 @@
 ﻿"""Mova SQLAlchemy ORM models."""
 
+from mova.adapter.outbound.orm.market_collections_orm import MovaCollection
 from mova.adapter.outbound.orm.studio_actors_orm import MovaActor
 from mova.adapter.outbound.orm.platform_assistants_orm import MovaAssistant
 from mova.adapter.outbound.orm.base_orm import MovaModel
@@ -27,6 +28,7 @@ from mova.adapter.outbound.orm.studio_tags_orm import (
 )
 
 __all__ = [
+    "MovaCollection",
     "MovaModel",
     "MovaMovie",
     "slugify_movie",

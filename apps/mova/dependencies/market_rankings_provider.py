@@ -1,21 +1,25 @@
-﻿from sqlalchemy.ext.asyncio import AsyncSession
+"""랭킹 DI."""
 
-from core.matrix.grid_oracle_database_manager import get_db
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from mova.adapter.outbound.pg.market_rankings_pg_repository import MarketRankingsPgRepository
-from mova.app.ports.input.market_rankings_use_case import MarketRankingsUseCase
-from mova.app.ports.output.market_rankings_repository import MarketRankingsRepository
-from mova.app.use_cases.market_rankings_interactor import MarketRankingsInteractor
-
-
-def get_market_rankings_repository(
-    db: AsyncSession = Depends(get_db),
-) -> MarketRankingsRepository:
-    return MarketRankingsPgRepository(session=db)
+from core.matrix.grid_oracle_database_manager import get_mova_db
+from mova.adapter.outbound.pg.market_rankings_pg_repository import RankingsPgRepository
+from mova.app.ports.input.market_rankings_use_case import RankingsUseCase
+from mova.app.ports.output.market_rankings_repository import RankingsRepositoryPort
+from mova.app.use_cases.market_rankings_interactor import RankingsInteractor
 
 
-def get_market_rankings_use_case(
-    repository: MarketRankingsRepository = Depends(get_market_rankings_repository),
-) -> MarketRankingsUseCase:
-    return MarketRankingsInteractor(repository=repository)
+def get_rankings_repository(
+    db: AsyncSession = Depends(get_mova_db),
+) -> RankingsRepositoryPort:
+    return RankingsPgRepository(session=db)
+
+
+def get_rankings_use_case(
+    repository: RankingsRepositoryPort = Depends(get_rankings_repository),
+) -> RankingsUseCase:
+    return RankingsInteractor(repository=repository)
+
+
+get_market_rankings_use_case = get_rankings_use_case

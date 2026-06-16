@@ -1,17 +1,18 @@
+"""영화 Interactor — MoviesUseCase 구현체."""
+
 from __future__ import annotations
 
-from mova.adapter.inbound.api.schemas.studio_movies_schema import StudioMoviesSchema
-from mova.app.dtos.studio_movies_dto import StudioMoviesQuery, StudioMoviesResponse
-from mova.app.ports.input.studio_movies_use_case import StudioMoviesUseCase
-from mova.app.ports.output.studio_movies_repository import StudioMoviesRepository
+from mova.app.dtos.studio_movies_dto import MovieDetailDto, MovieFilterQuery, MovieListDto
+from mova.app.ports.input.studio_movies_use_case import MoviesUseCase
+from mova.app.ports.output.studio_movies_repository import MoviesRepositoryPort
 
 
-class StudioMoviesInteractor(StudioMoviesUseCase):
-    def __init__(self, repository: StudioMoviesRepository) -> None:
+class MoviesInteractor(MoviesUseCase):
+    def __init__(self, repository: MoviesRepositoryPort) -> None:
         self._repository = repository
 
-    async def introduce_myself(self, schemas: StudioMoviesSchema) -> StudioMoviesResponse:
-        return await self._repository.introduce_myself(StudioMoviesQuery(
-            id=schemas.id,
-            name=schemas.name,
-        ))
+    async def get_movie_detail(self, slug: str) -> MovieDetailDto | None:
+        return await self._repository.get_by_slug(slug)
+
+    async def list_movies(self, query: MovieFilterQuery) -> MovieListDto:
+        return await self._repository.list_movies(query)

@@ -1,17 +1,18 @@
+"""어시스턴트 Interactor — AssistantsUseCase 구현체."""
+
 from __future__ import annotations
 
-from mova.adapter.inbound.api.schemas.platform_assistants_schema import PlatformAssistantsSchema
-from mova.app.dtos.platform_assistants_dto import PlatformAssistantsQuery, PlatformAssistantsResponse
-from mova.app.ports.input.platform_assistants_use_case import PlatformAssistantsUseCase
-from mova.app.ports.output.platform_assistants_repository import PlatformAssistantsRepository
+from mova.app.dtos.platform_assistants_dto import AssistantDto, AssistantListDto
+from mova.app.ports.input.platform_assistants_use_case import AssistantsUseCase
+from mova.app.ports.output.platform_assistants_repository import AssistantsRepositoryPort
 
 
-class PlatformAssistantsInteractor(PlatformAssistantsUseCase):
-    def __init__(self, repository: PlatformAssistantsRepository) -> None:
+class AssistantsInteractor(AssistantsUseCase):
+    def __init__(self, repository: AssistantsRepositoryPort) -> None:
         self._repository = repository
 
-    async def introduce_myself(self, schemas: PlatformAssistantsSchema) -> PlatformAssistantsResponse:
-        return await self._repository.introduce_myself(PlatformAssistantsQuery(
-            id=schemas.id,
-            name=schemas.name,
-        ))
+    async def list_assistants(self) -> AssistantListDto:
+        return await self._repository.list_active()
+
+    async def get_assistant(self, slug: str) -> AssistantDto | None:
+        return await self._repository.get_by_slug(slug)

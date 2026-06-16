@@ -1,55 +1,36 @@
-﻿from __future__ import annotations
+"""태그 HTTP 스키마."""
 
-from pydantic import BaseModel, Field
+from __future__ import annotations
 
+from typing import Literal
 
-class TagCreateSchema(BaseModel):
-    movie_id: int
-    label: str
-    slug: str = ""
-    description: str = ""
-    character_id: int | None = None
-    tag_kind: str = "mood"
+from pydantic import BaseModel
 
 
 class TagSchema(BaseModel):
     id: int
     movie_id: int
     character_id: int | None
-    tag_kind: str
+    tag_kind: Literal["mood", "genre", "cast"]
     slug: str
     label: str
     description: str
 
 
-class TagCatalogSchema(BaseModel):
-    slug: str
-    label: str
-    description: str
+class TagGroupSchema(BaseModel):
+    """영화 태그를 kind별로 묶은 응답."""
 
-
-class MoviesByTagSchema(BaseModel):
-    tag_id: int
     movie_id: int
-    slug: str
-    tag_slug: str
-    tag_label: str
-    title: str
-    release_year: str
-    poster: str
+    mood: list[TagSchema]
+    genre: list[TagSchema]
+    cast: list[TagSchema]
 
 
-class StudioTagsSchema(BaseModel):
-
-    id: int = Field(0, description="Tags ID")
-    name: str = Field("홍보 담당자 (Publicist)", description="Publicist's name")
-    # 영화의 분위기·장르·인물을 대중 언어로 표현하는 홍보 전문가. tags 테이블 관리
-
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "id": 1,
-                "name": "홍보 담당자 (Publicist)",
-            }
-        }
-    }
+# 생성 요청 (import/admin 용)
+class TagCreateSchema(BaseModel):
+    movie_id: int
+    label: str
+    slug: str = ""
+    description: str = ""
+    character_id: int | None = None
+    tag_kind: Literal["mood", "genre", "cast"] = "mood"

@@ -1,12 +1,14 @@
+"""배우 Input Port."""
+
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 
-from mova.adapter.inbound.api.schemas.studio_actors_schema import StudioActorsSchema
-from mova.app.dtos.studio_actors_dto import StudioActorsResponse
+from mova.app.dtos.studio_actors_dto import ActorDetailDto
 
 
-class StudioActorsUseCase(ABC):
+class ActorsUseCase(ABC):
 
     @abstractmethod
-    async def introduce_myself(self, schemas: StudioActorsSchema) -> StudioActorsResponse:
-        pass
+    async def get_actor_detail(self, actor_id: int) -> ActorDetailDto | None:
+        """배우/감독 상세 + filmography. 없으면 None."""

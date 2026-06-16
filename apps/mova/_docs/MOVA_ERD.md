@@ -44,6 +44,7 @@ config:
     layoutDirection: TB
 ---
 erDiagram
+    COLLECTIONS ||--o{ MOVIES : groups
     MOVIES ||--o{ CHARACTERS : casts
     ACTORS ||--o{ CHARACTERS : appears_in
     MOVIES ||--o{ TAGS : tagged
@@ -61,6 +62,13 @@ erDiagram
     USERS ||--o{ CHAT : searches
     USERS ||--o{ PICKS : user_actions
 
+    COLLECTIONS {
+        int id PK
+        varchar slug UK
+        varchar name
+        text description
+    }
+
     MOVIES {
         int id PK
         varchar slug UK
@@ -68,8 +76,10 @@ erDiagram
         varchar release_year
         float rating
         text poster_url
-        varchar platform
+        jsonb platforms
+        varchar age_rating
         jsonb genres
+        int collection_id FK
     }
 
     ACTORS {
@@ -149,6 +159,7 @@ erDiagram
         varchar hook
         varchar title_snapshot
         timestamptz batch_at
+        varchar feedback
     }
 
     GROUPS {
@@ -371,8 +382,18 @@ chat (refined_query, hit_count, keywords)
 | release_year | 개봉 연도 문자열 |
 | rating | 평균 별점 (리뷰 upsert 시 갱신) |
 | poster_url | 포스터 URL (TMDB enrich 가능) |
-| platform | OTT 힌트 (`netflix`, `disney` 등, nullable) |
+| platforms | OTT 플랫폼 JSONB 배열 `[{"provider": "netflix", "url": null, "type": "subscription"}]` |
+| age_rating | 관람 등급 `전체\|12세\|15세\|청불` (nullable) |
 | genres | 장르 배열 JSONB |
+| collection_id | `collections.id` FK (nullable) — Phase 3에서 연결 |
+
+### collections
+
+| 필드 | 설명 |
+|------|------|
+| slug | URL 식별자 (예: `dark-knight-trilogy`) |
+| name | 컬렉션 이름 (예: '다크 나이트 트릴로지') |
+| description | 설명 (nullable 아님, 기본 빈 문자열) |
 
 
 ### actors
@@ -432,6 +453,7 @@ KOFIC import는 `source=box_office`로 유지. UI 기본 HOT는 **`chat` → `pi
 | hook | AI 한 줄 추천 이유 |
 | title_snapshot | 추천 시점 제목 (스냅샷) |
 | batch_at | 같은 응답에서 나온 3편 묶음 시각 |
+| feedback | `like\|dislike\|null` — 추천 자체에 대한 사용자 반응 (Phase 2 개인화 신호) |
 
 사용자가 **클릭·찜**한 선택은 `reviews` (`action_type`)로 별도 기록 가능.
 
@@ -486,7 +508,8 @@ KOFIC import는 `source=box_office`로 유지. UI 기본 HOT는 **`chat` → `pi
 
 | 테이블 | 모델 | 경로 |
 |--------|------|------|
-| `movies` | `MovaMovie` | `mova/adapter/outbound/orm/movies_orm.py` |
+| `collections` | `MovaCollection` | `mova/adapter/outbound/orm/market_collections_orm.py` |
+| `movies` | `MovaMovie` | `mova/adapter/outbound/orm/studio_movies_orm.py` |
 | `actors` | `MovaActor` | `mova/adapter/outbound/orm/actors_orm.py` |
 | `characters` | `MovaCharacter` | `mova/adapter/outbound/orm/characters_orm.py` |
 | `tags` | `MovaTag` | `mova/adapter/outbound/orm/tags_orm.py` |

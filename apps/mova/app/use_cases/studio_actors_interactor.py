@@ -1,17 +1,15 @@
+"""배우 Interactor — ActorsUseCase 구현체."""
+
 from __future__ import annotations
 
-from mova.adapter.inbound.api.schemas.studio_actors_schema import StudioActorsSchema
-from mova.app.dtos.studio_actors_dto import StudioActorsQuery, StudioActorsResponse
-from mova.app.ports.input.studio_actors_use_case import StudioActorsUseCase
-from mova.app.ports.output.studio_actors_repository import StudioActorsRepository
+from mova.app.dtos.studio_actors_dto import ActorDetailDto
+from mova.app.ports.input.studio_actors_use_case import ActorsUseCase
+from mova.app.ports.output.studio_actors_repository import ActorsRepositoryPort
 
 
-class StudioActorsInteractor(StudioActorsUseCase):
-    def __init__(self, repository: StudioActorsRepository) -> None:
+class ActorsInteractor(ActorsUseCase):
+    def __init__(self, repository: ActorsRepositoryPort) -> None:
         self._repository = repository
 
-    async def introduce_myself(self, schemas: StudioActorsSchema) -> StudioActorsResponse:
-        return await self._repository.introduce_myself(StudioActorsQuery(
-            id=schemas.id,
-            name=schemas.name,
-        ))
+    async def get_actor_detail(self, actor_id: int) -> ActorDetailDto | None:
+        return await self._repository.get_by_id(actor_id)

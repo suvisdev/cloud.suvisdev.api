@@ -1,8 +1,7 @@
 # Viewer 앱 — 인증 (Login · Signup)
 
 > **역할:** `groups`, `admins`, `users` 테이블 기반 인증 API.  
-> **상위 문서:** [백엔드 CLAUDE.md](../../../_claude/CLAUDE.md) — 아키텍처 전체 규칙  
-> **Karpathy 원칙:** [루트 CLAUDE.md](../../../../CLAUDE.md)
+> **상위 문서:** [백엔드 CLAUDE.md](../../../../vault/suvisdev/CLAUDE.MD) — 아키텍처 전체 규칙
 
 Titanic(James)과 **동일한 레이어 규칙**을 따른다. 아래는 Viewer만의 특이점만 기록한다.
 

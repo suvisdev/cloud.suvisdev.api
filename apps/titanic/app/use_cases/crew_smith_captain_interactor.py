@@ -19,11 +19,10 @@ logger = logging.getLogger(__name__)
 class SmithCaptainInteractor(SmithCaptainUseCase):
     def __init__(self, repository: SmithCaptainRepository):
         self._repository = repository
+        self.jack = JackTrainerUseCase = Depends(get_jack_trainer_use_case)
+        self.rose = RoseModelUseCase = Depends(get_rose_model_use_case)
 
-    async def chat(self,
-                 schema: ChatSchema,
-                 jack: JackTrainerUseCase,
-                 rose: RoseModelUseCase) -> SmithChatResponse:
+    async def chat(self, schema: ChatSchema) -> SmithChatResponse:
         
         # schema 내용 로그로 출력
         logger.info(f"[SmithCaptainInteractor] chat | schema={schema.json()}")

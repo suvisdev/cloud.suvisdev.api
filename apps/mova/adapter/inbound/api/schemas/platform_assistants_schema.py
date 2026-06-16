@@ -1,16 +1,19 @@
-from pydantic import BaseModel, Field
+"""어시스턴트 HTTP 스키마."""
+
+from __future__ import annotations
+
+from pydantic import BaseModel
 
 
-class PlatformAssistantsSchema(BaseModel):
+class AssistantSchema(BaseModel):
+    id: int
+    slug: str
+    display_name: str
+    avatar_url: str
+    system_prompt: str
+    default_model: str
+    is_active: bool
 
-    id: int = Field(0, description="Assistants ID")
-    name: str = Field("AI 컨시?��? (AI Concierge)", description="AI Concierge's name")
-    # 극장 ?�구?�서 관객을 맞이?�는 AI ?�담?? assistants ?�이�?관�?
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "id": 1,
-                "name": "AI 컨시?��? (AI Concierge)",
-            }
-        }
-    }
+
+class AssistantListSchema(BaseModel):
+    items: list[AssistantSchema]

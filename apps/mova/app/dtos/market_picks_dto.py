@@ -1,13 +1,12 @@
-﻿from dataclasses import dataclass
+"""picks DTO."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class MarketPicksQuery:
-    id: int
-    name: str
-
-
-@dataclass(frozen=True)
-class MarketPicksResponse:
-    id: int
-    name: str
+class PickFeedbackDto:
+    pick_id: int
+    feedback: str | None
+    updated: bool

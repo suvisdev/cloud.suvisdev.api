@@ -1,16 +1,17 @@
-from pydantic import BaseModel, Field
+"""picks HTTP ìŠ¤í‚¤ë§ˆ."""
+
+from __future__ import annotations
+
+from typing import Literal
+
+from pydantic import BaseModel
 
 
-class MarketPicksSchema(BaseModel):
+class PickFeedbackUpdateSchema(BaseModel):
+    feedback: Literal["like", "dislike"] | None = None
 
-    id: int = Field(0, description="Picks ID")
-    name: str = Field("ë°°ê¸‰ ?´ë‹¹??(Distributor)", description="Distributor's name")
-    # AIê°€ ? ì •???‘í’ˆ???¬ìš©?ì—ê²?ë°°ê¸‰?˜ëŠ” ?ë ˆ?´í„°. picks ?Œì´ë¸?ê´€ë¦?
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "id": 1,
-                "name": "ë°°ê¸‰ ?´ë‹¹??(Distributor)",
-            }
-        }
-    }
+
+class PickFeedbackSchema(BaseModel):
+    pick_id: int
+    feedback: str | None
+    updated: bool

@@ -1,12 +1,14 @@
+"""검색 입력 포트 — 영화 검색 유스케이스 계약."""
+
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 
-from mova.adapter.inbound.api.schemas.studio_search_schema import StudioSearchSchema
-from mova.app.dtos.studio_search_dto import StudioSearchResponse
+from mova.app.dtos.studio_search_dto import SearchResultDto
 
 
-class StudioSearchUseCase(ABC):
+class SearchUseCase(ABC):
 
     @abstractmethod
-    async def introduce_myself(self, schemas: StudioSearchSchema) -> StudioSearchResponse:
+    async def search_movies(self, q: str, limit: int, offset: int) -> SearchResultDto:
         pass

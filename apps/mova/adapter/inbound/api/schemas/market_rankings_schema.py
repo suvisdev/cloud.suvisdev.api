@@ -1,4 +1,6 @@
-﻿from __future__ import annotations
+"""랭킹 HTTP 스키마."""
+
+from __future__ import annotations
 
 from datetime import date
 
@@ -38,17 +40,6 @@ class HotRankingDisplaySchema(BaseModel):
     genres: list[str]
 
 
-class MarketRankingsSchema(BaseModel):
-
-    id: int = Field(0, description="Rankings ID")
-    name: str = Field("프로듀서 (Producer)", description="Producer's name")
-    # 흥행 성적을 숫자로 증명하는 제작 총괄. rankings 테이블 관리
-
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "id": 1,
-                "name": "프로듀서 (Producer)",
-            }
-        }
-    }
+class HotRankingListSchema(BaseModel):
+    source: str
+    items: list[HotRankingDisplaySchema]
