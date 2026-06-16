@@ -55,13 +55,16 @@ class StudioMoviesPgRepository:
                     title=getattr(schema, "title", ""),
                     release_year=getattr(schema, "release_year", "") or "",
                     rating=float(getattr(schema, "rating", 0) or 0),
-                    poster_url=getattr(schema, "poster", "") or "",
-                    platforms=[],
+                    poster_url=getattr(schema, "poster_url", "") or "",
+                    platforms=[
+                        p.model_dump() if hasattr(p, "model_dump") else p
+                        for p in (getattr(schema, "platforms", None) or [])
+                    ],
                     genres=list(getattr(schema, "genres", []) or []),
                 )
                 session.add(existing)
             else:
-                poster = getattr(schema, "poster", None)
+                poster = getattr(schema, "poster_url", None)
                 if poster:
                     existing.poster_url = poster
             await session.commit()

@@ -12,9 +12,7 @@ class SmithCaptainUseCase(ABC):
     """smith_captain input port."""
 
     @abstractmethod
-    async def chat(self, schema: ChatSchema, 
-                   jack: JackTrainerUseCase, 
-                   rose: RoseModelUseCase) -> SmithChatResponse:
+    async def chat(self, schema: ChatSchema) -> SmithChatResponse:
         pass
 
 

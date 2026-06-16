@@ -22,14 +22,12 @@ smith_captain_router = APIRouter(prefix="/smith", tags=["smith"])
 async def chat(
     schema: Annotated[ChatSchema, Body()],
     smith: SmithCaptainUseCase = Depends(get_smith_captain_use_case),
-    jack: JackTrainerUseCase = Depends(get_jack_trainer_use_case),
-    rose: RoseModelUseCase = Depends(get_rose_model_use_case),
 ) -> SmithChatResponse:
     # suvis 안의 smith-captain/page.tsx 에서 /api/titanic/smith/chat 이 URL로
     # 키 값이 messages인 Body()로 보낸 내용을 로그로 출력하는 코드
     for msg in schema.messages:
         logger.info(f"[SmithCaptainRouter] messages | role={msg.role} content={msg.content[:30]}...")
-    return await smith.chat(schema, jack, rose)
+    return await smith.chat(schema)
 
 
 @smith_captain_router.get("/myself")

@@ -95,28 +95,42 @@ class ChatReplyService:
                     poster = (movie.poster_url or "").strip()
                 if not year:
                     year = movie.release_year or ""
-                if not platform and movie.platform:
-                    platform = movie.platform
+                if not platform and movie.platforms:
+                    first = movie.platforms[0]
+                    platform = first.get("provider") if isinstance(first, dict) else None
 
             if not poster:
                 poster = await self._fetch_tmdb_poster(rec.title, year)
-                if poster and movie is not None:
-                    try:
+
+            try:
+                if movie is not None:
+                    if poster and poster != (movie.poster_url or "").strip():
                         await repo.save_movie(MovieCreateSchema(
                             slug=movie.slug,
                             title=movie.title,
                             release_year=movie.release_year or "",
                             rating=float(movie.rating or 0),
-                            poster=poster,
-                            platform=movie.platform,
+                            poster_url=poster,
+                            platforms=movie.platforms or [],
                             genres=list(movie.genres or []),
                         ))
-                    except Exception:
-                        logger.debug(
-                            "[ChatReplyService] 포스터 DB 저장 스킵 — %r",
-                            rec.title,
-                            exc_info=True,
-                        )
+                else:
+                    # Gemini 추천 영화가 DB에 없으면 상세 페이지가 404나지 않도록 신규 저장
+                    await repo.save_movie(MovieCreateSchema(
+                        slug=slug,
+                        title=rec.title,
+                        release_year=year or "",
+                        rating=0.0,
+                        poster_url=poster or "",
+                        platforms=[],
+                        genres=[],
+                    ))
+            except Exception:
+                logger.debug(
+                    "[ChatReplyService] 영화 DB 저장 스킵 — %r",
+                    rec.title,
+                    exc_info=True,
+                )
 
             enriched.append(
                 rec.model_copy(

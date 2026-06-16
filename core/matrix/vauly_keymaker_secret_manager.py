@@ -41,7 +41,7 @@ def _normalize_model_id(model_id: str) -> str:
 
 
 def _default_env_path() -> Path:
-    return Path(__file__).resolve().parents[3] / ".env"
+    return Path(__file__).resolve().parents[2] / ".env"
 
 
 class Keymaker:

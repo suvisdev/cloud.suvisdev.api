@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.matrix.grid_oracle_database_manager import get_db
 from fastapi import Depends
 
+from titanic.adapter.outbound.ml.passenger_rose_model_strategies import ROSE_MODEL_STRATEGIES
 from titanic.adapter.outbound.pg.passenger_rose_model_pg_repository import RoseModelPgRepository
 from titanic.app.ports.input.passenger_rose_model_use_case import RoseModelUseCase
 from titanic.app.ports.output.passenger_rose_model_repository import RoseModelRepository
@@ -16,4 +17,4 @@ def get_rose_model_repository(
 def get_rose_model_use_case(
         repository: RoseModelRepository = Depends(get_rose_model_repository)
 ) -> RoseModelUseCase:
-    return RoseModelInteractor(repository=repository)
+    return RoseModelInteractor(repository=repository, strategies=ROSE_MODEL_STRATEGIES)

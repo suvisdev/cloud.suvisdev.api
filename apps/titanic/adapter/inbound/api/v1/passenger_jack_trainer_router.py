@@ -1,4 +1,6 @@
-﻿from fastapi import APIRouter, Depends
+﻿from typing import Any
+
+from fastapi import APIRouter, Depends
 
 from titanic.adapter.inbound.api.schemas.passenger_jack_trainer_schema import JackTrainerSchema
 from titanic.app.ports.input.passenger_jack_trainer_use_case import JackTrainerUseCase
@@ -18,3 +20,10 @@ async def introduce_myself(
             name="잭 트레이너 주인공"
         )
     )
+
+
+@jack_trainer_router.post("/train")
+async def get_model_train(
+    jack: JackTrainerUseCase = Depends(get_jack_trainer_use_case),
+) -> dict[str, Any]:
+    return await jack.get_train_model()

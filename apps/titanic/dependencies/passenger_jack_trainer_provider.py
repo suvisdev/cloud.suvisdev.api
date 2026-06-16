@@ -5,8 +5,10 @@ from fastapi import Depends
 
 from titanic.adapter.outbound.pg.passenger_jack_trainer_pg_repository import JackTrainerPgRepository
 from titanic.app.ports.input.passenger_jack_trainer_use_case import JackTrainerUseCase
+from titanic.app.ports.input.passenger_rose_model_use_case import RoseModelUseCase
 from titanic.app.ports.output.passenger_jack_trainer_repository import JackTrainerRepository
 from titanic.app.use_cases.passenger_jack_trainer_interactor import JackTrainerInteractor
+from titanic.dependencies.passenger_rose_model_provider import get_rose_model_use_case
 
 
 def get_jack_trainer_repository(
@@ -15,7 +17,8 @@ def get_jack_trainer_repository(
     return JackTrainerPgRepository(session=db)
 
 def get_jack_trainer_use_case(
-        repository: JackTrainerRepository = Depends(get_jack_trainer_repository)
+        repository: JackTrainerRepository = Depends(get_jack_trainer_repository),
+        rose: RoseModelUseCase = Depends(get_rose_model_use_case),
 ) -> JackTrainerUseCase:
-    return JackTrainerInteractor(repository=repository)
+    return JackTrainerInteractor(repository=repository, rose=rose)
 
