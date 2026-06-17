@@ -6,12 +6,8 @@ from typing_extensions import Annotated
 from fastapi import APIRouter, Depends
 from titanic.adapter.inbound.api.schemas.crew_smith_captain_schema import ChatSchema, SmithCaptainSchema
 from titanic.app.ports.input.crew_smith_captain_use_case import SmithCaptainUseCase
-from titanic.app.ports.input.passenger_jack_trainer_use_case import JackTrainerUseCase
-from titanic.app.ports.input.passenger_rose_model_use_case import RoseModelUseCase
 from titanic.dependencies.crew_smith_captain_provider import get_smith_captain_use_case
 from titanic.app.dtos.crew_smith_captain_dto import SmithCaptainResponse, SmithChatResponse
-from titanic.dependencies.passenger_jack_trainer_provider import get_jack_trainer_use_case
-from titanic.dependencies.passenger_rose_model_provider import get_rose_model_use_case
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +21,7 @@ async def chat(
 ) -> SmithChatResponse:
     # suvis 안의 smith-captain/page.tsx 에서 /api/titanic/smith/chat 이 URL로
     # 키 값이 messages인 Body()로 보낸 내용을 로그로 출력하는 코드
-    for msg in schema.messages:
-        logger.info(f"[SmithCaptainRouter] messages | role={msg.role} content={msg.content[:30]}...")
+    logger.info(f"[SmithCaptainRouter] messages | content={schema.messages[:50]}...")
     return await smith.chat(schema)
 
 

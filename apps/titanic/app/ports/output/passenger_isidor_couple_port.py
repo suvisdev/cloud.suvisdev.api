@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from titanic.app.dtos.passenger_isidor_couple_dto import IsidorCoupleQuery
 from titanic.app.dtos.passenger_isidor_couple_dto import IsidorCoupleResponse
 
-class IsidorCoupleRepository(ABC):
+class IsidorCouplePort(ABC):
     """passenger_isidor_couple output port."""
 
     @abstractmethod

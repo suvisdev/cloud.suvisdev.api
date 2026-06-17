@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from titanic.app.dtos.passenger_ruth_validation_dto import RuthValidationQuery
 from titanic.app.dtos.passenger_ruth_validation_dto import RuthValidationResponse
 
-class RuthValidationRepository(ABC):
+class RuthValidationPort(ABC):
     """passenger_ruth_validation output port."""
 
     @abstractmethod

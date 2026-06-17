@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from titanic.adapter.inbound.api.schemas.crew_james_director_schema import JamesIntroduceSchema, JamesSchema
+from titanic.adapter.inbound.api.schemas.crew_james_director_schema import JamesIntroduceSchema
 from titanic.app.dtos.crew_james_director_dto import JamesIntroduceResponse, JamesResponse
 
 class JamesUseCase(ABC):
@@ -11,8 +11,8 @@ class JamesUseCase(ABC):
     @abstractmethod
     async def receive_uploaded_records(
         self,
-        schemas: list[JamesSchema],
-    )->JamesResponse:
+        csv_text: str,
+    ) -> JamesResponse:
         pass
 
     @abstractmethod

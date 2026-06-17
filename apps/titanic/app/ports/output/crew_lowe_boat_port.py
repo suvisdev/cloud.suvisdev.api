@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from titanic.app.dtos.crew_lowe_boat_dto import LoweBoatQuery
 from titanic.app.dtos.crew_lowe_boat_dto import LoweBoatResponse
 
-class LoweBoatRepository(ABC):
+class LoweBoatPort(ABC):
     """crew_lowe_boat output port."""
 
     @abstractmethod

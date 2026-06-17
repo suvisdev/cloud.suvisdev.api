@@ -9,8 +9,8 @@ class CalTesterUseCase(ABC):
     """cal_tester input port."""
 
     @abstractmethod
-    async def get_test_model(self, test_set=None) -> TestmodelResponse:
-        """잭이 훈련시킨 전략 전체를 채점해 최고점 전략을 선정."""
+    async def get_test_model(self, test_set=None, train_result: dict | None = None) -> TestmodelResponse:
+        """잭의 1등 모델로 test_set 예측 실행 후 최고 전략 선정."""
         pass
 
     @abstractmethod

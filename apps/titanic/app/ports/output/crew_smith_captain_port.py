@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from titanic.app.dtos.crew_smith_captain_dto import SmithCaptainQuery, SmithCaptainResponse, SmithCaptainChatCommand, SmithChatResponse
 
 
-class SmithCaptainRepository(ABC):
+class SmithCaptainPort(ABC):
     """crew_smith_captain output port."""
 
     @abstractmethod

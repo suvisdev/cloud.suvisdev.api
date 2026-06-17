@@ -23,7 +23,5 @@ async def introduce_myself(
 
 
 @jack_trainer_router.post("/train")
-async def get_model_train(
-    jack: JackTrainerUseCase = Depends(get_jack_trainer_use_case),
-) -> dict[str, Any]:
-    return await jack.get_train_model()
+async def get_model_train() -> dict[str, Any]:
+    return {"message": "훈련은 /smith/chat 을 통해 자동으로 실행됩니다."}

@@ -14,17 +14,17 @@ from titanic.app.dtos.crew_james_director_dto import (
     JamesIntroduceResponse,
     PassengerCommand,
 )
-from titanic.app.ports.output.crew_james_director_repository import JamesRepository
+from titanic.app.ports.output.crew_james_director_port import JamesPort
 
 logger = logging.getLogger(__name__)
 
 
-class JamesPgRepository(JamesRepository):
+class JamesRepository(JamesPort):
     def __init__(self, session: AsyncSession | None = None) -> None:
         self._session = session
 
     async def introduce_myself(self, query: JamesIntroduceQuery) -> JamesIntroduceResponse:
-        logger.info("[JamesPgRepository] introduce_myself 진입 | request_data=%s", query)
+        logger.info("[JamesRepository] introduce_myself 진입 | request_data=%s", query)
         return JamesIntroduceResponse(
             id=query.id * 10000,
             name=query.name + "가 레포지토리에 다녀옴",

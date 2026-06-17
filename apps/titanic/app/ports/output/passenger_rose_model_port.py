@@ -6,7 +6,7 @@ from titanic.app.dtos.passenger_rose_model_dto import RoseModelFeatureRow
 from titanic.app.dtos.passenger_rose_model_dto import RoseModelQuery
 from titanic.app.dtos.passenger_rose_model_dto import RoseModelResponse
 
-class RoseModelRepository(ABC):
+class RoseModelPort(ABC):
     """passenger_rose_model output port."""
 
     @abstractmethod

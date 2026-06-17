@@ -10,16 +10,14 @@ from titanic.app.dtos.passenger_cal_tester_dto import (
     TestmodelResponse,
 )
 from titanic.app.ports.input.passenger_cal_tester_use_case import CalTesterUseCase
-from titanic.app.ports.input.passenger_jack_trainer_use_case import JackTrainerUseCase
-from titanic.app.ports.output.passenger_cal_tester_repository import CalTesterRepository
+from titanic.app.ports.output.passenger_cal_tester_port import CalTesterPort
 
 logger = logging.getLogger(__name__)
 
 
 class CalTesterInteractor(CalTesterUseCase):
-    def __init__(self, repository: CalTesterRepository, jack: JackTrainerUseCase) -> None:
+    def __init__(self, repository: CalTesterPort) -> None:
         self._repository = repository
-        self._jack = jack
 
     async def introduce_myself(self, schemas: CalTesterSchema) -> CalTesterResponse:
 
@@ -28,16 +26,26 @@ class CalTesterInteractor(CalTesterUseCase):
             name=schemas.name,
         ))
     
-    async def get_test_model(self, test_set=None) -> TestmodelResponse:
-        """칼이 로즈가 제안한 10개의 모델의 트레이닝 정도를 점수화 해서 1등을 뽑는것"""
-        train_results = await self._jack.get_train_model()
+    async def get_test_model(self, test_set=None, train_result: dict | None = None) -> TestmodelResponse:
+        """1등 모델로 test_set 예측 실행 후 최고 전략 선정"""
+        result = train_result or {}
+        accuracies: dict = result.get("accuracies", {})
+        trained_strategies: dict = result.get("trained_strategies", {})
+        X_test: list = result.get("X_test", [])
+        train_samples: int = result.get("train_samples", 0)
+
         leaderboard = [
-            KaggleScoreEntry(
-                strategy=strategy_key,
-                n_samples=result["n_samples"],
-                accuracy=result["accuracy"],
-            )
-            for strategy_key, result in train_results.items()
+            KaggleScoreEntry(strategy=key, n_samples=train_samples, accuracy=acc)
+            for key, acc in accuracies.items()
         ]
         leaderboard.sort(key=lambda entry: entry.accuracy, reverse=True)
-        return TestmodelResponse(best=leaderboard[0], leaderboard=leaderboard)
+        best_entry = leaderboard[0]
+
+        # 1등 모델로 test_set 예측
+        predictions: list[float] = []
+        best_model = trained_strategies.get(best_entry.strategy)
+        if best_model and X_test:
+            predictions = best_model.predict_proba(X_test)
+            logger.info(f"[CalTesterInteractor] {best_entry.strategy} 모델로 {len(predictions)}명 예측 완료")
+
+        return TestmodelResponse(best=best_entry, leaderboard=leaderboard, predictions=predictions)

@@ -16,7 +16,7 @@ class PassengerJackTrainer:
     Passenger Domain Entity — DDD 엄격 적용.
 
     동등성 기준 : passenger_id (비즈니스 키)
-    ORM 매핑   : 인프라 계층(JackTrainerPgRepository)에서 담당 — 엔티티는 ORM을 모른다.
+    ORM 매핑   : 인프라 계층(JackTrainerRepository)에서 담당 — 엔티티는 ORM을 모른다.
     PK         : passenger_id (ORM·DB와 동일 비즈니스 키).
     """
 

@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from titanic.app.dtos.passenger_jack_trainer_dto import JackTrainerQuery
 from titanic.app.dtos.passenger_jack_trainer_dto import JackTrainerResponse
 
-class JackTrainerRepository(ABC):
+class JackTrainerPort(ABC):
     """passenger_jack_trainer output port."""
 
     @abstractmethod

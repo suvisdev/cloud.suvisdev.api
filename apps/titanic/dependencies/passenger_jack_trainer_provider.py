@@ -3,22 +3,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.matrix.grid_oracle_database_manager import get_db
 from fastapi import Depends
 
-from titanic.adapter.outbound.pg.passenger_jack_trainer_pg_repository import JackTrainerPgRepository
+from titanic.adapter.outbound.ml.passenger_rose_model_strategies import build_all_strategies
+from titanic.adapter.outbound.repositories.passenger_jack_trainer_repository import JackTrainerRepository
 from titanic.app.ports.input.passenger_jack_trainer_use_case import JackTrainerUseCase
-from titanic.app.ports.input.passenger_rose_model_use_case import RoseModelUseCase
-from titanic.app.ports.output.passenger_jack_trainer_repository import JackTrainerRepository
+from titanic.app.ports.output.passenger_jack_trainer_port import JackTrainerPort
 from titanic.app.use_cases.passenger_jack_trainer_interactor import JackTrainerInteractor
-from titanic.dependencies.passenger_rose_model_provider import get_rose_model_use_case
 
 
 def get_jack_trainer_repository(
         db: AsyncSession = Depends(get_db)
-) -> JackTrainerRepository:
-    return JackTrainerPgRepository(session=db)
+) -> JackTrainerPort:
+    return JackTrainerRepository(session=db)
 
 def get_jack_trainer_use_case(
-        repository: JackTrainerRepository = Depends(get_jack_trainer_repository),
-        rose: RoseModelUseCase = Depends(get_rose_model_use_case),
+        repository: JackTrainerPort = Depends(get_jack_trainer_repository),
 ) -> JackTrainerUseCase:
-    return JackTrainerInteractor(repository=repository, rose=rose)
-
+    return JackTrainerInteractor(repository=repository, strategies=build_all_strategies())

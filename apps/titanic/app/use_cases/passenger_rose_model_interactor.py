@@ -16,7 +16,7 @@ from titanic.app.dtos.passenger_rose_model_dto import (
     RoseModelTrainResponse,
 )
 from titanic.app.ports.input.passenger_rose_model_use_case import RoseModelUseCase
-from titanic.app.ports.output.passenger_rose_model_repository import RoseModelRepository
+from titanic.app.ports.output.passenger_rose_model_port import RoseModelPort
 from titanic.app.ports.output.passenger_rose_model_strategy import RoseModelStrategy
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ def _encode_row(row: RoseModelFeatureRow, age_default: float, fare_default: floa
 class RoseModelInteractor(RoseModelUseCase):
     def __init__(
         self,
-        repository: RoseModelRepository,
+        repository: RoseModelPort,
         strategies: Mapping[str, type[RoseModelStrategy]],
     ) -> None:
         self._repository = repository

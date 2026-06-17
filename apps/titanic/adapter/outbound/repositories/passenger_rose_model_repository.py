@@ -12,17 +12,17 @@ from titanic.app.dtos.passenger_rose_model_dto import (
     RoseModelQuery,
     RoseModelResponse,
 )
-from titanic.app.ports.output.passenger_rose_model_repository import RoseModelRepository
+from titanic.app.ports.output.passenger_rose_model_port import RoseModelPort
 
 logger = logging.getLogger(__name__)
 
 
-class RoseModelPgRepository(RoseModelRepository):
+class RoseModelRepository(RoseModelPort):
     def __init__(self, session: AsyncSession | None = None) -> None:
         self._session = session
 
     async def introduce_myself(self, query: RoseModelQuery) -> RoseModelResponse:
-        logger.info(f"[RoseModelPgRepository] introduce_myself 진입 | request_data={query}")
+        logger.info(f"[RoseModelRepository] introduce_myself 진입 | request_data={query}")
         response = RoseModelResponse(id=query.id * 10000, name=query.name + "가 레포지토리에 다녀옴")
         return response
 

@@ -137,3 +137,7 @@ ROSE_MODEL_STRATEGIES: dict[str, type[RoseModelStrategy]] = {
     "naive_bayes": NaiveBayesStrategy,
     "kmeans_pca": KMeansPcaStrategy,
 }
+
+
+def build_all_strategies() -> dict[str, type[RoseModelStrategy]]:
+    return ROSE_MODEL_STRATEGIES
