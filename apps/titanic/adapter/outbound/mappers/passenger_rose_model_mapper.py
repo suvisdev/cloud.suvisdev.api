@@ -2,13 +2,8 @@ from __future__ import annotations
 
 from titanic.adapter.outbound.orm.passenger_rose_model_orm import RoseModelOrm
 from titanic.domain.entities.passenger_rose_model_entity import Booking
-from titanic.domain.value_objects.passenger_rose_model_vo import (
-    Cabin,
-    Embarkation,
-    PassengerClass,
-    PersonId,
-    TicketInfo,
-)
+from titanic.domain.value_objects.berth_vo import Berth
+from titanic.domain.value_objects.embarked_vo import Embarked
 
 
 class PassengerRoseModelMapper:
@@ -16,24 +11,19 @@ class PassengerRoseModelMapper:
 
     @staticmethod
     def to_entity(orm: RoseModelOrm) -> Booking:
-        """ORM row → Domain Entity."""
         return Booking(
-            person_id=PersonId(orm.passenger_id),
-            passenger_class=PassengerClass(orm.pclass),
-            ticket_info=TicketInfo(ticket=orm.ticket, fare=orm.fare),
-            cabin=Cabin(orm.cabin),
-            embarkation=Embarkation(orm.embarked),
+            passenger_id=orm.passenger_id,
+            berth=Berth.from_raw(orm.pclass, orm.cabin, orm.fare),
+            embarked=Embarked.from_raw(orm.embarked),
             _db_id=orm.id,
         )
 
     @staticmethod
     def to_orm_fields(entity: Booking) -> dict[str, str]:
-        """Domain Entity → ORM 컬럼 dict (INSERT/UPDATE 시 사용)."""
         return {
-            "passenger_id": entity.person_id.value,
-            "pclass": entity.passenger_class.value,
-            "ticket": entity.ticket_info.ticket,
-            "fare": entity.ticket_info.fare,
-            "cabin": entity.cabin.value,
-            "embarked": entity.embarkation.value,
+            "passenger_id": entity.passenger_id,
+            "pclass": str(entity.berth.pclass),
+            "fare": str(entity.berth.fare),
+            "cabin": str(entity.berth.cabin),
+            "embarked": str(entity.embarked),
         }

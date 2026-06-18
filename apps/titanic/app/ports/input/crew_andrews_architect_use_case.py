@@ -15,6 +15,11 @@ class AndrewsArchitectUseCase(ABC):
         pass
 
     @abstractmethod
+    def generate_reply(self, question: str, ml_context: dict) -> str:
+        '''ML 예측 결과(ml_context)를 받아 질문에 맞는 응답 문자열을 반환하는 추상 메소드'''
+        pass
+
+    @abstractmethod
     async def introduce_myself(self, schema: AndrewsArchitectSchema) -> AndrewsArchitectResponse:
         '''앤드류 아키텍트의 자기소개 메소드'''
         pass

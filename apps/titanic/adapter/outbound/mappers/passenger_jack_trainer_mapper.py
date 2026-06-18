@@ -2,12 +2,8 @@ from __future__ import annotations
 
 from titanic.adapter.outbound.orm.passenger_jack_trainer_orm import JackTrainerOrm
 from titanic.domain.entities.passenger_jack_trainer_entity import PassengerJackTrainer
-from titanic.domain.value_objects.passenger_jack_trainer_vo import (
-    FamilyRelation,
-    PassengerId,
-    PersonalInfo,
-    SurvivalStatus,
-)
+from titanic.domain.value_objects.passenger_identity_vo import PassengerIdentity
+from titanic.domain.value_objects.survived_vo import Survived
 
 
 class PassengerJackTrainerMapper:
@@ -15,30 +11,18 @@ class PassengerJackTrainerMapper:
 
     @staticmethod
     def to_entity(orm: JackTrainerOrm) -> PassengerJackTrainer:
-        """ORM row → Domain Entity."""
         return PassengerJackTrainer(
-            passenger_id=PassengerId(orm.passenger_id),
-            personal_info=PersonalInfo(
-                name=orm.name,
-                gender=orm.gender,
-                age=orm.age,
-            ),
-            family_relation=FamilyRelation(
-                sib_sp=orm.sib_sp,
-                parch=orm.parch,
-            ),
-            survival_status=SurvivalStatus(orm.survived),
+            passenger_id=orm.passenger_id,
+            identity=PassengerIdentity.from_raw(orm.name, orm.gender),
+            survived=Survived.from_raw(orm.survived),
         )
 
     @staticmethod
     def to_orm_fields(entity: PassengerJackTrainer) -> dict[str, str]:
-        """Domain Entity → ORM 컬럼 dict (INSERT/UPDATE 시 사용)."""
         return {
-            "passenger_id": str(entity.passenger_id),
-            "name": entity.personal_info.name,
-            "gender": entity.personal_info.gender,
-            "age": entity.personal_info.age,
-            "sib_sp": entity.family_relation.sib_sp,
-            "parch": entity.family_relation.parch,
-            "survived": entity.survival_status.value,
+            "passenger_id": entity.passenger_id,
+            "name": str(entity.identity.title),
+            "gender": str(entity.identity.gender),
+            "age": str(entity.identity.age),
+            "survived": str(entity.survived),
         }

@@ -12,8 +12,14 @@ from titanic.app.dtos.passenger_jack_trainer_dto import JackTrainerResponse
 class JackTrainerUseCase(ABC):
 
     @abstractmethod
-    async def train_model(self, train_set: pd.DataFrame, test_set: pd.DataFrame | None = None) -> dict[str, Any]:
-        '''로즈가 제안한 모델들을 훈련시키고 test_set도 전처리해서 반환하는 메소드'''
+    async def train_model(
+        self,
+        X_train: list[list[float]],
+        y_label: list[int],
+        X_test: list[list[float]],
+        test_meta: pd.DataFrame | None = None,
+    ) -> dict[str, Any]:
+        """피처 엔지니어링이 완료된 데이터를 받아 모델을 훈련하고 결과를 반환한다."""
         pass
 
     @abstractmethod
