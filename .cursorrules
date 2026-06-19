@@ -1,20 +1,52 @@
 # Backend Harness — `suvisdev/` (Cursor)
 
-> **PKS** = Prompt (본 `.cursorrules`, 사용자 작업) + Knowledge ([`CLAUDE.md`](CLAUDE.md), [`ENTITY_RULE.md`](ENTITY_RULE.md), `apps/*/_docs/`) + System (Clean · Hexagonal · SOLID 코드).
+> **PKS** = Prompt (본 `.cursorrules`, 사용자 작업) + Knowledge ([루트 `CLAUDE.md`](../CLAUDE.md), [`CLAUDE.md`](CLAUDE.md), `apps/*/_docs/`) + System (Clean · Hexagonal · SOLID 코드).
 
-**상세 SSOT:** [`CLAUDE.md`](CLAUDE.md) — 본 파일은 Cursor용 **요약 하네스**이다. 충돌 시 `CLAUDE.md`가 우선한다.
+**상위 원칙:** [루트 `CLAUDE.md`](../CLAUDE.md) — Karpathy 네 원칙 (항상 유효)  
+**백엔드 SSOT:** [`CLAUDE.md`](CLAUDE.md) — 본 파일은 Cursor용 **요약 하네스**이다. 충돌 시 `suvisdev/CLAUDE.md`가 우선한다.
+
+---
+
+## Karpathy 네 원칙 (루트 `CLAUDE.md` 요약)
+
+| 원칙 | 한 줄 |
+|------|--------|
+| **구현 전 사고** | 가정을 명시하고, 모호하면 멈추고 질문한다. |
+| **단순성 우선** | 요청 밖 기능·추상·불필요한 예외 처리를 넣지 않는다. |
+| **정밀한 수정** | 요청과 직결된 줄만 바꾸고, 기존 스타일을 따른다. |
+| **목표 중심 실행** | 검증 가능한 성공 기준으로 일한다. |
+
+속도보다 **신중함**을 우선한다. (명백한 한 줄 수정은 상황 판단)
 
 ---
 
 ## Mandatory workflow (`suvisdev/` Python·FastAPI 수정 전)
 
-1. **본 파일** [`CLAUDE.md`](CLAUDE.md) §A–N (아키텍처·레이어·SOLID·체크리스트)
-2. [루트 `CLAUDE.md`](../../CLAUDE.md) — Karpathy 네 원칙
-3. [`ENTITY_RULE.md`](ENTITY_RULE.md) — PK `id` int 자동증감
-4. `AGENTS.md` — 앱 경로·삭제된 옛 경로 금지
-5. 해당 앱이면 `apps/<app>/_docs/.cursorrules` + `CLAUDE.md`
+1. [루트 `CLAUDE.md`](../CLAUDE.md) — Karpathy 원칙
+2. **본 파일** [`CLAUDE.md`](CLAUDE.md) — 아키텍처·레이어·SOLID·체크리스트
+3. `_claude/entity-rule.md` — PK `id` int 자동증감
+4. 해당 앱: `apps/<app>/_docs/.cursorrules` + `CLAUDE.md`
+5. `AGENTS.md` — 삭제된 옛 경로 금지
 
-관례를 **추측하지 않는다.** Wiki·본 문서가 모델 prior보다 우선한다.
+관례를 **추측하지 않는다.**
+
+---
+
+## 저장소 구조
+
+```text
+suvisdev/
+├── CLAUDE.md              ← 백엔드 인수인계 (SSOT)
+├── _claude/               ← entity-rule 등
+├── apps/<app>/_docs/      ← 앱별 ERD·도메인
+└── core/                  ← DB·인프라
+```
+
+| 앱 | Cursor 하네스 |
+|----|----------------|
+| Titanic (기준선) | [`apps/titanic/_docs/.cursorrules`](apps/titanic/_docs/.cursorrules) |
+| Mova | [`apps/mova/_docs/.cursorrules`](apps/mova/_docs/.cursorrules) |
+| Viewer | [`apps/viewer/_docs/.cursorrules`](apps/viewer/_docs/.cursorrules) |
 
 ---
 
@@ -30,11 +62,13 @@ Router (Schema) → Input Port (Schema in, Dto out) → Interactor (Schema→Com
 | **Router** | Schema, `Depends`, `await use_case`, Dto→Schema | 비즈니스 로직, DB·Repository 직접 접근 |
 | **Interactor** | Schema→Command, port 호출, Dto 반환 | `to_schema()`, `HTTPException`, ORM import |
 | **PgRepository** | Command, ORM, `RepositoryError` | `HTTPException`, Use Case import |
-| **DI** (`dependencies/`) | `get_*` 조립 | 비즈니스 로직 |
+| **DI** (`dependencies/`) | `get_*_use_case` 조립 | 비즈니스 로직 |
 
 **Import:** `from mova.*` / `from titanic.*` — `suvisdev.apps.` 접두사 금지. Core는 `from core.*`.
 
-**SOLID:** SRP · ISP · DIP 적용. OCP/LSP로 과한 추상·팩토리 남발 금지 (Karpathy 단순성).
+**SOLID:** SRP · ISP · DIP. OCP/LSP로 과한 추상·팩토리 남발 금지.
+
+**CPU-bound** (형태소 분석 등): `async def` 금지 → `def` + 필요 시 `asyncio.to_thread()`.
 
 ---
 
@@ -46,18 +80,7 @@ Router (Schema) → Input Port (Schema in, Dto out) → Interactor (Schema→Com
 | Interactor `to_schema()` | Router에서 `Dto.to_schema()` |
 | `model_dump()` → dict Command | `Command.from_schema(schema)` |
 | Interactor 내부 `XxxPgRepository()` | 생성자 DI (Output Port ABC) |
-| `adapter/__init__.py` 전역 use case | `dependencies/*.py` + `Depends` |
-| 삭제된 경로 (`friday13th/jason` 등) | `AGENTS.md` 확인 |
-
----
-
-## 앱별 위임
-
-| 앱 | Cursor 하네스 |
-|----|----------------|
-| Titanic (기준선) | [`apps/titanic/_docs/.cursorrules`](../apps/titanic/_docs/.cursorrules) |
-| Mova | [`apps/mova/_docs/.cursorrules`](../apps/mova/_docs/.cursorrules) |
-| Viewer | [`apps/viewer/_docs/.cursorrules`](../apps/viewer/_docs/.cursorrules) |
+| `from suvisdev.apps.*` | `from mova.*` / `from titanic.*` |
 
 ---
 
@@ -65,17 +88,15 @@ Router (Schema) → Input Port (Schema in, Dto out) → Interactor (Schema→Com
 
 1. 사용자의 **더 구체적·최근** 지시
 2. `apps/*/_docs/` 해당 앱 규칙
-3. 본 폴더 [`CLAUDE.md`](CLAUDE.md)
-4. [루트 `.cursorrules`](../../.cursorrules)
+3. [`suvisdev/CLAUDE.md`](CLAUDE.md)
+4. [루트 `CLAUDE.md`](../CLAUDE.md)
 5. 본 요약
-
-Karpathy 네 원칙(가정 명시 · 최소 diff · 검증 가능한 성공 기준)은 **항상** 유지한다.
 
 ### Cursor 참조 예
 
 ```
-@suvisdev/_claude/CLAUDE.md
-@suvisdev/_claude/ENTITY_RULE.md
 @CLAUDE.md
+@suvisdev/CLAUDE.md
+@suvisdev/apps/titanic/_docs/.cursorrules
 @AGENTS.md
 ```
