@@ -1,1 +1,1 @@
-C:/Users/hi/Documents/cloud.suvisdev/vault/suvisdev/CLAUDE.MD
+C:/Users/hi/Documents/cloud.suvisdev/suvisdev/_docs/CLAUDE.MD
