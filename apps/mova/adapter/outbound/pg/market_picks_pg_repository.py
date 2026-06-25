@@ -10,10 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from mova.adapter.outbound.orm.market_picks_orm import MovaPick
 from mova.app.dtos.market_picks_dto import PickFeedbackDto
 from mova.app.ports.output.market_picks_repository import PicksRepositoryPort
+from mova.domain.value_objects.market_picks_vo import Feedback
 
 logger = logging.getLogger(__name__)
-
-_VALID_FEEDBACK = frozenset({"like", "dislike"})
 
 
 class PicksPgRepository(PicksRepositoryPort):
@@ -21,9 +20,9 @@ class PicksPgRepository(PicksRepositoryPort):
         self._session = session
 
     async def update_feedback(self, pick_id: int, feedback: str | None) -> PickFeedbackDto:
-        normalized = feedback.strip().lower() if feedback else None
-        if normalized and normalized not in _VALID_FEEDBACK:
-            normalized = None
+        # 피드백 유효성·정규화는 도메인 VO(Feedback)가 단일 출처
+        feedback_vo = Feedback.from_str(feedback)
+        normalized = feedback_vo.value if feedback_vo else None
 
         pick = (
             await self._session.execute(
