@@ -43,3 +43,9 @@ class HotRankingDisplaySchema(BaseModel):
 class HotRankingListSchema(BaseModel):
     source: str
     items: list[HotRankingDisplaySchema]
+
+
+class RefreshRankingResponseSchema(BaseModel):
+    source: str
+    ranked_at: date
+    saved: int

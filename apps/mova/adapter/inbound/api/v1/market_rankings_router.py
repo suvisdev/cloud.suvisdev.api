@@ -2,12 +2,24 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from datetime import date
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from mova.adapter.inbound.api.schemas.market_rankings_schema import HotRankingListSchema
-from mova.app.ports.input.market_rankings_use_case import RankingsUseCase
-from mova.dependencies.market_rankings_provider import get_rankings_use_case
+from mova.adapter.inbound.api.schemas.market_rankings_schema import (
+    HotRankingListSchema,
+    RefreshRankingResponseSchema,
+)
+from mova.app.ports.input.market_rankings_use_case import (
+    GenerateChatTrendRankingUseCase,
+    RankingsUseCase,
+)
+from mova.domain.value_objects.market_rankings_vo import RANKING_SOURCE_CHAT_TREND
+from mova.dependencies.market_rankings_provider import (
+    get_generate_chat_trend_ranking_use_case,
+    get_rankings_use_case,
+)
 
 market_rankings_router = APIRouter(prefix="/rankings", tags=["mova-rankings"])
 
@@ -31,3 +43,21 @@ async def get_hot_rankings(
     """HOT 랭킹 조회 (source 별 최신 스냅샷)."""
     dto = await use_case.get_hot(source, limit)
     return dto.to_schema()
+
+
+@market_rankings_router.post("/refresh", response_model=RefreshRankingResponseSchema)
+async def refresh_rankings(
+    source: str = Query(RANKING_SOURCE_CHAT_TREND, description="현재 chat_trend만 지원"),
+    days: int = Query(7, ge=1, le=90, description="집계 윈도우 (일)"),
+    limit: int = Query(10, ge=1, le=50, description="상위 K건"),
+    use_case: GenerateChatTrendRankingUseCase = Depends(get_generate_chat_trend_ranking_use_case),
+) -> RefreshRankingResponseSchema:
+    """chat_trend 랭킹 수동 재집계·스냅샷 저장 (수동 트리거용)."""
+    if source != RANKING_SOURCE_CHAT_TREND:
+        raise HTTPException(status_code=400, detail="refresh는 source=chat_trend만 지원합니다.")
+    saved = await use_case.execute(days=days, limit=limit)
+    return RefreshRankingResponseSchema(
+        source=RANKING_SOURCE_CHAT_TREND,
+        ranked_at=date.today(),
+        saved=saved,
+    )

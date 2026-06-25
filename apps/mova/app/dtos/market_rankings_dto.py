@@ -7,6 +7,26 @@ from datetime import date
 
 
 @dataclass(frozen=True)
+class ChatTrendAggRowDto:
+    """picks×chat 윈도우 집계 1행 (movie 단위 raw 수치)."""
+
+    movie_id: int
+    pick_count: int
+    hit_sum: int
+
+
+@dataclass(frozen=True)
+class ChatTrendRankingRowDto:
+    """rankings(source=chat_trend) 스냅샷 저장 1행."""
+
+    rank: int
+    movie_id: int
+    chat_id: int | None
+    score: int
+    badge: str | None
+
+
+@dataclass(frozen=True)
 class RankingItemDto:
     id: int
     rank: int

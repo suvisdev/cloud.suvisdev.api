@@ -3,15 +3,23 @@
 from __future__ import annotations
 
 import logging
+from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mova.adapter.outbound.orm.market_chat_orm import MovaChat
+from mova.adapter.outbound.orm.market_picks_orm import MovaPick
 from mova.adapter.outbound.orm.market_rankings_orm import MovaRanking
 from mova.adapter.outbound.orm.studio_movies_orm import MovaMovie
-from mova.app.dtos.market_rankings_dto import RankingItemDto, RankingListDto
+from mova.app.dtos.market_rankings_dto import (
+    ChatTrendAggRowDto,
+    ChatTrendRankingRowDto,
+    RankingItemDto,
+    RankingListDto,
+)
 from mova.app.ports.output.market_rankings_repository import RankingsRepositoryPort
+from mova.domain.value_objects.market_rankings_vo import RANKING_SOURCE_CHAT_TREND
 
 logger = logging.getLogger(__name__)
 
@@ -54,3 +62,68 @@ class RankingsPgRepository(RankingsRepositoryPort):
         ]
         logger.debug("[RankingsPgRepository] get_hot source=%s count=%d", source, len(items))
         return RankingListDto(items=items, source=source)
+
+    async def aggregate_chat_trend(self, days: int, limit: int) -> list[ChatTrendAggRowDto]:
+        since = datetime.now(timezone.utc) - timedelta(days=days)
+        pick_count = func.count(MovaPick.id)
+        hit_sum = func.coalesce(func.sum(MovaChat.hit_count), 0)
+
+        rows = (
+            await self._session.execute(
+                select(
+                    MovaPick.movie_id.label("movie_id"),
+                    pick_count.label("pick_count"),
+                    hit_sum.label("hit_sum"),
+                )
+                .join(MovaChat, MovaPick.chat_id == MovaChat.id)
+                .where(MovaPick.batch_at >= since)
+                .group_by(MovaPick.movie_id)
+                .order_by((pick_count + hit_sum).desc())
+                .limit(limit)
+            )
+        ).all()
+
+        result = [
+            ChatTrendAggRowDto(
+                movie_id=r.movie_id,
+                pick_count=int(r.pick_count or 0),
+                hit_sum=int(r.hit_sum or 0),
+            )
+            for r in rows
+        ]
+        logger.debug(
+            "[RankingsPgRepository] aggregate_chat_trend days=%d count=%d", days, len(result)
+        )
+        return result
+
+    async def save_chat_trend_ranking(
+        self,
+        rows: list[ChatTrendRankingRowDto],
+        ranked_at: date,
+    ) -> int:
+        # 동일 일자·source 스냅샷 덮어쓰기 — UNIQUE(rank, ranked_at, source) 충돌 방지.
+        await self._session.execute(
+            delete(MovaRanking).where(
+                MovaRanking.source == RANKING_SOURCE_CHAT_TREND,
+                MovaRanking.ranked_at == ranked_at,
+            )
+        )
+        for row in rows:
+            self._session.add(
+                MovaRanking(
+                    rank=row.rank,
+                    movie_id=row.movie_id,
+                    chat_id=row.chat_id,
+                    source=RANKING_SOURCE_CHAT_TREND,
+                    score=row.score,
+                    badge=row.badge,
+                    ranked_at=ranked_at,
+                )
+            )
+        await self._session.commit()
+        logger.debug(
+            "[RankingsPgRepository] save_chat_trend_ranking ranked_at=%s count=%d",
+            ranked_at,
+            len(rows),
+        )
+        return len(rows)
