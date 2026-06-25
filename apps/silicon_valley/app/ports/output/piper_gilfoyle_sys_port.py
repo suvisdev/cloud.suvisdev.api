@@ -9,5 +9,5 @@ class GilfoyleSysPort(ABC):
     """piper_gilfoyle_sys output port."""
 
     @abstractmethod
-    def introduce_myself(self, query: GilfoyleSysQuery)->GilfoyleSysResponse:
+    async def introduce_myself(self, query: GilfoyleSysQuery) -> GilfoyleSysResponse:
         pass

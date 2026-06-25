@@ -9,5 +9,5 @@ class HendricksCeoPort(ABC):
     """piper_hendricks_ceo output port."""
 
     @abstractmethod
-    def introduce_myself(self, query: HendricksCeoQuery)->HendricksCeoResponse:
+    async def introduce_myself(self, query: HendricksCeoQuery) -> HendricksCeoResponse:
         pass

@@ -1,0 +1,42 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["apps", "core"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+]
+ignore = [
+    "E501",  # line too long (ruff format handles it)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "star_craft",
+    "titanic", "mova", "viewer", "silicon_valley",
+    "friday13th", "imitation_game", "inception", "social_network",
+    "core",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ──────────────────────────────────────────────
+# mypy — strict 정적 타입 검사
+# ──────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+exclude = [
+    "tests/",
+    "scripts/",
+    "alembic/",
+]

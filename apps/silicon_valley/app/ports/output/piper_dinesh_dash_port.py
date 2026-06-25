@@ -9,5 +9,5 @@ class DineshDashPort(ABC):
     """piper_dinesh_dash output port."""
 
     @abstractmethod
-    def introduce_myself(self, query: DineshDashQuery)->DineshDashResponse:
+    async def introduce_myself(self, query: DineshDashQuery) -> DineshDashResponse:
         pass

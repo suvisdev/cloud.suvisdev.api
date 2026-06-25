@@ -9,5 +9,5 @@ class DunnCooPort(ABC):
     """piper_dunn_coo output port."""
 
     @abstractmethod
-    def introduce_myself(self, query: DunnCooQuery)->DunnCooResponse:
+    async def introduce_myself(self, query: DunnCooQuery) -> DunnCooResponse:
         pass

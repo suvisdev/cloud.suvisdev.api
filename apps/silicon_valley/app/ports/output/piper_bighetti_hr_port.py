@@ -9,5 +9,5 @@ class BighettiHrPort(ABC):
     """piper_bighetti_hr output port."""
 
     @abstractmethod
-    def introduce_myself(self, query: BighettiHrQuery)->BighettiHrResponse:
+    async def introduce_myself(self, query: BighettiHrQuery) -> BighettiHrResponse:
         pass
