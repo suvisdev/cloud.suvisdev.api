@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -16,7 +16,7 @@ class TagDto:
     description: str
 
     @classmethod
-    def from_orm(cls, orm: object) -> "TagDto":
+    def from_orm(cls, orm: object) -> TagDto:
         return cls(
             id=orm.id,
             movie_id=orm.movie_id,
@@ -51,7 +51,7 @@ class TagGroupDto:
     cast: list[TagDto]
 
     @classmethod
-    def from_tag_list(cls, movie_id: int, tags: list[TagDto]) -> "TagGroupDto":
+    def from_tag_list(cls, movie_id: int, tags: list[TagDto]) -> TagGroupDto:
         return cls(
             movie_id=movie_id,
             mood=[t for t in tags if t.tag_kind == "mood"],
@@ -74,8 +74,13 @@ if __name__ == "__main__":
     from types import SimpleNamespace
 
     mock = SimpleNamespace(
-        id=1, movie_id=10, character_id=None,
-        tag_kind="genre", slug="genre-sf", label="SF", description="",
+        id=1,
+        movie_id=10,
+        character_id=None,
+        tag_kind="genre",
+        slug="genre-sf",
+        label="SF",
+        description="",
     )
     dto = TagDto.from_orm(mock)
     assert dto.tag_kind == "genre"

@@ -14,7 +14,7 @@ class CharacterDto:
     actor_id: int
 
     @classmethod
-    def from_orm(cls, orm: object) -> "CharacterDto":
+    def from_orm(cls, orm: object) -> CharacterDto:
         return cls(id=orm.id, movie_id=orm.movie_id, actor_id=orm.actor_id)
 
 
@@ -30,7 +30,7 @@ class CharacterWithActorDto:
     profile_photo_url: str
 
     @classmethod
-    def from_orm(cls, char: object, actor: object) -> "CharacterWithActorDto":
+    def from_orm(cls, char: object, actor: object) -> CharacterWithActorDto:
         return cls(
             id=char.id,
             movie_id=char.movie_id,

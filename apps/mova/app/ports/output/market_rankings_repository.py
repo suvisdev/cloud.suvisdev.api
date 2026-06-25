@@ -8,7 +8,6 @@ from mova.app.dtos.market_rankings_dto import RankingListDto
 
 
 class RankingsRepositoryPort(ABC):
-
     @abstractmethod
     async def get_hot(self, source: str, limit: int) -> RankingListDto:
         """HOT 랭킹 조회 (rankings → movies LEFT JOIN chat)."""

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from mova.adapter.inbound.api.schemas.market_chat_schema import MovaChatRequest
 from mova.app.dtos.market_chat_dto import ChatRecommendationDto, ChatResponseDto
@@ -57,7 +57,7 @@ class ChatInteractor(ChatUseCase):
         )
 
         # 4. chat + picks 저장
-        batch_at = datetime.now(timezone.utc)
+        batch_at = datetime.now(UTC)
         chat_id = await self._repo.save_chat(
             user_id=request.user_id,
             assistant_id=None,
@@ -76,7 +76,9 @@ class ChatInteractor(ChatUseCase):
 
         logger.info(
             "[ChatInteractor] chat_id=%d intent=%s recs=%d",
-            chat_id, intent["intent_type"], len(recs),
+            chat_id,
+            intent["intent_type"],
+            len(recs),
         )
         return ChatResponseDto(
             chat_id=chat_id,

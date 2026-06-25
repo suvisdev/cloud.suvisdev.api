@@ -510,14 +510,14 @@ KOFIC import는 `source=box_office`로 유지. UI 기본 HOT는 **`chat` → `pi
 |--------|------|------|
 | `collections` | `MovaCollection` | `mova/adapter/outbound/orm/market_collections_orm.py` |
 | `movies` | `MovaMovie` | `mova/adapter/outbound/orm/studio_movies_orm.py` |
-| `actors` | `MovaActor` | `mova/adapter/outbound/orm/actors_orm.py` |
-| `characters` | `MovaCharacter` | `mova/adapter/outbound/orm/characters_orm.py` |
-| `tags` | `MovaTag` | `mova/adapter/outbound/orm/tags_orm.py` |
-| `rankings` | `MovaRanking` | `mova/adapter/outbound/orm/rankings_orm.py` |
-| `chat` | `MovaChat` | `mova/adapter/outbound/orm/chat_orm.py` |
-| `picks` | `MovaPick` | `mova/adapter/outbound/orm/picks_orm.py` |
-| `reviews` | `MovaReview` | `mova/adapter/outbound/orm/reviews_orm.py` |
-| `assistants` | `MovaAssistant` | `mova/adapter/outbound/orm/assistants_orm.py` |
+| `actors` | `MovaActor` | `mova/adapter/outbound/orm/studio_actors_orm.py` |
+| `characters` | `MovaCharacter` | `mova/adapter/outbound/orm/studio_characters_orm.py` |
+| `tags` | `MovaTag` | `mova/adapter/outbound/orm/studio_tags_orm.py` |
+| `rankings` | `MovaRanking` | `mova/adapter/outbound/orm/market_rankings_orm.py` |
+| `chat` | `MovaChat` | `mova/adapter/outbound/orm/market_chat_orm.py` |
+| `picks` | `MovaPick` | `mova/adapter/outbound/orm/market_picks_orm.py` |
+| `reviews` | `MovaReview` | `mova/adapter/outbound/orm/market_reviews_orm.py` |
+| `assistants` | `MovaAssistant` | `mova/adapter/outbound/orm/platform_assistants_orm.py` |
 | `users` | `User` | `viewer/app/dtos/user_model.py` |
 | `groups` | `Group` | `viewer/app/dtos/group_model.py` |
 | `admins` | `Admin` | `viewer/app/dtos/admin_model.py` |

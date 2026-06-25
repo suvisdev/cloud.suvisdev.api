@@ -18,7 +18,7 @@ class AssistantEntity:
     is_active: bool
 
     @classmethod
-    def from_orm(cls, row: object) -> "AssistantEntity":
+    def from_orm(cls, row: object) -> AssistantEntity:
         return cls(
             id=row.id,
             slug=AssistantSlug(row.slug),

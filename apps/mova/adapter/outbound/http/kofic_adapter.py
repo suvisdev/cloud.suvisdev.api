@@ -1,4 +1,4 @@
-﻿"""KOFIC(KOBIS) Open API 클라이언트."""
+"""KOFIC(KOBIS) Open API 클라이언트."""
 
 from __future__ import annotations
 

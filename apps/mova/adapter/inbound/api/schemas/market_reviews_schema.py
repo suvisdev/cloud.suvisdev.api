@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from datetime import datetime
 
@@ -69,7 +69,6 @@ class MovieRatingSummarySchema(BaseModel):
 
 
 class MarketReviewsSchema(BaseModel):
-
     id: int = Field(0, description="Reviews ID")
     name: str = Field("평론가 (Critic)", description="Critic's name")
     # 작품에 대한 반응을 언어와 별점으로 기록하는 비평가. reviews 테이블 관리

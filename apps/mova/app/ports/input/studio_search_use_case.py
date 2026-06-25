@@ -8,7 +8,6 @@ from mova.app.dtos.studio_search_dto import SearchResultDto
 
 
 class SearchUseCase(ABC):
-
     @abstractmethod
     async def search_movies(self, q: str, limit: int, offset: int) -> SearchResultDto:
         pass

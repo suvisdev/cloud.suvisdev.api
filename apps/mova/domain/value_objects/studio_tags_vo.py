@@ -14,7 +14,7 @@ class TagKind(str, Enum):
     CAST = "cast"
 
     @classmethod
-    def from_str(cls, value: str | None) -> "TagKind":
+    def from_str(cls, value: str | None) -> TagKind:
         for member in cls:
             if member.value == value:
                 return member
@@ -43,11 +43,11 @@ class TagSlug:
         return self.value
 
     @classmethod
-    def for_genre(cls, genre: str) -> "TagSlug":
+    def for_genre(cls, genre: str) -> TagSlug:
         return cls(f"genre-{genre.strip().lower()}")
 
     @classmethod
-    def for_cast(cls, name: str) -> "TagSlug":
+    def for_cast(cls, name: str) -> TagSlug:
         return cls(f"cast-{name.strip()}")
 
 

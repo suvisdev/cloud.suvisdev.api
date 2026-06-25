@@ -17,7 +17,7 @@ class ActorEntity:
     profile_photo_url: str
 
     @classmethod
-    def from_orm(cls, orm: object) -> "ActorEntity":
+    def from_orm(cls, orm: object) -> ActorEntity:
         return cls(
             id=orm.id,
             name=ActorName(orm.name),

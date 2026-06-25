@@ -4,10 +4,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+from mova.app.dtos.studio_import_dto import StudioImportQuery, StudioImportResponse
 from mova.app.dtos.studio_movies_dto import MovieDetailDto, MovieFilterQuery, MovieListDto
 
 
 class MoviesRepositoryPort(ABC):
+    @abstractmethod
+    async def introduce_myself(self, query: StudioImportQuery) -> StudioImportResponse:
+        """Import 담당자 소개 정보 반환."""
 
     @abstractmethod
     async def get_by_slug(self, slug: str) -> MovieDetailDto | None:

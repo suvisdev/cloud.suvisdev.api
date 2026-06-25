@@ -8,7 +8,6 @@ from mova.app.dtos.studio_movies_dto import MovieDetailDto, MovieFilterQuery, Mo
 
 
 class MoviesUseCase(ABC):
-
     @abstractmethod
     async def get_movie_detail(self, slug: str) -> MovieDetailDto | None:
         """영화 상세 조회. 없으면 None."""

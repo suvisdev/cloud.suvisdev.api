@@ -1,4 +1,4 @@
-﻿"""@see suvisdev/_claude/ENTITY_RULE.md — Mova AI 채팅 검색·취향 의도 로그."""
+"""@see suvisdev/_claude/ENTITY_RULE.md — Mova AI 채팅 검색·취향 의도 로그."""
 
 from datetime import datetime
 

@@ -8,7 +8,6 @@ from mova.app.dtos.market_picks_dto import PickFeedbackDto
 
 
 class PicksRepositoryPort(ABC):
-
     @abstractmethod
     async def update_feedback(self, pick_id: int, feedback: str | None) -> PickFeedbackDto:
         """like | dislike | null 피드백 업데이트."""

@@ -20,21 +20,23 @@ class AssistantsPgRepository(AssistantsRepositoryPort):
 
     async def list_active(self) -> AssistantListDto:
         rows = (
-            await self._session.execute(
-                select(MovaAssistant)
-                .where(MovaAssistant.is_active.is_(True))
-                .order_by(MovaAssistant.display_name)
+            (
+                await self._session.execute(
+                    select(MovaAssistant)
+                    .where(MovaAssistant.is_active.is_(True))
+                    .order_by(MovaAssistant.display_name)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
         logger.debug("[AssistantsPgRepository] list_active count=%d", len(rows))
         return AssistantListDto(items=[AssistantDto.from_orm(r) for r in rows])
 
     async def get_by_slug(self, slug: str) -> AssistantDto | None:
         row = (
-            await self._session.execute(
-                select(MovaAssistant).where(MovaAssistant.slug == slug)
-            )
+            await self._session.execute(select(MovaAssistant).where(MovaAssistant.slug == slug))
         ).scalar_one_or_none()
 
         if not row:

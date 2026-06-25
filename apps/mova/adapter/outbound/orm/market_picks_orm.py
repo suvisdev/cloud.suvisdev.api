@@ -1,8 +1,8 @@
-﻿"""@see suvisdev/_claude/ENTITY_RULE.md — AI 채팅 추천 작품 기록 (`picks`)."""
+"""@see suvisdev/_claude/ENTITY_RULE.md — AI 채팅 추천 작품 기록 (`picks`)."""
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from mova.adapter.outbound.orm.base_orm import MovaModel

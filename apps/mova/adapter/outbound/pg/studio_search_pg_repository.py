@@ -37,14 +37,18 @@ class SearchPgRepository(SearchRepositoryPort):
         ).scalar_one()
 
         movies = (
-            await self._session.execute(
-                select(MovaMovie)
-                .where(MovaMovie.id.in_(select(matching_ids.c.id)))
-                .order_by(MovaMovie.rating.desc())
-                .limit(limit)
-                .offset(offset)
+            (
+                await self._session.execute(
+                    select(MovaMovie)
+                    .where(MovaMovie.id.in_(select(matching_ids.c.id)))
+                    .order_by(MovaMovie.rating.desc())
+                    .limit(limit)
+                    .offset(offset)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
         items = [MovieListItemDto.from_orm(m) for m in movies]
         logger.debug("[SearchPgRepository] q=%r total=%d returned=%d", q, total, len(items))

@@ -8,7 +8,6 @@ from mova.app.dtos.platform_assistants_dto import AssistantDto, AssistantListDto
 
 
 class AssistantsUseCase(ABC):
-
     @abstractmethod
     async def list_assistants(self) -> AssistantListDto:
         pass

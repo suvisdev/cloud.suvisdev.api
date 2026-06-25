@@ -1,4 +1,4 @@
-﻿"""@see suvisdev/_claude/ENTITY_RULE.md — 영화↔인물(배우) 연결."""
+"""@see suvisdev/_claude/ENTITY_RULE.md — 영화↔인물(배우) 연결."""
 
 from sqlalchemy import ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
@@ -10,9 +10,7 @@ class MovaCharacter(MovaModel):
     """��ȭ?�ι� ���� (`characters` ���̺�). PK `id` ? `(movie_id, actor_id)` UNIQUE."""
 
     __tablename__ = "characters"
-    __table_args__ = (
-        UniqueConstraint("movie_id", "actor_id", name="uq_characters_movie_actor"),
-    )
+    __table_args__ = (UniqueConstraint("movie_id", "actor_id", name="uq_characters_movie_actor"),)
 
     movie_id: Mapped[int] = mapped_column(
         Integer,

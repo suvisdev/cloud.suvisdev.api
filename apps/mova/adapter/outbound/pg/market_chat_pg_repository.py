@@ -31,15 +31,20 @@ class ChatPgRepository(ChatRepositoryPort):
 
         cond = or_(*[MovaTag.label.ilike(f"%{kw}%") for kw in keywords[:6]])
         rows = (
-            await self._session.execute(
-                select(MovaMovie)
-                .join(MovaTag, MovaTag.movie_id == MovaMovie.id)
-                .where(cond)
-                .distinct()
-                .order_by(MovaMovie.rating.desc())
-                .limit(limit)
+            (
+                await self._session.execute(
+                    select(MovaMovie)
+                    .join(MovaTag, MovaTag.movie_id == MovaMovie.id)
+                    .where(cond)
+                    .distinct()
+                    .order_by(MovaMovie.rating.desc())
+                    .limit(limit)
+                )
             )
-        ).scalars().unique().all()
+            .scalars()
+            .unique()
+            .all()
+        )
 
         return [
             MovaSearchItemSchema(
@@ -55,13 +60,17 @@ class ChatPgRepository(ChatRepositoryPort):
 
     async def get_recent_intents_by_user(self, user_id: int, limit: int) -> list[MovaChat]:
         rows = (
-            await self._session.execute(
-                select(MovaChat)
-                .where(MovaChat.user_id == user_id)
-                .order_by(MovaChat.last_used_at.desc())
-                .limit(limit)
+            (
+                await self._session.execute(
+                    select(MovaChat)
+                    .where(MovaChat.user_id == user_id)
+                    .order_by(MovaChat.last_used_at.desc())
+                    .limit(limit)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return list(rows)
 
     async def save_chat(

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from mova.app.dtos.studio_movies_dto import MovieDetailDto, MovieFilterQuery, MovieListDto
 from mova.app.ports.input.studio_movies_use_case import MoviesUseCase
-from mova.app.ports.output.studio_movies_repository import MoviesRepositoryPort
+from mova.app.ports.output.movies_repository import MoviesRepositoryPort
 
 
 class MoviesInteractor(MoviesUseCase):

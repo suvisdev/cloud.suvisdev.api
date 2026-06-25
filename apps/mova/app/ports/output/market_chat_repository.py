@@ -12,7 +12,6 @@ from mova.adapter.inbound.api.schemas.studio_search_schema import MovaSearchItem
 
 
 class ChatRepositoryPort(ABC):
-
     @abstractmethod
     async def search_tag_catalog(
         self, keywords: list[str], limit: int

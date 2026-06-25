@@ -35,6 +35,4 @@ async def update_pick_feedback(
     dto = await use_case.update_feedback(pick_id, body.feedback)
     if not dto.updated:
         raise HTTPException(status_code=404, detail=f"Pick {pick_id} not found")
-    return PickFeedbackSchema(
-        pick_id=dto.pick_id, feedback=dto.feedback, updated=dto.updated
-    )
+    return PickFeedbackSchema(pick_id=dto.pick_id, feedback=dto.feedback, updated=dto.updated)

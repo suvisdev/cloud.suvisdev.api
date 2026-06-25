@@ -4,7 +4,7 @@
 > **목적:** Clean Architecture + Hexagonal + FastAPI + SOLID(SRP·ISP·DIP) + **스타-토폴로지(Star Topology)** 규칙을 한 문서에서 인수인계한다.  
 > **구조:** **모듈러 모놀리식(Modular Monolith)** — `star_craft`가 Hub, 나머지 앱이 Spoke.  
 > **기준 구현:** `apps/titanic/` (James/Walter/Smith) — Mova·Viewer는 **동일 레이어 규칙**으로 맞춘 상태.  
-> **상위 원칙:** `CLAUDE.md` — Karpathy 네 원칙 (항상 유효)
+> **상위 원칙:** [[CLAUDE]] — Karpathy 네 원칙 (항상 유효)
 
 ---
 
@@ -13,9 +13,9 @@
 | 순서 | 문서 | 용도 |
 |------|------|------|
 | 1 | **본 파일** (`suvisdev/CLAUDE.md`) | 아키텍처·레이어·SOLID·패턴 |
-| 2 | `_claude/entity-rule.md` | PK `id` int 자동증감 |
-| 3 | `apps/mova/_docs/MOVA_ERD.md` | Mova 테이블 관계 (해당 시) |
-| 4 | `apps/titanic/_docs/CLAUDE.md` | Titanic 기준선 세부 |
+| 2 | [[entity-rules]] | PK `id` int 자동증감 |
+| 3 | [[MOVA_ERD]] | Mova 테이블 관계 (해당 시) |
+| 4 | [[titanic/_docs/CLAUDE]] | Titanic 기준선 세부 |
 
 **규칙 문서를 읽지 않고 관례를 추측하여 구현하지 않는다.**
 
@@ -282,7 +282,7 @@ python scripts/verify_db_tables.py
 
 ## J. 앱별 참조 파일
 
-### Titanic → `apps/titanic/_docs/CLAUDE.md`
+### Titanic → [[titanic/_docs/CLAUDE]]
 
 | 역할 | 파일 |
 |------|------|
@@ -292,7 +292,7 @@ python scripts/verify_db_tables.py
 | DI | `titanic/dependencies/crew_james_director_provider.py` |
 | Smith Captain Router | `titanic/adapter/inbound/api/v1/crew_smith_captain_router.py` |
 
-### Mova → `apps/mova/_docs/CLAUDE.md`
+### Mova → [[mova/_docs/CLAUDE]]
 
 | 역할 | 파일 |
 |------|------|
@@ -301,7 +301,18 @@ python scripts/verify_db_tables.py
 | Interactor | `mova/app/use_cases/movies_interactor.py` |
 | DI | `mova/dependencies/movies_provider.py` |
 
-### Viewer → `apps/viewer/_docs/CLAUDE.md`
+| Mova ORM 테이블 | 파일 |
+|-----------------|------|
+| Actors ORM | `mova/adapter/outbound/orm/studio_actors_orm.py` |
+| Characters ORM | `mova/adapter/outbound/orm/studio_characters_orm.py` |
+| Tags ORM | `mova/adapter/outbound/orm/studio_tags_orm.py` |
+| Rankings ORM | `mova/adapter/outbound/orm/market_rankings_orm.py` |
+| Chat ORM | `mova/adapter/outbound/orm/market_chat_orm.py` |
+| Picks ORM | `mova/adapter/outbound/orm/market_picks_orm.py` |
+| Reviews ORM | `mova/adapter/outbound/orm/market_reviews_orm.py` |
+| Assistants ORM | `mova/adapter/outbound/orm/platform_assistants_orm.py` |
+
+### Viewer → [[viewer/_docs/CLAUDE]]
 
 | API | 경로 |
 |-----|------|

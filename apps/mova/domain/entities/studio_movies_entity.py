@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from mova.domain.value_objects.studio_movies_vo import AgeRating, PlatformEntry
 
@@ -27,7 +27,7 @@ class MovieEntity:
     collection_id: int | None
 
     @classmethod
-    def from_orm(cls, orm: object) -> "MovieEntity":
+    def from_orm(cls, orm: object) -> MovieEntity:
         """SQLAlchemy ORM row → Entity. ORM import는 이 팩토리 안에서만."""
         platforms = [
             PlatformEntry.from_dict(p) if isinstance(p, dict) else p

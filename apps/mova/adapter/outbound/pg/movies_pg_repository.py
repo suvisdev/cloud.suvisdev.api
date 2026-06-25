@@ -11,39 +11,42 @@ from mova.adapter.outbound.orm.studio_actors_orm import MovaActor
 from mova.adapter.outbound.orm.studio_characters_orm import MovaCharacter
 from mova.adapter.outbound.orm.studio_movies_orm import MovaMovie
 from mova.adapter.outbound.orm.studio_tags_orm import MovaTag
+from mova.app.dtos.studio_import_dto import StudioImportQuery, StudioImportResponse
 from mova.app.dtos.studio_movies_dto import (
     MovieDetailDto,
     MovieFilterQuery,
     MovieListDto,
     MovieListItemDto,
 )
-from mova.app.ports.output.studio_movies_repository import MoviesRepositoryPort
+from mova.app.ports.output.movies_repository import MoviesRepositoryPort
 
 logger = logging.getLogger(__name__)
 
-# ── 레거시 호환 클래스 — chat_reply.py에서 세션 없이 직접 사용 ──────────────────
 
+# ── 레거시 호환 클래스 — chat_reply.py에서 세션 없이 직접 사용 ──────────────────
 class StudioMoviesPgRepository:
     """chat_reply.py 전용 레거시 클래스 — 자체 세션 생성."""
 
     def __init__(self) -> None:
         from core.matrix.grid_oracle_database_manager import get_mova_session_factory
+
         self._factory = get_mova_session_factory()
 
-    async def get_by_slug(self, slug: str) -> "MovaMovie | None":
+    async def get_by_slug(self, slug: str) -> MovaMovie | None:
         async with self._factory() as session:
             result = await session.execute(select(MovaMovie).where(MovaMovie.slug == slug))
             return result.scalar_one_or_none()
 
-    async def find_by_title(self, title: str) -> "MovaMovie | None":
+    async def find_by_title(self, title: str) -> MovaMovie | None:
         async with self._factory() as session:
             result = await session.execute(
                 select(MovaMovie).where(MovaMovie.title == title).limit(1)
             )
             return result.scalar_one_or_none()
 
-    async def save_movie(self, schema: object) -> "MovaMovie":
+    async def save_movie(self, schema: object) -> MovaMovie:
         from mova.adapter.outbound.orm.studio_movies_orm import slugify_movie as _slugify
+
         async with self._factory() as session:
             slug = getattr(schema, "slug", None) or _slugify(getattr(schema, "title", ""))
             existing = (
@@ -73,15 +76,15 @@ class StudioMoviesPgRepository:
 
 
 # ── 헥사고날 PgRepository ─────────────────────────────────────────────────────
-
 class MoviesPgRepository(MoviesRepositoryPort):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    async def introduce_myself(self, query: StudioImportQuery) -> StudioImportResponse:
+        return StudioImportResponse(id=query.id, name=query.name)
+
     async def get_by_slug(self, slug: str) -> MovieDetailDto | None:
-        movie_q = await self._session.execute(
-            select(MovaMovie).where(MovaMovie.slug == slug)
-        )
+        movie_q = await self._session.execute(select(MovaMovie).where(MovaMovie.slug == slug))
         movie = movie_q.scalar_one_or_none()
         if not movie:
             return None
@@ -103,7 +106,9 @@ class MoviesPgRepository(MoviesRepositoryPort):
 
         logger.debug(
             "[MoviesPgRepository] get_by_slug=%s actors=%d tags=%d",
-            slug, len(char_actors), len(tags),
+            slug,
+            len(char_actors),
+            len(tags),
         )
         return MovieDetailDto.from_orm(movie, char_actors, tags)
 
@@ -150,9 +155,7 @@ class MoviesPgRepository(MoviesRepositoryPort):
         movies_r = await self._session.execute(stmt)
         movies = list(movies_r.scalars().all())
 
-        logger.debug(
-            "[MoviesPgRepository] list_movies total=%d returned=%d", total, len(movies)
-        )
+        logger.debug("[MoviesPgRepository] list_movies total=%d returned=%d", total, len(movies))
         return MovieListDto(
             items=[MovieListItemDto.from_orm(m) for m in movies],
             total=total,

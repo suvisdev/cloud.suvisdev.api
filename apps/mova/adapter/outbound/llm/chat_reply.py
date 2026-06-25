@@ -7,7 +7,7 @@ from mova.adapter.inbound.api.schemas.market_chat_schema import MovaChatRecommen
 from mova.adapter.inbound.api.schemas.studio_movies_schema import MovieCreateSchema
 from mova.adapter.outbound.http import TmdbAdapter
 from mova.adapter.outbound.orm.studio_movies_orm import slugify_movie
-from mova.adapter.outbound.pg.studio_movies_pg_repository import StudioMoviesPgRepository
+from mova.adapter.outbound.pg.movies_pg_repository import StudioMoviesPgRepository
 from mova.domain.value_objects.studio_movies_vo import resolve_canonical_slug
 
 logger = logging.getLogger(__name__)
@@ -105,26 +105,30 @@ class ChatReplyService:
             try:
                 if movie is not None:
                     if poster and poster != (movie.poster_url or "").strip():
-                        await repo.save_movie(MovieCreateSchema(
-                            slug=movie.slug,
-                            title=movie.title,
-                            release_year=movie.release_year or "",
-                            rating=float(movie.rating or 0),
-                            poster_url=poster,
-                            platforms=movie.platforms or [],
-                            genres=list(movie.genres or []),
-                        ))
+                        await repo.save_movie(
+                            MovieCreateSchema(
+                                slug=movie.slug,
+                                title=movie.title,
+                                release_year=movie.release_year or "",
+                                rating=float(movie.rating or 0),
+                                poster_url=poster,
+                                platforms=movie.platforms or [],
+                                genres=list(movie.genres or []),
+                            )
+                        )
                 else:
                     # Gemini 추천 영화가 DB에 없으면 상세 페이지가 404나지 않도록 신규 저장
-                    await repo.save_movie(MovieCreateSchema(
-                        slug=slug,
-                        title=rec.title,
-                        release_year=year or "",
-                        rating=0.0,
-                        poster_url=poster or "",
-                        platforms=[],
-                        genres=[],
-                    ))
+                    await repo.save_movie(
+                        MovieCreateSchema(
+                            slug=slug,
+                            title=rec.title,
+                            release_year=year or "",
+                            rating=0.0,
+                            poster_url=poster or "",
+                            platforms=[],
+                            genres=[],
+                        )
+                    )
             except Exception:
                 logger.debug(
                     "[ChatReplyService] 영화 DB 저장 스킵 — %r",

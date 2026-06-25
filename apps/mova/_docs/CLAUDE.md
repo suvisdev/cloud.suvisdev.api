@@ -1,7 +1,7 @@
 # Mova 앱 — 영화·채팅·랭킹·리뷰 도메인
 
 > **역할:** 영화 저장·조회·채팅·리뷰·랭킹 등 Mova 도메인 API.  
-> **상위 문서:** [백엔드 CLAUDE.md](../../../../vault/suvisdev/CLAUDE.MD) — 아키텍처 전체 규칙
+> **상위 문서:** [[suvisdev/CLAUDE|백엔드 CLAUDE.md]] — 아키텍처 전체 규칙
 
 Titanic(James)과 **동일한 레이어 규칙**을 따른다. 아래는 Mova만의 특이점만 기록한다.
 
@@ -19,6 +19,20 @@ Titanic(James)과 **동일한 레이어 규칙**을 따른다. 아래는 Mova만
 | Router 집약 | `adapter/inbound/api/__init__.py` → `mova_router` |
 | LLM 어댑터 | `adapter/outbound/llm/gemini_client.py` |
 | ERD | [`MOVA_ERD.md`](MOVA_ERD.md) |
+| AI 채팅 UX (프론트) | [`MOVA_CHAT_UX.md`](MOVA_CHAT_UX.md) |
+
+### A.1 ORM 매핑 파일 (MOVA_ERD 동기화)
+
+| 테이블 | 모델 | 경로 |
+|--------|------|------|
+| `actors` | `MovaActor` | `adapter/outbound/orm/studio_actors_orm.py` |
+| `characters` | `MovaCharacter` | `adapter/outbound/orm/studio_characters_orm.py` |
+| `tags` | `MovaTag` | `adapter/outbound/orm/studio_tags_orm.py` |
+| `rankings` | `MovaRanking` | `adapter/outbound/orm/market_rankings_orm.py` |
+| `chat` | `MovaChat` | `adapter/outbound/orm/market_chat_orm.py` |
+| `picks` | `MovaPick` | `adapter/outbound/orm/market_picks_orm.py` |
+| `reviews` | `MovaReview` | `adapter/outbound/orm/market_reviews_orm.py` |
+| `assistants` | `MovaAssistant` | `adapter/outbound/orm/platform_assistants_orm.py` |
 
 ---
 
@@ -81,6 +95,9 @@ mova_router.include_router(movies_router)
 | Picks | `/mova/picks` | 찜 |
 | Chat | `/mova/chat` | LLM 채팅 |
 | Ranking | `/mova/ranking` | 랭킹 집계 |
+| Collections | `/mova/collections` | 큐레이션 컬렉션 CRUD·소속 영화 조회 |
+
+프론트 AI 채팅·일일 추천 칩·세션 복원 규칙은 [`MOVA_CHAT_UX.md`](MOVA_CHAT_UX.md)를 따른다.
 
 ---
 

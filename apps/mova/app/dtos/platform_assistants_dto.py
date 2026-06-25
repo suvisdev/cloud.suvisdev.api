@@ -16,7 +16,7 @@ class AssistantDto:
     is_active: bool
 
     @classmethod
-    def from_orm(cls, row: object) -> "AssistantDto":
+    def from_orm(cls, row: object) -> AssistantDto:
         return cls(
             id=row.id,
             slug=row.slug,

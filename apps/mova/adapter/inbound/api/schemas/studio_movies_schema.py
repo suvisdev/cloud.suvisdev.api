@@ -6,8 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 # ── 공용 중첩 스키마 ──────────────────────────────────────────────────────────
+
 
 class PlatformSchema(BaseModel):
     provider: str
@@ -34,6 +34,7 @@ class TagInMovieSchema(BaseModel):
 
 # ── 영화 상세 응답 (GET /movies/{slug}) ──────────────────────────────────────
 
+
 class MovieDetailSchema(BaseModel):
     id: int
     slug: str
@@ -50,6 +51,7 @@ class MovieDetailSchema(BaseModel):
 
 
 # ── 목록 응답 (GET /movies) ──────────────────────────────────────────────────
+
 
 class MovieListItemSchema(BaseModel):
     id: int
@@ -71,6 +73,7 @@ class MovieListSchema(BaseModel):
 
 
 # ── 생성 요청 (import/admin 용) ──────────────────────────────────────────────
+
 
 class MovieCreateSchema(BaseModel):
     title: str

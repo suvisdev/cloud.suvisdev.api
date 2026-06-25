@@ -13,7 +13,6 @@ from mova.app.dtos.market_reviews_dto import (
 
 
 class ReviewsUseCase(ABC):
-
     @abstractmethod
     async def add_activity(
         self, user_id: int, movie_id: int, action_type: str
@@ -21,15 +20,11 @@ class ReviewsUseCase(ABC):
         pass
 
     @abstractmethod
-    async def add_review(
-        self, user_id: int, movie_id: int, rating: float, body: str
-    ) -> ReviewDto:
+    async def add_review(self, user_id: int, movie_id: int, rating: float, body: str) -> ReviewDto:
         pass
 
     @abstractmethod
-    async def get_by_movie(
-        self, movie_id: int, limit: int, offset: int
-    ) -> list[ReviewWithUserDto]:
+    async def get_by_movie(self, movie_id: int, limit: int, offset: int) -> list[ReviewWithUserDto]:
         pass
 
     @abstractmethod

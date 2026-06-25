@@ -18,9 +18,7 @@ class PickRank:
 
     def __post_init__(self) -> None:
         if not PICK_RANK_MIN <= self.value <= PICK_RANK_MAX:
-            raise ValueError(
-                f"PickRank must be {PICK_RANK_MIN}..{PICK_RANK_MAX}, got {self.value}"
-            )
+            raise ValueError(f"PickRank must be {PICK_RANK_MIN}..{PICK_RANK_MAX}, got {self.value}")
 
     def __int__(self) -> int:
         return self.value
@@ -41,7 +39,7 @@ class Feedback(str, Enum):
     DISLIKE = "dislike"
 
     @classmethod
-    def from_str(cls, value: str | None) -> "Feedback | None":
+    def from_str(cls, value: str | None) -> Feedback | None:
         """원시 문자열 → Feedback. 공백 정리·소문자화 후 매칭, 무효·빈값은 None."""
         if not value:
             return None

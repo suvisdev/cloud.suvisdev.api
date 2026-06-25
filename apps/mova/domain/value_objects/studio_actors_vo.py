@@ -13,7 +13,7 @@ class RoleType(str, Enum):
     ACTOR = "actor"
 
     @classmethod
-    def from_str(cls, value: str | None) -> "RoleType":
+    def from_str(cls, value: str | None) -> RoleType:
         if value == "director":
             return cls.DIRECTOR
         return cls.ACTOR

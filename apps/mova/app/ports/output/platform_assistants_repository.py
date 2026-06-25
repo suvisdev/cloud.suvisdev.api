@@ -8,7 +8,6 @@ from mova.app.dtos.platform_assistants_dto import AssistantDto, AssistantListDto
 
 
 class AssistantsRepositoryPort(ABC):
-
     @abstractmethod
     async def list_active(self) -> AssistantListDto:
         """is_active=true인 어시스턴트 목록."""

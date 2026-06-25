@@ -30,7 +30,7 @@ class ActorDetailDto:
     filmography: list[MovieInActorDto]
 
     @classmethod
-    def from_orm(cls, actor: object, movie_rows: list) -> "ActorDetailDto":
+    def from_orm(cls, actor: object, movie_rows: list) -> ActorDetailDto:
         filmography = [
             MovieInActorDto(
                 character_id=char.id,
@@ -82,13 +82,16 @@ class ActorDetailDto:
 if __name__ == "__main__":
     from types import SimpleNamespace
 
-    mock_actor = SimpleNamespace(
-        id=1, name="전지현", role_type="actor", profile_photo_url=""
-    )
+    mock_actor = SimpleNamespace(id=1, name="전지현", role_type="actor", profile_photo_url="")
     mock_char = SimpleNamespace(id=10)
     mock_movie = SimpleNamespace(
-        id=5, slug="assassination", title="암살",
-        release_year="2015", rating=4.2, poster_url="", genres=["액션"],
+        id=5,
+        slug="assassination",
+        title="암살",
+        release_year="2015",
+        rating=4.2,
+        poster_url="",
+        genres=["액션"],
     )
     dto = ActorDetailDto.from_orm(mock_actor, [(mock_char, mock_movie)])
     assert dto.name == "전지현"

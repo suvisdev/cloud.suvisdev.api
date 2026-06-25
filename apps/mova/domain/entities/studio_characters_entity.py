@@ -19,7 +19,7 @@ class CharacterEntity:
     link: CharacterLink
 
     @classmethod
-    def from_orm(cls, orm: object) -> "CharacterEntity":
+    def from_orm(cls, orm: object) -> CharacterEntity:
         return cls(
             id=orm.id,
             link=CharacterLink(movie_id=orm.movie_id, actor_id=orm.actor_id),

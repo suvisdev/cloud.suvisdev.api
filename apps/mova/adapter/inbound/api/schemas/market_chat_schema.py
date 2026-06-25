@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from typing import Any, Literal
 
@@ -38,7 +38,6 @@ class MovaChatResponseSchema(BaseModel):
 
 
 class MarketChatSchema(BaseModel):
-
     id: int = Field(0, description="Chat ID")
     name: str = Field("시나리오 작가 (Screenwriter)", description="Screenwriter's name")
     # 사용자의 말 속 숨은 의도를 정제된 문장으로 번역하는 작가. chat 테이블 관리

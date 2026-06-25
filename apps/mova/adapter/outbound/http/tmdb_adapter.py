@@ -1,4 +1,4 @@
-﻿"""TMDB(The Movie Database) v3 API 클라이언트."""
+"""TMDB(The Movie Database) v3 API 클라이언트."""
 
 from __future__ import annotations
 

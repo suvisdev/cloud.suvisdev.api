@@ -28,7 +28,7 @@ class PickEntity:
     feedback: Feedback | None
 
     @classmethod
-    def from_orm(cls, orm: object) -> "PickEntity":
+    def from_orm(cls, orm: object) -> PickEntity:
         """SQLAlchemy ORM row(MovaPick) → Entity. ORM import는 이 팩토리 안에서만."""
         return cls(
             id=orm.id,

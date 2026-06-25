@@ -21,9 +21,7 @@ class ActorsPgRepository(ActorsRepositoryPort):
         self._session = session
 
     async def get_by_id(self, actor_id: int) -> ActorDetailDto | None:
-        actor_q = await self._session.execute(
-            select(MovaActor).where(MovaActor.id == actor_id)
-        )
+        actor_q = await self._session.execute(select(MovaActor).where(MovaActor.id == actor_id))
         actor = actor_q.scalar_one_or_none()
         if not actor:
             return None
@@ -36,7 +34,5 @@ class ActorsPgRepository(ActorsRepositoryPort):
         )
         movie_rows = movie_q.all()
 
-        logger.debug(
-            "[ActorsPgRepository] get_by_id=%d filmography=%d", actor_id, len(movie_rows)
-        )
+        logger.debug("[ActorsPgRepository] get_by_id=%d filmography=%d", actor_id, len(movie_rows))
         return ActorDetailDto.from_orm(actor, movie_rows)

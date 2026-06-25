@@ -9,7 +9,6 @@ from mova.app.dtos.market_chat_dto import ChatResponseDto
 
 
 class ChatUseCase(ABC):
-
     @abstractmethod
     async def chat(self, request: MovaChatRequest) -> ChatResponseDto:
         pass

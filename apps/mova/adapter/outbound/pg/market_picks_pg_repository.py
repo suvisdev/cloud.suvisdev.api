@@ -25,9 +25,7 @@ class PicksPgRepository(PicksRepositoryPort):
         normalized = feedback_vo.value if feedback_vo else None
 
         pick = (
-            await self._session.execute(
-                select(MovaPick).where(MovaPick.id == pick_id)
-            )
+            await self._session.execute(select(MovaPick).where(MovaPick.id == pick_id))
         ).scalar_one_or_none()
 
         if pick is None:

@@ -52,9 +52,7 @@ class ReviewsPgRepository(ReviewsRepositoryPort):
             action_at=row.action_at,
         )
 
-    async def add_review(
-        self, user_id: int, movie_id: int, rating: float, body: str
-    ) -> ReviewDto:
+    async def add_review(self, user_id: int, movie_id: int, rating: float, body: str) -> ReviewDto:
         row = MovaReview(
             user_id=user_id,
             movie_id=movie_id,
@@ -75,9 +73,7 @@ class ReviewsPgRepository(ReviewsRepositoryPort):
             action_at=row.action_at,
         )
 
-    async def get_by_movie(
-        self, movie_id: int, limit: int, offset: int
-    ) -> list[ReviewWithUserDto]:
+    async def get_by_movie(self, movie_id: int, limit: int, offset: int) -> list[ReviewWithUserDto]:
         rows = (
             await self._session.execute(
                 select(MovaReview, User.nickname)
@@ -165,9 +161,7 @@ class ReviewsPgRepository(ReviewsRepositoryPort):
         if result is None:
             return
         movie = (
-            await self._session.execute(
-                select(MovaMovie).where(MovaMovie.id == movie_id)
-            )
+            await self._session.execute(select(MovaMovie).where(MovaMovie.id == movie_id))
         ).scalar_one_or_none()
         if movie:
             movie.rating = round(float(result), 2)

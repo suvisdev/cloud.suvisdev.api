@@ -20,7 +20,7 @@ class TagEntity:
     description: str
 
     @classmethod
-    def from_orm(cls, orm: object) -> "TagEntity":
+    def from_orm(cls, orm: object) -> TagEntity:
         return cls(
             id=orm.id,
             movie_id=orm.movie_id,
@@ -42,8 +42,13 @@ if __name__ == "__main__":
     from types import SimpleNamespace
 
     mock = SimpleNamespace(
-        id=1, movie_id=10, character_id=None,
-        tag_kind="genre", slug="genre-sf", label="SF", description="SF 장르",
+        id=1,
+        movie_id=10,
+        character_id=None,
+        tag_kind="genre",
+        slug="genre-sf",
+        label="SF",
+        description="SF 장르",
     )
     entity = TagEntity.from_orm(mock)
     assert entity.kind == TagKind.GENRE

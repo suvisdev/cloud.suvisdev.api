@@ -1,4 +1,4 @@
-﻿"""@see suvisdev/_claude/ENTITY_RULE.md — Mova HOT 랭킹 (영화·chat FK)."""
+"""@see suvisdev/_claude/ENTITY_RULE.md — Mova HOT 랭킹 (영화·chat FK)."""
 
 from datetime import date
 

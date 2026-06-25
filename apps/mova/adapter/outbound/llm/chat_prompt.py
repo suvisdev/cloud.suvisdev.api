@@ -1,4 +1,4 @@
-﻿import logging
+import logging
 
 from mova.adapter.inbound.api.schemas.studio_search_schema import MovaSearchItemSchema
 from mova.adapter.outbound.llm.chat_reply import ChatReplyService
@@ -42,11 +42,7 @@ class ChatPromptBuilder:
         kw = ", ".join(keywords) if keywords else "(없음)"
         filters = search_filters if isinstance(search_filters, dict) else {}
         must = filters.get("must") if isinstance(filters.get("must"), dict) else {}
-        similar = (
-            filters.get("similar_to")
-            if isinstance(filters.get("similar_to"), dict)
-            else {}
-        )
+        similar = filters.get("similar_to") if isinstance(filters.get("similar_to"), dict) else {}
         and_parts: list[str] = []
         for actor in must.get("actors") or []:
             and_parts.append(f"배우={actor}")

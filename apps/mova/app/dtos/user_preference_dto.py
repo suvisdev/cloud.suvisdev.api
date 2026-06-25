@@ -16,7 +16,7 @@ class UserPreferenceDto:
     preferred_genres: list[str] = field(default_factory=list)
 
     @classmethod
-    def empty(cls) -> "UserPreferenceDto":
+    def empty(cls) -> UserPreferenceDto:
         """사용자 미존재·비로그인 — 신호 없음."""
         return cls(nickname=None, preferred_genres=[])
 

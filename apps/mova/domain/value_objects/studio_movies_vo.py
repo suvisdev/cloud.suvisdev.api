@@ -73,7 +73,7 @@ class PlatformEntry:
     type: str | None = None
 
     @classmethod
-    def from_dict(cls, d: dict) -> "PlatformEntry":
+    def from_dict(cls, d: dict) -> PlatformEntry:
         return cls(
             provider=d.get("provider", ""),
             url=d.get("url"),
@@ -93,7 +93,7 @@ class AgeRating(str, Enum):
     ADULT = "청불"
 
     @classmethod
-    def from_str(cls, value: str | None) -> "AgeRating | None":
+    def from_str(cls, value: str | None) -> AgeRating | None:
         if value is None:
             return None
         for member in cls:

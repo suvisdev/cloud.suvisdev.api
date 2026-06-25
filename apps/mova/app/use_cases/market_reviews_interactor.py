@@ -21,14 +21,10 @@ class ReviewsInteractor(ReviewsUseCase):
     ) -> ReviewActivityDto:
         return await self._repository.add_activity(user_id, movie_id, action_type)
 
-    async def add_review(
-        self, user_id: int, movie_id: int, rating: float, body: str
-    ) -> ReviewDto:
+    async def add_review(self, user_id: int, movie_id: int, rating: float, body: str) -> ReviewDto:
         return await self._repository.add_review(user_id, movie_id, rating, body)
 
-    async def get_by_movie(
-        self, movie_id: int, limit: int, offset: int
-    ) -> list[ReviewWithUserDto]:
+    async def get_by_movie(self, movie_id: int, limit: int, offset: int) -> list[ReviewWithUserDto]:
         return await self._repository.get_by_movie(movie_id, limit, offset)
 
     async def update_review(

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-
+from dataclasses import dataclass
 
 # ── 중첩 DTO ─────────────────────────────────────────────────────────────────
+
 
 @dataclass(frozen=True)
 class PlatformDto:
@@ -14,7 +14,7 @@ class PlatformDto:
     type: str | None
 
     @classmethod
-    def from_dict(cls, d: dict) -> "PlatformDto":
+    def from_dict(cls, d: dict) -> PlatformDto:
         return cls(provider=d.get("provider", ""), url=d.get("url"), type=d.get("type"))
 
 
@@ -43,6 +43,7 @@ class TagInMovieDto:
 
 # ── 상세 DTO (GET /movies/{slug}) ────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class MovieDetailDto:
     id: int
@@ -64,9 +65,11 @@ class MovieDetailDto:
         movie: object,
         char_actor_rows: list,
         tag_rows: list,
-    ) -> "MovieDetailDto":
+    ) -> MovieDetailDto:
         platforms = [
-            PlatformDto.from_dict(p) if isinstance(p, dict) else PlatformDto(p.provider, p.url, p.type)
+            PlatformDto.from_dict(p)
+            if isinstance(p, dict)
+            else PlatformDto(p.provider, p.url, p.type)
             for p in (getattr(movie, "platforms", None) or [])
         ]
         actors = [
@@ -120,7 +123,9 @@ class MovieDetailDto:
             release_year=self.release_year,
             rating=self.rating,
             poster_url=self.poster_url,
-            platforms=[PlatformSchema(provider=p.provider, url=p.url, type=p.type) for p in self.platforms],
+            platforms=[
+                PlatformSchema(provider=p.provider, url=p.url, type=p.type) for p in self.platforms
+            ],
             age_rating=self.age_rating,
             genres=self.genres,
             collection_id=self.collection_id,
@@ -150,6 +155,7 @@ class MovieDetailDto:
 
 # ── 목록 DTO (GET /movies) ───────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class MovieListItemDto:
     id: int
@@ -163,9 +169,11 @@ class MovieListItemDto:
     genres: list[str]
 
     @classmethod
-    def from_orm(cls, movie: object) -> "MovieListItemDto":
+    def from_orm(cls, movie: object) -> MovieListItemDto:
         platforms = [
-            PlatformDto.from_dict(p) if isinstance(p, dict) else PlatformDto(p.provider, p.url, p.type)
+            PlatformDto.from_dict(p)
+            if isinstance(p, dict)
+            else PlatformDto(p.provider, p.url, p.type)
             for p in (getattr(movie, "platforms", None) or [])
         ]
         return cls(
@@ -193,7 +201,9 @@ class MovieListItemDto:
             release_year=self.release_year,
             rating=self.rating,
             poster_url=self.poster_url,
-            platforms=[PlatformSchema(provider=p.provider, url=p.url, type=p.type) for p in self.platforms],
+            platforms=[
+                PlatformSchema(provider=p.provider, url=p.url, type=p.type) for p in self.platforms
+            ],
             age_rating=self.age_rating,
             genres=self.genres,
         )
@@ -219,6 +229,7 @@ class MovieListDto:
 
 # ── 필터 쿼리 ────────────────────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class MovieFilterQuery:
     genre: str | None = None
@@ -235,10 +246,16 @@ if __name__ == "__main__":
     from types import SimpleNamespace
 
     mock = SimpleNamespace(
-        id=1, slug="interstellar", title="인터스텔라",
-        release_year="2014", rating=4.8, poster_url="",
+        id=1,
+        slug="interstellar",
+        title="인터스텔라",
+        release_year="2014",
+        rating=4.8,
+        poster_url="",
         platforms=[{"provider": "netflix", "url": None, "type": None}],
-        age_rating="12세", genres=["SF"], collection_id=None,
+        age_rating="12세",
+        genres=["SF"],
+        collection_id=None,
     )
     dto = MovieListItemDto.from_orm(mock)
     assert dto.slug == "interstellar"
