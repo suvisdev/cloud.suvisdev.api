@@ -24,10 +24,6 @@ class ChatRepositoryPort(ABC):
         """사용자 최근 검색 의도 (MovaChat rows)."""
 
     @abstractmethod
-    async def get_user_preferences(self, user_id: int) -> tuple[str | None, list[str]]:
-        """(nickname, preferred_genres)."""
-
-    @abstractmethod
     async def save_chat(
         self,
         *,

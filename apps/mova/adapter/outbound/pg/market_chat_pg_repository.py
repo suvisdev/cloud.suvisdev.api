@@ -15,7 +15,6 @@ from mova.adapter.outbound.orm.market_picks_orm import MovaPick
 from mova.adapter.outbound.orm.studio_movies_orm import MovaMovie
 from mova.adapter.outbound.orm.studio_tags_orm import MovaTag
 from mova.app.ports.output.market_chat_repository import ChatRepositoryPort
-from viewer.adapter.outbound.orm.user_orm import User
 
 logger = logging.getLogger(__name__)
 
@@ -64,18 +63,6 @@ class ChatPgRepository(ChatRepositoryPort):
             )
         ).scalars().all()
         return list(rows)
-
-    async def get_user_preferences(self, user_id: int) -> tuple[str | None, list[str]]:
-        row = (
-            await self._session.execute(
-                select(User.nickname, User.preferred_genres).where(User.id == user_id)
-            )
-        ).one_or_none()
-        if not row:
-            return None, []
-        nickname = row.nickname or None
-        genres = list(row.preferred_genres or [])
-        return nickname, genres
 
     async def save_chat(
         self,
