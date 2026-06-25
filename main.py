@@ -31,6 +31,7 @@ from core.matrix.weather_reader import (
 from viewer.adapter.inbound.api import viewer_router
 from viewer.adapter.outbound.orm.user_orm import seed_viewer_if_empty
 from mova.adapter.inbound.api import mova_router
+from mova.adapter.inbound.api.exception_handlers import register_exception_handlers
 from mova.adapter.outbound.llm.gemini_client import gemini_reply
 from titanic.adapter.inbound.api import titanic_router
 from silicon_valley.adapter.inbound.api import silicon_valley_router
@@ -149,6 +150,8 @@ async def request_path_logger(request: Request, call_next):
     )
     return response
 
+
+register_exception_handlers(app)
 
 app.include_router(mova_router)
 app.include_router(titanic_router, prefix="/api")

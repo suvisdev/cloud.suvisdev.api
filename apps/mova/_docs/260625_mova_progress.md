@@ -4,6 +4,7 @@
 > **대상:** `suvisdev/apps/mova/` (백엔드, Clean Architecture + Hexagonal)
 > **방법:** 파일 시스템 직접 탐색 (레이어별 파일 존재·라인 수·코드 내용 확인)
 > **갱신(2026-06-25):** picks 도메인 레이어 완성 + `RecommendationPort`·`UserPreferenceQueryPort` 도입으로 Phase 2 미비 항목 해소 (§3·§5 반영).
+> **갱신(2026-06-25 #2):** rankings `chat_trend` 집계 Use Case 완료 + LLM 어댑터 예외 경계 정돈(`gemini_client` → 도메인 예외) 완료 + `tests/` 신설 (§3·§4·§5·§7 반영).
 
 ---
 
@@ -27,7 +28,7 @@
 |------|------|
 | **Phase 1** (영화 카탈로그: movies·actors·characters·tags·assistants) | ✅ **완료** — 전 레이어 구현, 스키마도 ERD와 일치 |
 | **Phase 2** (chat 추천) | ✅ 채팅 추천 동작 + LLM 출력 포트 추상화·콜드스타트 포트·picks 도메인 엔티티 **완료** (2026-06-25) |
-| **Phase 3** (reviews·rankings·collections) | 🚧 reviews·rankings 스키마 ✅ / collections는 **ORM 테이블만** |
+| **Phase 3** (reviews·rankings·collections) | 🚧 reviews ✅ / rankings **`chat_trend` 집계 Use Case 완료**(2026-06-25) / collections는 **ORM 테이블만** |
 
 **먼저 알아둘 점 2가지**
 1. **네이밍 컨벤션 변경됨** — 코드는 도메인 그룹 접두사(`studio_`/`market_`/`platform_`)를 사용. 일부 문서(ERD·CLAUDE.md)는 옛 짧은 이름을 그대로 참조 → **문서 경로 stale** (§6).
@@ -68,7 +69,7 @@ apps/mova/
 | 리포지토리 폴더 | `repositories/` | **`pg/`** | mova는 `suvisdev/CLAUDE.md` C.4 템플릿(pg/) 준수 |
 | 매퍼 | `mappers/` | **없음** | pg에 인라인 매핑 |
 | 외부 어댑터 | `ml/` | **`llm/`, `http/`** | Gemini·KOFIC·TMDB |
-| **`tests/`** | **있음** | **❌ 없음** | mova 테스트 디렉터리 부재 |
+| **`tests/`** | **있음** | **✅ 있음** | collections·chat_trend 랭킹·LLM 예외 핸들링 (2026-06-25) |
 
 ---
 
@@ -113,7 +114,8 @@ apps/mova/
 | 항목 | 실제 | 상태 |
 |------|------|:---:|
 | reviews ORM + Entity | `market_reviews_orm`·`_entity`(+port 33·interactor 31) | ✅ |
-| rankings ORM + Entity | `market_rankings_orm`·`_entity`·`_vo` | ✅ 스키마 / 🚧 `chat_trend` 집계는 "목표 설계"(현재 KOFIC box_office만) |
+| rankings ORM + Entity | `market_rankings_orm`·`_entity`·`_vo` | ✅ 스키마 |
+| rankings `chat_trend` 집계 Use Case | `GenerateChatTrendRankingUseCase`/Interactor + `aggregate_chat_trend`/`save_chat_trend_ranking` + `POST /rankings/refresh` | ✅ **완료**(2026-06-25) — picks×chat.hit_count 가중합·오늘자 스냅샷 덮어쓰기. box_office(KOFIC) 미변경 |
 | collections ORM + Entity | `market_collections_orm.py`(17줄) ✅ / **Entity·VO·Repo·UseCase·Router 전부 ❌** | 🚧 |
 
 > collections는 ORM 테이블만 존재(movies.collection_id FK 타깃).
@@ -128,12 +130,13 @@ FK 루트: `collections → movies → (characters/tags/rankings/reviews/picks)`
 - ~~picks Entity + VO~~ ✅ `PickEntity`(`from_orm`) · `PickRank`(1~3) · `Feedback`(like/dislike/null)
 - ~~LLMOutputPort(RecommendationPort) 추상화~~ ✅ `RecommendationPort` + `GeminiRecommendationAdapter` (DIP 해소)
 - ~~UserPreferenceQueryPort(콜드스타트)~~ ✅ 전용 쿼리 포트 분리 + `UserPreferenceDto`
+- ~~rankings `chat_trend` 집계 Use Case~~ ✅ picks×chat.hit_count 가중합 → 오늘자 스냅샷 덮어쓰기 + `POST /rankings/refresh`
+- ~~LLM 어댑터 예외 경계 정돈~~ ✅ `gemini_client` HTTPException → 도메인 예외(`LLMError` 등), 전역 핸들러 단일 변환
 
 **남은 작업:**
-1. **rankings `chat_trend` 집계 Use Case** — picks 견고화 완료 → picks·chat.hit_count 집계 → `source=chat_trend` 스냅샷.
-2. **collections 풀스택** (Entity→Repo→UseCase→Router) — FK 타깃·시리즈 그룹화. movies는 collection 없이 동작하므로 우선순위 낮음.
-3. **ERD·CLAUDE.md 파일 경로 동기화** (§6).
-4. *(선택)* picks 읽기 메서드(`PickEntity` 소비처 생성) · LLM 어댑터 예외 경계 정돈(`gemini_client`의 HTTPException).
+1. **collections 풀스택** (Entity→Repo→UseCase→Router) — FK 타깃·시리즈 그룹화. movies는 collection 없이 동작하므로 우선순위 낮음.
+2. **ERD·CLAUDE.md 파일 경로 동기화** (§6).
+3. *(선택)* picks 읽기 메서드(`PickEntity` 소비처 생성) · rankings 집계 SQL의 DB 통합 테스트(현재 Use Case 단위 테스트만) · `chat_trend` 정기 실행(스케줄러) 연동.
 
 ---
 
@@ -156,6 +159,23 @@ FK 루트: `collections → movies → (characters/tags/rankings/reviews/picks)`
 | assistants | `assistants_orm.py` | `platform_assistants_orm.py` | ❌ |
 
 > 같은 stale 경로가 `suvisdev/CLAUDE.md`(J절)·`mova/_docs/CLAUDE.md`(A절)에도 존재. 파일 리네이밍 후 문서 경로 미갱신.
+
+---
+
+## 7. 2026-06-25 작업 로그
+
+### 7.1 rankings `chat_trend` 집계 Use Case
+- 흐름: `POST /mova/rankings/refresh?source=chat_trend&days=N&limit=K` → `aggregate_chat_trend`(최근 N일 picks 횟수 + `chat.hit_count` 합산 상위 K) → `chat_trend_score`(가중 `pick×3+hit×1`)로 랭크 → `save_chat_trend_ranking`(오늘자 스냅샷 덮어쓰기).
+- 결정: 덮어쓰기는 오늘자(`ranked_at=today`) 행만 삭제(일별 히스토리 보존), 대표 `chat_id`는 None 단순화, box_office/KOFIC·마이그레이션 미변경.
+- 파일: `market_rankings_vo`/`_dto`/output·input port/`market_rankings_pg_repository`/`market_rankings_interactor`/`market_rankings_provider`/`market_rankings_schema`/`market_rankings_router` + `tests/test_chat_trend_ranking_interactor.py`.
+
+### 7.2 LLM 예외 어댑터 경계 정돈 (CLAUDE.md E.3 / B.4)
+- 아웃바운드 `gemini_client`가 FastAPI `HTTPException`에 의존하던 구조 → `app/exceptions.py`의 도메인 예외(`LLMError`/`LLMTimeoutError`/`LLMUnavailableError`)로 교체, `fastapi` import 제거.
+- HTTP 변환은 `adapter/inbound/api/exception_handlers.py`의 전역 핸들러 한 곳에서만(`main.py`가 등록). `gemini_reply` 세 호출처(mova chat·main `/chat`·titanic) 모두 기존 상태코드(429/502/400/503)·메시지 보존.
+- 파일: `app/exceptions.py`(신규)·`gemini_client.py`·`exception_handlers.py`(신규)·`main.py` + `tests/test_llm_error_handling.py`.
+
+### 7.3 검증
+- `pytest apps/mova/tests/` → **16 passed**. `apps/mova/adapter/outbound/`에 `fastapi`/`HTTPException` 의존 0건.
 
 ---
 
