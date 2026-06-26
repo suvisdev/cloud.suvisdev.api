@@ -1,6 +1,7 @@
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 _here = Path(__file__).parent  # apps/titanic/tests/
 

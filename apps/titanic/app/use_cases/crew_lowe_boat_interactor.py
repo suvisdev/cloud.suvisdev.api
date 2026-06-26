@@ -4,7 +4,6 @@ import logging
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 
 from titanic.adapter.inbound.api.schemas.crew_lowe_boat_schema import LoweBoatSchema
 from titanic.app.dtos.crew_lowe_boat_dto import LoweBoatQuery, LoweBoatResponse

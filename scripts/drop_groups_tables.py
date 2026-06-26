@@ -31,7 +31,12 @@ async def table_exists(conn, table: str) -> bool:
 async def main() -> None:
     from sqlalchemy import text
 
-    from core.matrix.grid_oracle_database_manager import create_tables, dispose_engine, get_viewer_engine, reload_env
+    from core.matrix.grid_oracle_database_manager import (
+        create_tables,
+        dispose_engine,
+        get_viewer_engine,
+        reload_env,
+    )
 
     reload_env()
     await create_tables()

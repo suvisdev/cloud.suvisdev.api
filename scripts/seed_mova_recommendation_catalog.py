@@ -7,7 +7,6 @@ Usage (suvisdev 폴더에서):
 from __future__ import annotations
 
 import asyncio
-import selectors
 import sys
 from pathlib import Path
 
@@ -21,6 +20,7 @@ sys.path.insert(0, str(APPS))
 async def main() -> None:
     from database import dispose_engine, reload_env
     from recommendation_catalog_seed_data import MOOD_TAG_BY_SLUG, MOVIE_SEEDS
+
     from mova.adapter.outbound.pg.actors_pg_repository import ActorsPgRepository
     from mova.adapter.outbound.pg.characters_pg_repository import CharactersPgRepository
     from mova.adapter.outbound.pg.movies_pg_repository import MoviesPgRepository

@@ -6,9 +6,10 @@ from titanic.app.dtos.crew_james_director_dto import (
     BookingCommand,
     JamesIntroduceQuery,
     JamesIntroduceResponse,
+    JamesResponse,
     PassengerCommand,
 )
-from titanic.app.dtos.crew_james_director_dto import JamesResponse
+
 
 class JamesPort(ABC):
     """James 업로드 데이터를 외부로 보내는 아웃바운드 포트 (ABC)."""

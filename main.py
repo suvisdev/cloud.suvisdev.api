@@ -1,5 +1,8 @@
 import asyncio
+import base64
 import logging
+import os
+import secrets
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -14,6 +17,8 @@ logger = logging.getLogger(__name__)
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response as StarletteResponse
 
 _BACKEND_ROOT = Path(__file__).resolve().parent
 _APPS_ROOT = _BACKEND_ROOT / "apps"
@@ -21,24 +26,24 @@ for _p in (_BACKEND_ROOT, _APPS_ROOT):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from core.matrix.vauly_keymaker_secret_manager import get_keymaker
 from core.matrix.grid_oracle_database_manager import (
     create_tables,
     dispose_engine,
     verify_connection,
 )
+from core.matrix.vauly_keymaker_secret_manager import get_keymaker
 from core.matrix.weather_reader import (
     WeatherReaderError,
     fetch_current_weather,
     fetch_weekly_forecast,
 )
-from viewer.adapter.inbound.api import viewer_router
-from viewer.adapter.outbound.orm.user_orm import seed_viewer_if_empty
 from mova.adapter.inbound.api import mova_router
 from mova.adapter.outbound.llm.gemini_client import gemini_reply
 from mova.app.ports.output.llm_errors import LLMError
-from titanic.adapter.inbound.api import titanic_router
 from silicon_valley.adapter.inbound.api import silicon_valley_router
+from titanic.adapter.inbound.api import titanic_router
+from viewer.adapter.inbound.api import viewer_router
+from viewer.adapter.outbound.orm.user_orm import seed_viewer_if_empty
 
 keymaker = get_keymaker()
 
@@ -132,6 +137,30 @@ async def lifespan(app: FastAPI):
         await dispose_engine()
 
 
+class _BasicAuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> StarletteResponse:
+        username = os.getenv("API_USERNAME", "")
+        password = os.getenv("API_PASSWORD", "")
+        if not username:
+            return await call_next(request)
+        auth = request.headers.get("Authorization", "")
+        if auth.startswith("Basic "):
+            try:
+                decoded = base64.b64decode(auth[6:]).decode("utf-8")
+                u, _, p = decoded.partition(":")
+                if secrets.compare_digest(u.encode(), username.encode()) and secrets.compare_digest(
+                    p.encode(), password.encode()
+                ):
+                    return await call_next(request)
+            except Exception:
+                pass
+        return StarletteResponse(
+            status_code=401,
+            headers={"WWW-Authenticate": 'Basic realm="Suvisdev API"'},
+            content=b"Unauthorized",
+        )
+
+
 app = FastAPI(title="Suvisdev Main Page", lifespan=lifespan)
 
 app.add_middleware(
@@ -141,6 +170,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(_BasicAuthMiddleware)
 
 
 @app.middleware("http")
@@ -214,6 +244,7 @@ async def read_weather_forecast(city: str | None = None) -> ForecastResponse:
 
 if __name__ == "__main__":
     import selectors
+
     import uvicorn
 
     config = uvicorn.Config(

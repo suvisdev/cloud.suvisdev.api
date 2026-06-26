@@ -3,7 +3,10 @@ from __future__ import annotations
 import csv
 from io import StringIO
 
-from titanic.adapter.inbound.api.schemas.crew_james_director_schema import JamesIntroduceSchema, JamesSchema
+from titanic.adapter.inbound.api.schemas.crew_james_director_schema import (
+    JamesIntroduceSchema,
+    JamesSchema,
+)
 from titanic.app.dtos.crew_james_director_dto import (
     BookingCommand,
     JamesIntroduceQuery,

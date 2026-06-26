@@ -1,6 +1,6 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -8,13 +8,13 @@ class Cabin:
     value: str
 
     @classmethod
-    def from_raw(cls, raw: Optional[str]) -> "Cabin":
+    def from_raw(cls, raw: str | None) -> Cabin:
         if raw is None:
             return cls(value="")
         return cls(value=raw.strip())
 
     @property
-    def deck(self) -> Optional[str]:
+    def deck(self) -> str | None:
         if self.value and self.value[0].isalpha():
             return self.value[0].upper()
         return None

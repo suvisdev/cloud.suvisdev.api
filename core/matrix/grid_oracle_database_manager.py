@@ -4,18 +4,18 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from urllib.parse import urlparse
-from typing import AsyncGenerator
 
 from dotenv import load_dotenv
 from fastapi import HTTPException
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
-    AsyncEngine,
 )
 from sqlalchemy.orm import DeclarativeBase
 
@@ -273,10 +273,9 @@ async def create_tables() -> None:
 
 async def ensure_titanic_tables() -> None:
     """passengers·bookings 없으면 생성 (삭제 후 업로드 복구용)."""
-    from core.matrix.grid_neo_theone_base import Base
-
-    import titanic.adapter.outbound.orm.passenger_rose_model_orm  # noqa: F401
     import titanic.adapter.outbound.orm.passenger_jack_trainer_orm  # noqa: F401
+    import titanic.adapter.outbound.orm.passenger_rose_model_orm  # noqa: F401
+    from core.matrix.grid_neo_theone_base import Base
 
     ok, err = ensure_mova_database()
     if not ok:

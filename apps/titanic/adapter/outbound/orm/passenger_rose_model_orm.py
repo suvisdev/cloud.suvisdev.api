@@ -4,7 +4,6 @@ from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.matrix.grid_neo_theone_base import Base
-from titanic.app.dtos.crew_james_director_dto import BookingCommand
 
 
 class RoseModelOrm(Base):

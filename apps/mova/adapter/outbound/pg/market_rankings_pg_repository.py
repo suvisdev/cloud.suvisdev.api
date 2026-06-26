@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -67,7 +67,7 @@ class RankingsPgRepository(RankingsRepositoryPort):
         return RankingListDto(items=items, source=source)
 
     async def aggregate_chat_trend(self, days: int, limit: int) -> list[ChatTrendAggRowDto]:
-        since = datetime.now(timezone.utc) - timedelta(days=days)
+        since = datetime.now(UTC) - timedelta(days=days)
         pick_count = func.count(MovaPick.id)
         hit_sum = func.coalesce(func.sum(MovaChat.hit_count), 0)
 

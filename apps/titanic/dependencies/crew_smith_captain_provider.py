@@ -1,9 +1,10 @@
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.matrix.grid_oracle_database_manager import get_db
-from fastapi import Depends
-
-from titanic.adapter.outbound.repositories.crew_smith_captain_repository import SmithCaptainRepository
+from titanic.adapter.outbound.repositories.crew_smith_captain_repository import (
+    SmithCaptainRepository,
+)
 from titanic.app.ports.input.crew_andrews_architect_use_case import AndrewsArchitectUseCase
 from titanic.app.ports.input.crew_hartley_violin_use_case import HartleyViolinUseCase
 from titanic.app.ports.input.crew_lowe_boat_use_case import LoweBoatUseCase

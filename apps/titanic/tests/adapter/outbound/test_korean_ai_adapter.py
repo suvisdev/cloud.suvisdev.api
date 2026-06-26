@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from titanic.adapter.outbound.llm.korean_ai_adapter import run_korean_ai
 

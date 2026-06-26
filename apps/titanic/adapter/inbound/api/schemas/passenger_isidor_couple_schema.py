@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class IsidorCoupleSchema(BaseModel):
     
     id: int = Field(0, description="Passenger ID")

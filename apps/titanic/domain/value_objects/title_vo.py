@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 _RARE_TITLES = {"Capt", "Col", "Don", "Dr", "Major", "Rev", "Jonkheer", "Dona", "Mme"}
 _ROYAL_TITLES = {"Countess", "Lady", "Sir"}
@@ -34,7 +33,7 @@ class Title:
     value: TitleType
 
     @classmethod
-    def from_name(cls, name: Optional[str]) -> "Title":
+    def from_name(cls, name: str | None) -> Title:
         if not name:
             raise ValueError("Title: name이 비어 있습니다.")
         match = re.search(r"([A-Za-z]+)\.", name)

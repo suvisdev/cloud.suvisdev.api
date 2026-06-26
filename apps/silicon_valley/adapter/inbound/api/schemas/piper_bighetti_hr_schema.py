@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class BighettiHrSchema(BaseModel):
 
     id: int = Field(0, description="Piper ID")

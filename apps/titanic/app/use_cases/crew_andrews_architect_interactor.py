@@ -7,9 +7,12 @@ from typing import Any
 import pandas as pd
 from kiwipiepy import Kiwi
 
-from titanic.app.constants.intent_map import INTENT_MAP
 from titanic.adapter.inbound.api.schemas.crew_andrews_architect_schema import AndrewsArchitectSchema
-from titanic.app.dtos.crew_andrews_architect_dto import AndrewsArchitectQuery, AndrewsArchitectResponse
+from titanic.app.constants.intent_map import INTENT_MAP
+from titanic.app.dtos.crew_andrews_architect_dto import (
+    AndrewsArchitectQuery,
+    AndrewsArchitectResponse,
+)
 from titanic.app.ports.input.crew_andrews_architect_use_case import AndrewsArchitectUseCase
 from titanic.app.ports.output.crew_andrews_architect_port import AndrewsArchitectPort
 
@@ -331,7 +334,7 @@ class AndrewsArchitectInteractor(AndrewsArchitectUseCase):
         if estimator is not None and hasattr(estimator, "feature_importances_"):
             importances = estimator.feature_importances_.tolist()
             if len(importances) == len(_FEATURE_NAMES):
-                ranked = sorted(zip(_FEATURE_NAMES, importances), key=lambda x: x[1], reverse=True)
+                ranked = sorted(zip(_FEATURE_NAMES, importances, strict=False), key=lambda x: x[1], reverse=True)
                 lines  = [f"{i+1}. {n}({v:.3f})" for i, (n, v) in enumerate(ranked[:5])]
                 return f"[{best_model} 모델 기준 실제 피처 중요도]\n" + "\n".join(lines)
 

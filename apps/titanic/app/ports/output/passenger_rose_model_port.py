@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from titanic.app.dtos.passenger_rose_model_dto import RoseModelFeatureRow
-from titanic.app.dtos.passenger_rose_model_dto import RoseModelQuery
-from titanic.app.dtos.passenger_rose_model_dto import RoseModelResponse
+from titanic.app.dtos.passenger_rose_model_dto import (
+    RoseModelFeatureRow,
+    RoseModelQuery,
+    RoseModelResponse,
+)
+
 
 class RoseModelPort(ABC):
     """passenger_rose_model output port."""

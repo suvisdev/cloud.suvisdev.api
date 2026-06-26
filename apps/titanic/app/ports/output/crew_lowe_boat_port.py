@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from titanic.app.dtos.crew_lowe_boat_dto import LoweBoatQuery
-from titanic.app.dtos.crew_lowe_boat_dto import LoweBoatResponse
+from titanic.app.dtos.crew_lowe_boat_dto import LoweBoatQuery, LoweBoatResponse
+
 
 class LoweBoatPort(ABC):
     """crew_lowe_boat output port."""

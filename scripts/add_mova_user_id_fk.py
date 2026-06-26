@@ -50,7 +50,6 @@ async def table_exists(conn, table: str) -> bool:
 
 
 async def main() -> None:
-    from sqlalchemy import text
     from database import (
         _resolve_mova_url,
         _resolve_secom_url,
@@ -58,6 +57,7 @@ async def main() -> None:
         get_engine,
         reload_env,
     )
+    from sqlalchemy import text
 
     reload_env()
     mova_url = _resolve_mova_url()

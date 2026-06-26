@@ -1,10 +1,9 @@
 ﻿from fastapi import APIRouter, Depends
 
 from titanic.adapter.inbound.api.schemas.crew_andrews_architect_schema import AndrewsArchitectSchema
+from titanic.app.dtos.crew_andrews_architect_dto import AndrewsArchitectResponse
 from titanic.app.ports.input.crew_andrews_architect_use_case import AndrewsArchitectUseCase
 from titanic.dependencies.crew_andrews_architect_provider import get_andrews_architect_use_case
-from titanic.app.dtos.crew_andrews_architect_dto import AndrewsArchitectResponse
-
 
 andrews_architect_router = APIRouter(prefix="/andrews", tags=["andrews"])
 

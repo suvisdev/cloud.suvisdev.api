@@ -1,9 +1,11 @@
 ﻿from fastapi import APIRouter, Depends
 
-from titanic.adapter.inbound.api.schemas.passenger_ruth_validation_schema import RuthValidationSchema
+from titanic.adapter.inbound.api.schemas.passenger_ruth_validation_schema import (
+    RuthValidationSchema,
+)
+from titanic.app.dtos.passenger_ruth_validation_dto import RuthValidationResponse
 from titanic.app.ports.input.passenger_ruth_validation_use_case import RuthValidationUseCase
 from titanic.dependencies.passenger_ruth_validation_provider import get_ruth_validation_use_case
-from titanic.app.dtos.passenger_ruth_validation_dto import RuthValidationResponse
 
 ruth_validation_router = APIRouter(prefix="/ruth", tags=["ruth"])
 

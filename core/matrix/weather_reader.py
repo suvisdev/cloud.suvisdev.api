@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -95,7 +95,7 @@ async def fetch_weekly_forecast(*, city: str, api_key: str) -> dict[str, object]
         lambda: {"temps": [], "icons": [], "descs": [], "hours": []}
     )
     for item in items:
-        dt = datetime.fromtimestamp(int(item["dt"]), tz=timezone.utc)
+        dt = datetime.fromtimestamp(int(item["dt"]), tz=UTC)
         day_key = dt.strftime("%Y-%m-%d")
         main = item.get("main") or {}
         w0 = (item.get("weather") or [{}])[0]
@@ -116,7 +116,7 @@ async def fetch_weekly_forecast(*, city: str, api_key: str) -> dict[str, object]
         desc = descs[noon_idx] if descs else ""
         icon = icons[noon_idx] if icons else "01d"
 
-        dt = datetime.strptime(day_key, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        dt = datetime.strptime(day_key, "%Y-%m-%d").replace(tzinfo=UTC)
         weekday = _WEEKDAY_KO[dt.weekday()]
 
         days.append(

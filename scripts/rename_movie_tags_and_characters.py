@@ -34,8 +34,8 @@ async def table_exists(conn, name: str) -> bool:
 
 
 async def main() -> None:
-    from sqlalchemy import text
     from database import dispose_engine, get_engine, reload_env
+    from sqlalchemy import text
 
     reload_env()
     engine = get_engine()

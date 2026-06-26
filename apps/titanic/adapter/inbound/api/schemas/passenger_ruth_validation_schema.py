@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class RuthValidationSchema(BaseModel):
     
     id: int = Field(0, description="Passenger ID")

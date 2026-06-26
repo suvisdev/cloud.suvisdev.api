@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class AndrewsArchitectSchema(BaseModel):
     
     id: int = Field(0, description="Architect ID")

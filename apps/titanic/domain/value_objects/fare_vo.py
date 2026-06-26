@@ -1,14 +1,14 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass(frozen=True)
 class Fare:
-    value: Optional[float]
+    value: float | None
 
     @classmethod
-    def from_raw(cls, raw: Optional[str]) -> "Fare":
+    def from_raw(cls, raw: str | None) -> Fare:
         if raw is None or raw.strip() == "":
             return cls(value=None)
         try:
@@ -17,7 +17,7 @@ class Fare:
             raise ValueError(f"Fare 유효하지 않은 값: '{raw}'")
 
     @property
-    def is_free(self) -> Optional[bool]:
+    def is_free(self) -> bool | None:
         if self.value is None:
             return None
         return self.value == 0.0

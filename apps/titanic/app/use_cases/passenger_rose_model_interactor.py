@@ -79,7 +79,7 @@ class RoseModelInteractor(RoseModelUseCase):
         strategy.fit(X, y)
         predicted = [1 if p >= 0.5 else 0 for p in strategy.predict_proba(X)]
         accuracy = (
-            sum(1 for p, actual in zip(predicted, y) if p == actual) / len(y)
+            sum(1 for p, actual in zip(predicted, y, strict=False) if p == actual) / len(y)
             if y else 0.0
         )
         return RoseModelTrainResponse(strategy=schemas.strategy, n_samples=len(y), accuracy=accuracy)

@@ -82,7 +82,7 @@ class JackTrainerInteractor(JackTrainerUseCase):
                 strategy.fit(X_train, y_label)
                 proba = strategy.predict_proba(X_train)
                 preds = [1 if p >= 0.5 else 0 for p in proba]
-                acc = sum(p == y for p, y in zip(preds, y_label)) / len(y_label)
+                acc = sum(p == y for p, y in zip(preds, y_label, strict=False)) / len(y_label)
                 self._trained_strategies[key] = strategy
                 accuracies[key] = acc
                 trained_names.append(strategy.key)

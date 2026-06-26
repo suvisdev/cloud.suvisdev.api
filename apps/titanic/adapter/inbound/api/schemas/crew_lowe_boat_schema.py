@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class LoweBoatSchema(BaseModel):
     
     id: int = Field(0, description="Officer ID")

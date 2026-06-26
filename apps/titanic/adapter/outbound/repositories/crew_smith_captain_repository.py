@@ -4,8 +4,12 @@ import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mova.adapter.outbound.llm.gemini_client import gemini_reply
-from titanic.app.dtos.crew_smith_captain_dto import SmithCaptainQuery, SmithCaptainResponse, SmithCaptainChatCommand, SmithChatResponse
+from titanic.app.dtos.crew_smith_captain_dto import (
+    SmithCaptainChatCommand,
+    SmithCaptainQuery,
+    SmithCaptainResponse,
+    SmithChatResponse,
+)
 from titanic.app.ports.output.crew_smith_captain_port import SmithCaptainPort
 
 logger = logging.getLogger(__name__)

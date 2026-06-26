@@ -7,7 +7,6 @@ Usage (suvisdev 폴더에서):
 from __future__ import annotations
 
 import asyncio
-import selectors
 import sys
 from pathlib import Path
 
@@ -43,8 +42,8 @@ async def table_exists(conn, name: str) -> bool:
 
 
 async def main() -> None:
-    from sqlalchemy import text
     from database import dispose_engine, get_engine, reload_env
+    from sqlalchemy import text
 
     reload_env()
     engine = get_engine()

@@ -5,13 +5,13 @@ from titanic.adapter.inbound.api.schemas.passenger_rose_model_schema import (
     RoseModelSchema,
     RoseModelTrainSchema,
 )
-from titanic.app.ports.input.passenger_rose_model_use_case import RoseModelUseCase
-from titanic.dependencies.passenger_rose_model_provider import get_rose_model_use_case
 from titanic.app.dtos.passenger_rose_model_dto import (
     RoseModelPredictResponse,
     RoseModelResponse,
     RoseModelTrainResponse,
 )
+from titanic.app.ports.input.passenger_rose_model_use_case import RoseModelUseCase
+from titanic.dependencies.passenger_rose_model_provider import get_rose_model_use_case
 
 rose_model_router = APIRouter(prefix="/rose", tags=["rose"])
 

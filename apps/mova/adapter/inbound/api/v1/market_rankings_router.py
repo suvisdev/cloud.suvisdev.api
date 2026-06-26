@@ -15,11 +15,11 @@ from mova.app.ports.input.market_rankings_use_case import (
     GenerateChatTrendRankingUseCase,
     RankingsUseCase,
 )
-from mova.domain.value_objects.market_rankings_vo import RANKING_SOURCE_CHAT_TREND
 from mova.dependencies.market_rankings_provider import (
     get_generate_chat_trend_ranking_use_case,
     get_rankings_use_case,
 )
+from mova.domain.value_objects.market_rankings_vo import RANKING_SOURCE_CHAT_TREND
 
 market_rankings_router = APIRouter(prefix="/rankings", tags=["mova-rankings"])
 

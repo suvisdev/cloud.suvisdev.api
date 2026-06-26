@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class HartleyViolinSchema(BaseModel):
     
     id: int = Field(0, description="Musician ID")

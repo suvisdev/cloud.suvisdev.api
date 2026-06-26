@@ -68,8 +68,8 @@ async def row_count(conn, name: str) -> int:
 
 
 async def main() -> None:
-    from sqlalchemy import text
     from database import dispose_engine, get_engine, reload_env
+    from sqlalchemy import text
 
     reload_env()
     engine = get_engine()

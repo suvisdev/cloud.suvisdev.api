@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from titanic.app.dtos.crew_walter_roaster_dto import WalterQuery
-from titanic.app.dtos.crew_walter_roaster_dto import WalterResponse
+from titanic.app.dtos.crew_walter_roaster_dto import WalterQuery, WalterResponse
+
 
 class WalterPort(ABC):
     """Walter 소개 출력 포트 (ABC)."""

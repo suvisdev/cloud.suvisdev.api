@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from silicon_valley.app.dtos.piper_gilfoyle_sys_dto import GilfoyleSysQuery
-from silicon_valley.app.dtos.piper_gilfoyle_sys_dto import GilfoyleSysResponse
+from silicon_valley.app.dtos.piper_gilfoyle_sys_dto import GilfoyleSysQuery, GilfoyleSysResponse
+
 
 class GilfoyleSysPort(ABC):
     """piper_gilfoyle_sys output port."""

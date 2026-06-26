@@ -1,5 +1,6 @@
 from core.matrix.grid_neo_theone_base import Base
 
+
 class AndrewArchitectOrm(Base):
     """
     [기획 홀딩 구역]

@@ -1,4 +1,3 @@
-from star_craft.app.dtos.event_dto import EventDto
 from star_craft.app.ports.input.event_bus_use_case import EventBusUseCase
 from star_craft.app.ports.output.event_publisher_port import EventPublisherPort
 from star_craft.domain.events.base_event import BaseEvent

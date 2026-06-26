@@ -1,7 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 
 class GenderType(str, Enum):
@@ -14,7 +14,7 @@ class Gender:
     value: GenderType
 
     @classmethod
-    def from_raw(cls, raw: Optional[str]) -> "Gender":
+    def from_raw(cls, raw: str | None) -> Gender:
         if raw is None or raw.strip() == "":
             raise ValueError("Gender는 필수 값입니다.")
         try:

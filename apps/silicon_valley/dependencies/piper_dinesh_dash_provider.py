@@ -1,9 +1,10 @@
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.matrix.grid_oracle_database_manager import get_db
-from fastapi import Depends
-
-from silicon_valley.adapter.outbound.repositories.piper_dinesh_dash_repository import DineshDashRepository
+from silicon_valley.adapter.outbound.repositories.piper_dinesh_dash_repository import (
+    DineshDashRepository,
+)
 from silicon_valley.app.ports.input.piper_dinesh_dash_use_case import DineshDashUseCase
 from silicon_valley.app.ports.output.piper_dinesh_dash_port import DineshDashPort
 from silicon_valley.app.use_case.piper_dinesh_dash_interactor import DineshDashInteractor

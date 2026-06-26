@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from titanic.app.dtos.crew_smith_captain_dto import SmithCaptainQuery, SmithCaptainResponse, SmithCaptainChatCommand, SmithChatResponse
+from titanic.app.dtos.crew_smith_captain_dto import (
+    SmithCaptainChatCommand,
+    SmithCaptainQuery,
+    SmithCaptainResponse,
+    SmithChatResponse,
+)
 
 
 class SmithCaptainPort(ABC):

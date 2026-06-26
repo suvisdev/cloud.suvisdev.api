@@ -5,6 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from core.matrix.grid_neo_theone_base import Base
 
+
 class JackTrainerOrm(Base):
     """JackTrainerCommand → passengers (PK: `passenger_id` str)."""
 

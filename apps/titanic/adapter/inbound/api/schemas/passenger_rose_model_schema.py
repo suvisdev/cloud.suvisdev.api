@@ -2,6 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+
 class RoseModelSchema(BaseModel):
 
     id: int = Field(0, description="Passenger ID")

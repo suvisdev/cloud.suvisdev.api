@@ -18,7 +18,7 @@ class PassengerIdentity:
     gender: Gender
 
     @classmethod
-    def from_raw(cls, name: str, gender: str) -> "PassengerIdentity":
+    def from_raw(cls, name: str, gender: str) -> PassengerIdentity:
         return cls(
             title=Title.from_name(name),
             gender=Gender.from_raw(gender),

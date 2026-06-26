@@ -1,7 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 
 class EmbarkedType(str, Enum):
@@ -19,10 +19,10 @@ _PORT_NAMES: dict[str, str] = {
 
 @dataclass(frozen=True)
 class Embarked:
-    value: Optional[EmbarkedType]
+    value: EmbarkedType | None
 
     @classmethod
-    def from_raw(cls, raw: Optional[str]) -> "Embarked":
+    def from_raw(cls, raw: str | None) -> Embarked:
         if raw is None or raw.strip() == "":
             return cls(value=None)
         try:

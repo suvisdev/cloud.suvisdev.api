@@ -9,8 +9,8 @@ from mova.adapter.inbound.api.schemas.market_chat_schema import (
     MovaChatRequest,
     MovaChatResponseSchema,
 )
-from mova.app.ports.output.llm_errors import LLMError
 from mova.app.ports.input.market_chat_use_case import ChatUseCase
+from mova.app.ports.output.llm_errors import LLMError
 from mova.dependencies.market_chat_provider import get_chat_use_case
 
 market_chat_router = APIRouter(prefix="/chat", tags=["mova-chat"])

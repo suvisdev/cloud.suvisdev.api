@@ -1,8 +1,7 @@
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.matrix.grid_oracle_database_manager import get_viewer_db
-from fastapi import Depends
-
 from viewer.adapter.outbound.pg.login_pg_repository import LoginPgRepository
 from viewer.app.ports.input.login_use_case import LoginUseCase
 from viewer.app.ports.output.login_repository import LoginRepository

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from titanic.domain.value_objects.cabin_vo import Cabin
 from titanic.domain.value_objects.fare_vo import Fare
@@ -23,10 +22,10 @@ class Berth:
     @classmethod
     def from_raw(
         cls,
-        pclass: Optional[str],
-        cabin: Optional[str],
-        fare: Optional[str],
-    ) -> "Berth":
+        pclass: str | None,
+        cabin: str | None,
+        fare: str | None,
+    ) -> Berth:
         return cls(
             pclass=PClass.from_raw(pclass),
             cabin=Cabin.from_raw(cabin),
@@ -38,7 +37,7 @@ class Berth:
         return self.pclass.is_first_class
 
     @property
-    def deck(self) -> Optional[str]:
+    def deck(self) -> str | None:
         return self.cabin.deck
 
     def __str__(self) -> str:
