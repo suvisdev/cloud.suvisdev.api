@@ -149,6 +149,7 @@ class ChatReplyService:
                     rec.model_copy(
                         update={
                             "id": slug,
+                            "movie_id": movie.id if movie is not None else None,
                             "poster": poster,
                             "year": year,
                             "platform": platform,

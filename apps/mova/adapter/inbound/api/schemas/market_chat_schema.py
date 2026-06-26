@@ -20,6 +20,7 @@ class MovaChatRequest(BaseModel):
 
 class MovaChatRecommendationSchema(BaseModel):
     id: str
+    movie_id: int | None = None
     title: str
     year: str = ""
     poster: str = ""

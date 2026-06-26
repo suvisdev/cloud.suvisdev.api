@@ -10,6 +10,8 @@ def __getattr__(name: str) -> APIRouter:
         from fastapi import APIRouter
 
         from mova.adapter.inbound.api.v1.collections_router import collections_router
+        from mova.adapter.inbound.api.v1.market_watchlist_router import market_watchlist_router
+        from mova.adapter.inbound.api.v1.mypage_router import mypage_router
         from mova.adapter.inbound.api.v1.import_router import import_router
         from mova.adapter.inbound.api.v1.market_chat_router import market_chat_router
         from mova.adapter.inbound.api.v1.market_picks_router import market_picks_router
@@ -37,5 +39,7 @@ def __getattr__(name: str) -> APIRouter:
         router.include_router(market_reviews_router)
         router.include_router(platform_assistants_router)
         router.include_router(collections_router)
+        router.include_router(market_watchlist_router)
+        router.include_router(mypage_router)
         return router
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -8,6 +8,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class ChatRecommendationDto:
     id: str
+    movie_id: int | None
     title: str
     year: str
     poster: str
@@ -37,6 +38,7 @@ class ChatResponseDto:
             recommendations=[
                 MovaChatRecommendationSchema(
                     id=r.id,
+                    movie_id=r.movie_id,
                     title=r.title,
                     year=r.year,
                     poster=r.poster,

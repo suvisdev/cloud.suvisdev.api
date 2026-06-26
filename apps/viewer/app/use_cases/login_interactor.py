@@ -17,5 +17,4 @@ class LoginInteractor(LoginUseCase):
         self._repository = repository
 
     async def login(self, payload: LoginSchema) -> LoginResponseDto:
-        
-        return LoginResponseDto(user_id=await self._repository.login_user(LoginUserCommand.from_schema(payload)))
+        return await self._repository.login_user(LoginUserCommand.from_schema(payload))

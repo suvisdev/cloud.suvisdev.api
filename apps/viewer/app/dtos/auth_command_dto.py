@@ -56,6 +56,7 @@ class SignupCommand:
 @dataclass
 class LoginResponseDto:
     user_id: int
+    username: str
 
 
 @dataclass

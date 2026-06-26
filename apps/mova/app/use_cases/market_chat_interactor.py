@@ -90,6 +90,7 @@ class ChatInteractor(ChatUseCase):
             recommendations=[
                 ChatRecommendationDto(
                     id=r.id,
+                    movie_id=r.movie_id,
                     title=r.title,
                     year=r.year,
                     poster=r.poster,
