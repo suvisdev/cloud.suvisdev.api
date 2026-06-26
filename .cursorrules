@@ -24,7 +24,7 @@
 
 1. [루트 `CLAUDE.md`](../CLAUDE.md) — Karpathy 원칙
 2. **본 파일** [`CLAUDE.md`](CLAUDE.md) — 아키텍처·레이어·SOLID·체크리스트
-3. `_claude/entity-rule.md` — PK `id` int 자동증감
+3. [`_docs/entity-rules.md`](_docs/entity-rules.md) — PK `id` int 자동증감
 4. 해당 앱: `apps/<app>/_docs/.cursorrules` + `CLAUDE.md`
 5. `AGENTS.md` — 삭제된 옛 경로 금지
 
@@ -36,8 +36,8 @@
 
 ```text
 suvisdev/
-├── CLAUDE.md              ← 백엔드 인수인계 (SSOT)
-├── _claude/               ← entity-rule 등
+├── _docs/                 ← CLAUDE.MD · entity-rules (SSOT)
+├── CLAUDE.md              ← _docs/CLAUDE.MD 심볼릭 링크
 ├── apps/<app>/_docs/      ← 앱별 ERD·도메인
 └── core/                  ← DB·인프라
 ```
@@ -96,7 +96,7 @@ Router (Schema) → Input Port (Schema in, Dto out) → Interactor (Schema→Com
 
 ```
 @CLAUDE.md
-@suvisdev/CLAUDE.md
+@suvisdev/_docs/CLAUDE.MD
 @suvisdev/apps/titanic/_docs/.cursorrules
 @AGENTS.md
 ```

@@ -2,7 +2,7 @@
 
 > **역할:** CSV 업로드(James)·조회(Walter)·선장 채팅(Smith) — 백엔드 앱 **헥사고날 기준선**.  
 > **상세 SSOT:** [`CLAUDE.md`](CLAUDE.md)  
-> **상위:** [`suvisdev/CLAUDE.md`](../../../CLAUDE.md) · [루트 Karpathy](../../../../CLAUDE.md)
+> **상위:** [`suvisdev/_docs/CLAUDE.MD`](../../../_docs/CLAUDE.MD) · [루트 Karpathy](../../../../CLAUDE.md)
 
 `mova`·`viewer` 신규/수정 시 **이 앱과 동일 레이어**를 따른다. 본 파일은 Titanic **특이점** 요약이다.
 
@@ -11,8 +11,8 @@
 ## Mandatory workflow (`apps/titanic/` 수정 전)
 
 1. 본 폴더 [`CLAUDE.md`](CLAUDE.md)
-2. [`suvisdev/CLAUDE.md`](../../../CLAUDE.md)
-3. `_claude/entity-rule.md` (스키마·PK 변경 시)
+2. [`suvisdev/_docs/CLAUDE.MD`](../../../_docs/CLAUDE.MD)
+3. [`_docs/entity-rules.md`](../../../_docs/entity-rules.md) (스키마·PK 변경 시)
 4. 도메인 위키: `titanic-features.md`, `titanic-walter.md` 등 `_docs/` 내 문서
 
 ---

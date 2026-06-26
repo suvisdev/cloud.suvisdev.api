@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from mova.adapter.inbound.api.schemas.market_chat_schema import (
     MovaChatRequest,
     MovaChatResponseSchema,
 )
+from mova.app.ports.output.llm_errors import LLMError
 from mova.app.ports.input.market_chat_use_case import ChatUseCase
 from mova.dependencies.market_chat_provider import get_chat_use_case
 
@@ -31,5 +32,8 @@ async def chat(
     use_case: ChatUseCase = Depends(get_chat_use_case),
 ) -> MovaChatResponseSchema:
     """사용자 메시지 → 의도 추출 → Gemini 추천 → picks 저장."""
-    dto = await use_case.chat(req)
+    try:
+        dto = await use_case.chat(req)
+    except LLMError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     return dto.to_schema()

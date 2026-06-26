@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import logging
 import sys
 from contextlib import asynccontextmanager
@@ -22,7 +22,11 @@ for _p in (_BACKEND_ROOT, _APPS_ROOT):
         sys.path.insert(0, str(_p))
 
 from core.matrix.vauly_keymaker_secret_manager import get_keymaker
-from core.matrix.grid_oracle_database_manager import create_tables, dispose_engine, verify_connection
+from core.matrix.grid_oracle_database_manager import (
+    create_tables,
+    dispose_engine,
+    verify_connection,
+)
 from core.matrix.weather_reader import (
     WeatherReaderError,
     fetch_current_weather,
@@ -31,8 +35,8 @@ from core.matrix.weather_reader import (
 from viewer.adapter.inbound.api import viewer_router
 from viewer.adapter.outbound.orm.user_orm import seed_viewer_if_empty
 from mova.adapter.inbound.api import mova_router
-from mova.adapter.inbound.api.exception_handlers import register_exception_handlers
 from mova.adapter.outbound.llm.gemini_client import gemini_reply
+from mova.app.ports.output.llm_errors import LLMError
 from titanic.adapter.inbound.api import titanic_router
 from silicon_valley.adapter.inbound.api import silicon_valley_router
 
@@ -101,17 +105,17 @@ async def lifespan(app: FastAPI):
                 except Exception as ast_err:
                     logger.warning("[main] assistants ?? ??: %s", ast_err)
                 try:
-                    from mova.app.use_cases.movie_import_interactor import MovieImportInteractor
+                    from mova.dependencies.import_provider import seed_catalog_if_sparse
 
-                    seed_result = await MovieImportInteractor().seed_catalog_if_sparse()
-                    if seed_result:
+                    seed_result = await seed_catalog_if_sparse()
+                    if seed_result and seed_result.imported:
                         logger.info(
-                            "[main] TMDB ?? ?? ? imported=%s rankings=%s",
+                            "[main] TMDB 카탈로그 시드 — imported=%s rankings=%s",
                             seed_result.imported,
                             seed_result.rankings_updated,
                         )
                 except Exception as tmdb_err:
-                    logger.warning("[main] TMDB ?? ?? ??: %s", tmdb_err)
+                    logger.warning("[main] TMDB 카탈로그 시드 실패: %s", tmdb_err)
             except Exception as e:
                 logger.error(
                     "DB ???/?? ??? ?? ? DB ?? API? 503 ??: %s",
@@ -151,8 +155,6 @@ async def request_path_logger(request: Request, call_next):
     return response
 
 
-register_exception_handlers(app)
-
 app.include_router(mova_router)
 app.include_router(titanic_router, prefix="/api")
 app.include_router(viewer_router)
@@ -167,7 +169,10 @@ def read_root():
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> ChatResponse:
     """?? Gemini ?? (?? ?? ? Mova ??? ??)."""
-    text = gemini_reply(req.message, req.model)
+    try:
+        text = gemini_reply(req.message, req.model)
+    except LLMError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     return ChatResponse(reply=text)
 
 

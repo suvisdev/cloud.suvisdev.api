@@ -2,12 +2,14 @@ import json
 import logging
 import re
 
+from core.matrix.grid_oracle_database_manager import get_mova_session_factory
 from core.matrix.vauly_keymaker_secret_manager import get_keymaker
 from mova.adapter.inbound.api.schemas.market_chat_schema import MovaChatRecommendationSchema
-from mova.adapter.inbound.api.schemas.studio_movies_schema import MovieCreateSchema
 from mova.adapter.outbound.http import TmdbAdapter
 from mova.adapter.outbound.orm.studio_movies_orm import slugify_movie
-from mova.adapter.outbound.pg.movies_pg_repository import StudioMoviesPgRepository
+from mova.adapter.outbound.pg.movies_pg_repository import MoviesPgRepository
+from mova.app.dtos.studio_import_dto import MovieUpsertCommand
+from mova.app.dtos.studio_movies_dto import MovieDetailDto
 from mova.domain.value_objects.studio_movies_vo import resolve_canonical_slug
 
 logger = logging.getLogger(__name__)
@@ -25,6 +27,13 @@ def _coerce_poster(value: object) -> str:
                 return nested.strip()
         return ""
     return str(value).strip() if value else ""
+
+
+def _platform_from_dto(movie: MovieDetailDto) -> str | None:
+    if not movie.platforms:
+        return None
+    provider = movie.platforms[0].provider
+    return provider or None
 
 
 class ChatReplyService:
@@ -76,76 +85,76 @@ class ChatReplyService:
     ) -> list[MovaChatRecommendationSchema]:
         if not recommendations:
             return []
-        repo = StudioMoviesPgRepository()
+
+        factory = get_mova_session_factory()
         enriched: list[MovaChatRecommendationSchema] = []
-        for rec in recommendations:
-            canonical = resolve_canonical_slug(rec.id, title=rec.title)
-            movie = (
-                await repo.get_by_slug(canonical)
-                or await repo.get_by_slug(rec.id)
-                or await repo.find_by_title(rec.title)
-            )
-            poster = _coerce_poster(rec.poster)
-            year = rec.year
-            platform = rec.platform
-            slug = canonical if canonical != "movie" else rec.id
-            if movie is not None:
-                slug = movie.slug
-                if not poster:
-                    poster = (movie.poster_url or "").strip()
-                if not year:
-                    year = movie.release_year or ""
-                if not platform and movie.platforms:
-                    first = movie.platforms[0]
-                    platform = first.get("provider") if isinstance(first, dict) else None
 
-            if not poster:
-                poster = await self._fetch_tmdb_poster(rec.title, year)
-
-            try:
+        async with factory() as session:
+            repo = MoviesPgRepository(session)
+            for rec in recommendations:
+                canonical = resolve_canonical_slug(rec.id, title=rec.title)
+                movie = (
+                    await repo.get_by_slug(canonical)
+                    or await repo.get_by_slug(rec.id)
+                    or await repo.find_by_title(rec.title)
+                )
+                poster = _coerce_poster(rec.poster)
+                year = rec.year
+                platform = rec.platform
+                slug = canonical if canonical != "movie" else rec.id
                 if movie is not None:
-                    if poster and poster != (movie.poster_url or "").strip():
-                        await repo.save_movie(
-                            MovieCreateSchema(
-                                slug=movie.slug,
-                                title=movie.title,
-                                release_year=movie.release_year or "",
-                                rating=float(movie.rating or 0),
-                                poster_url=poster,
-                                platforms=movie.platforms or [],
-                                genres=list(movie.genres or []),
+                    slug = movie.slug
+                    if not poster:
+                        poster = (movie.poster_url or "").strip()
+                    if not year:
+                        year = movie.release_year or ""
+                    if not platform:
+                        platform = _platform_from_dto(movie)
+
+                if not poster:
+                    poster = await self._fetch_tmdb_poster(rec.title, year)
+
+                try:
+                    if movie is not None:
+                        if poster and poster != (movie.poster_url or "").strip():
+                            await repo.upsert_movie(
+                                MovieUpsertCommand(
+                                    slug=movie.slug,
+                                    title=movie.title,
+                                    release_year=movie.release_year or "",
+                                    rating=movie.rating,
+                                    poster_url=poster,
+                                    genres=list(movie.genres or []),
+                                )
+                            )
+                    else:
+                        await repo.upsert_movie(
+                            MovieUpsertCommand(
+                                slug=slug,
+                                title=rec.title,
+                                release_year=year or "",
+                                rating=0.0,
+                                poster_url=poster or "",
+                                genres=[],
                             )
                         )
-                else:
-                    # Gemini 추천 영화가 DB에 없으면 상세 페이지가 404나지 않도록 신규 저장
-                    await repo.save_movie(
-                        MovieCreateSchema(
-                            slug=slug,
-                            title=rec.title,
-                            release_year=year or "",
-                            rating=0.0,
-                            poster_url=poster or "",
-                            platforms=[],
-                            genres=[],
-                        )
+                except Exception:
+                    logger.debug(
+                        "[ChatReplyService] 영화 DB 저장 스킵 — %r",
+                        rec.title,
+                        exc_info=True,
                     )
-            except Exception:
-                logger.debug(
-                    "[ChatReplyService] 영화 DB 저장 스킵 — %r",
-                    rec.title,
-                    exc_info=True,
-                )
 
-            enriched.append(
-                rec.model_copy(
-                    update={
-                        "id": slug,
-                        "poster": poster,
-                        "year": year,
-                        "platform": platform,
-                    },
-                ),
-            )
+                enriched.append(
+                    rec.model_copy(
+                        update={
+                            "id": slug,
+                            "poster": poster,
+                            "year": year,
+                            "platform": platform,
+                        },
+                    ),
+                )
         return enriched
 
     async def _fetch_tmdb_poster(self, title: str, year: str) -> str:

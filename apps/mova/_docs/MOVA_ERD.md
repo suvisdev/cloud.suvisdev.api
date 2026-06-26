@@ -1,5 +1,7 @@
 # Mova ERD
 
+> **상위:** `CLAUDE.md` (동일 폴더)
+
 `suvisdev/apps/mova` ORM 기준 **Mova DB** 테이블 구조입니다.  
 회원·인증·프로필은 **`viewer`** 모듈 — **`groups` · `admins` · `users` 3테이블**. env는 `SECOM_DATABASE_URL` (**미설정 시 Mova와 동일 DB**).  
 `chat` / `reviews` / `picks`의 `user_id`는 **`users.id` FK** (관리자는 `admins` — Mova FK 없음).
@@ -522,7 +524,7 @@ KOFIC import는 `source=box_office`로 유지. UI 기본 HOT는 **`chat` → `pi
 | `groups` | `Group` | `viewer/app/dtos/group_model.py` |
 | `admins` | `Admin` | `viewer/app/dtos/admin_model.py` |
 
-공통 PK 규칙은 [`ENTITY_RULE.md`](../../../_claude/ENTITY_RULE.md)를 따릅니다 (`id` int 자동 증감).
+공통 PK 규칙은 `suvisdev/_docs/entity-rules.md`를 따릅니다 (`id` int 자동 증감).
 
 ### actors vs assistants
 

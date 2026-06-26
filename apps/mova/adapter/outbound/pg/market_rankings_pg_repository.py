@@ -19,7 +19,10 @@ from mova.app.dtos.market_rankings_dto import (
     RankingListDto,
 )
 from mova.app.ports.output.market_rankings_repository import RankingsRepositoryPort
-from mova.domain.value_objects.market_rankings_vo import RANKING_SOURCE_CHAT_TREND
+from mova.domain.value_objects.market_rankings_vo import (
+    RANKING_SOURCE_BOX_OFFICE,
+    RANKING_SOURCE_CHAT_TREND,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -127,3 +130,32 @@ class RankingsPgRepository(RankingsRepositoryPort):
             len(rows),
         )
         return len(rows)
+
+    async def save_box_office_ranking(self, movie_ids: list[int], ranked_at: date) -> int:
+        if not movie_ids:
+            return 0
+        await self._session.execute(
+            delete(MovaRanking).where(
+                MovaRanking.source == RANKING_SOURCE_BOX_OFFICE,
+                MovaRanking.ranked_at == ranked_at,
+            )
+        )
+        for rank, movie_id in enumerate(movie_ids, start=1):
+            self._session.add(
+                MovaRanking(
+                    rank=rank,
+                    movie_id=movie_id,
+                    chat_id=None,
+                    source=RANKING_SOURCE_BOX_OFFICE,
+                    score=None,
+                    badge=None,
+                    ranked_at=ranked_at,
+                )
+            )
+        await self._session.commit()
+        logger.debug(
+            "[RankingsPgRepository] save_box_office_ranking ranked_at=%s count=%d",
+            ranked_at,
+            len(movie_ids),
+        )
+        return len(movie_ids)

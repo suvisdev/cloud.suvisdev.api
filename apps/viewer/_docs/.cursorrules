@@ -3,7 +3,7 @@
 > **역할:** `groups` · `admins` · `users` 기반 **프로덕션** login/signup API.  
 > **상세 SSOT:** [`CLAUDE.md`](CLAUDE.md)  
 > **레이어 기준선:** [`titanic/_docs/CLAUDE.md`](../titanic/_docs/CLAUDE.md)  
-> **상위:** [`suvisdev/_claude/CLAUDE.md`](../../../_claude/CLAUDE.md)
+> **상위:** [`suvisdev/_docs/CLAUDE.MD`](../../../_docs/CLAUDE.MD)
 
 `friday13th/`는 **수업용** — 프로덕션 인증은 **viewer만** 사용한다.
 
@@ -12,7 +12,7 @@
 ## Mandatory workflow (`apps/viewer/` 수정 전)
 
 1. 본 폴더 [`CLAUDE.md`](CLAUDE.md)
-2. [`suvisdev/_claude/CLAUDE.md`](../../../_claude/CLAUDE.md)
+2. [`suvisdev/_docs/CLAUDE.MD`](../../../_docs/CLAUDE.MD)
 3. Mova FK 연동 시 [`mova/_docs/CLAUDE.md`](../mova/_docs/CLAUDE.md)
 
 ---
@@ -99,11 +99,11 @@ groups (1) ──< users (N)
 
 1. 사용자 지시
 2. 본 폴더 [`CLAUDE.md`](CLAUDE.md)
-3. [`suvisdev/_claude/CLAUDE.md`](../../../_claude/CLAUDE.md)
+3. [`suvisdev/_docs/CLAUDE.MD`](../../../_docs/CLAUDE.MD)
 
 ### Cursor 참조 예
 
 ```
 @suvisdev/apps/viewer/_docs/CLAUDE.md
-@suvisdev/_claude/CLAUDE.md
+@suvisdev/_docs/CLAUDE.MD
 ```

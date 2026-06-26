@@ -1,7 +1,8 @@
 # Mova AI 채팅 UX (프론트)
 
 > **역할:** `/mova` 랜딩·`/mova/main` 메인의 AI 추천 채팅 UI 동작 정의.  
-> **백엔드 API:** `POST /mova/chat` — [`CLAUDE.md`](CLAUDE.md) C절 · [`MOVA_ERD.md`](MOVA_ERD.md) 채팅 추천 흐름
+> **상위:** `CLAUDE.md` (동일 폴더)  
+> **백엔드 API:** `POST /mova/chat` — Mova CLAUDE C절 · `MOVA_ERD.md` 채팅 추천 흐름
 
 ---
 

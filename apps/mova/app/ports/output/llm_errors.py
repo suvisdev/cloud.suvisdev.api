@@ -1,9 +1,8 @@
-"""LLM 호출 도메인 예외.
+"""LLM 출력 포트 실패 예외 — ``llm_output_port``·``gemini_client`` 계약의 오류 면.
 
-아웃바운드 LLM 어댑터는 FastAPI(HTTPException, 인바운드 관심사)에 의존하지 않는다.
-대신 이 예외를 던지고, 인바운드 레이어가 단일 지점에서 HTTP 로 변환한다.
-기존 도메인 예외 ``core.matrix.weather_reader.WeatherReaderError`` 와 동일하게
-``status_code`` 를 실어 보내, 인바운드가 상태코드를 그대로 매핑하도록 한다.
+아웃바운드 LLM 어댑터는 FastAPI(HTTPException)에 의존하지 않는다.
+인바운드 라우터가 ``HTTPException``으로 변환한다 (``apps/mova/_docs/CLAUDE.md`` §B.4).
+``core.matrix.weather_reader.WeatherReaderError`` 와 동일하게 ``status_code`` 를 실어 보낸다.
 """
 
 from __future__ import annotations

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Literal
 
 from core.matrix.vauly_keymaker_secret_manager import get_keymaker
-from mova.app.exceptions import LLMError, LLMUnavailableError
+from mova.app.ports.output.llm_errors import LLMError, LLMUnavailableError
 
 
 def gemini_reply(prompt: str, model_key: Literal["flash", "flash15", "pro"] | None) -> str:
