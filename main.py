@@ -14,8 +14,9 @@ if sys.platform == "win32":
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:\t%(message)s", force=True)
 logger = logging.getLogger(__name__)
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response as StarletteResponse
@@ -137,11 +138,85 @@ async def lifespan(app: FastAPI):
         await dispose_engine()
 
 
-class _BasicAuthMiddleware(BaseHTTPMiddleware):
+_LOGIN_HTML = """<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Suvisdev API</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;background:#0d0f14;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:1rem}
+.card{width:100%;max-width:400px;background:#161a24;border:1px solid #252b3b;border-radius:24px;padding:2.5rem}
+.brand{margin-bottom:2rem}
+.brand-row{display:flex;align-items:center;gap:.5rem}
+.brand-name{font-size:1.25rem;font-weight:700;color:#e8e8e8;letter-spacing:-.02em}
+.badge{font-size:.65rem;font-family:'SF Mono','Fira Code',monospace;font-weight:600;background:#f0dc3a1a;color:#f0dc3a;border:1px solid #f0dc3a44;border-radius:6px;padding:2px 7px;letter-spacing:.05em;text-transform:uppercase}
+.brand-desc{margin-top:.375rem;font-size:.8125rem;color:#6b7280}
+.error{margin-bottom:1rem;padding:.625rem 1rem;background:#7f1d1d22;border:1px solid #7f1d1d55;border-radius:10px;font-size:.8125rem;color:#f87171}
+.group{margin-bottom:1rem}
+label{display:block;font-size:.7rem;font-weight:600;color:#9ca3af;margin-bottom:.375rem;letter-spacing:.06em;text-transform:uppercase}
+input[type=text],input[type=password]{width:100%;background:#1a1f2e;border:1px solid #252b3b;border-radius:12px;padding:.75rem 1rem;color:#e8e8e8;font-size:.9375rem;outline:none;transition:border-color .15s}
+input:focus{border-color:#f0dc3a66}
+input::placeholder{color:#374151}
+.btn{display:block;width:100%;margin-top:1.5rem;padding:.875rem;background:#f0dc3a;color:#0d0f14;font-size:.9375rem;font-weight:700;border:none;border-radius:14px;cursor:pointer;transition:background .15s;letter-spacing:-.01em}
+.btn:hover{background:#e8d020}
+.btn:active{background:#d4bc00}
+.footer{margin-top:2rem;padding-top:1.25rem;border-top:1px solid #1e2333;display:flex;align-items:center;justify-content:center;gap:.375rem;font-size:.75rem;color:#374151}
+.dot{width:6px;height:6px;background:#22c55e;border-radius:50%;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brand">
+    <div class="brand-row">
+      <span class="brand-name">suvisdev</span>
+      <span class="badge">API</span>
+    </div>
+    <p class="brand-desc">개발자 전용 대시보드입니다.</p>
+  </div>
+  __ERROR__
+  <form method="post" action="/api-login">
+    <input type="hidden" name="next" value="__NEXT__">
+    <div class="group">
+      <label for="u">아이디</label>
+      <input type="text" id="u" name="username" placeholder="username" autocomplete="username" autofocus>
+    </div>
+    <div class="group">
+      <label for="p">비밀번호</label>
+      <input type="password" id="p" name="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn">로그인</button>
+  </form>
+  <div class="footer">
+    <span class="dot"></span>
+    <span>api.suvisdev.cloud</span>
+  </div>
+</div>
+</body>
+</html>"""
+
+
+def _render_login(next_path: str, error: bool = False) -> str:
+    safe = next_path if next_path.startswith("/") and not next_path.startswith("//") else "/docs"
+    err = '<div class="error">아이디 또는 비밀번호가 올바르지 않습니다.</div>' if error else ""
+    return _LOGIN_HTML.replace("__NEXT__", safe).replace("__ERROR__", err)
+
+
+class _ApiAuthMiddleware(BaseHTTPMiddleware):
+    _BYPASS = {"/api-login", "/api-logout", "/favicon.ico"}
+    _COOKIE = "api_auth"
+
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> StarletteResponse:
         username = os.getenv("API_USERNAME", "")
         password = os.getenv("API_PASSWORD", "")
         if not username:
+            return await call_next(request)
+        if request.url.path in self._BYPASS:
+            return await call_next(request)
+        expected = base64.b64encode(f"{username}:{password}".encode()).decode()
+        cookie = request.cookies.get(self._COOKIE, "")
+        if cookie and secrets.compare_digest(cookie.encode(), expected.encode()):
             return await call_next(request)
         auth = request.headers.get("Authorization", "")
         if auth.startswith("Basic "):
@@ -154,11 +229,7 @@ class _BasicAuthMiddleware(BaseHTTPMiddleware):
                     return await call_next(request)
             except Exception:
                 pass
-        return StarletteResponse(
-            status_code=401,
-            headers={"WWW-Authenticate": 'Basic realm="Suvisdev API"'},
-            content=b"Unauthorized",
-        )
+        return RedirectResponse(url=f"/api-login?next={request.url.path}", status_code=302)
 
 
 app = FastAPI(title="Suvisdev Main Page", lifespan=lifespan)
@@ -170,7 +241,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(_BasicAuthMiddleware)
+app.add_middleware(_ApiAuthMiddleware)
 
 
 @app.middleware("http")
@@ -189,6 +260,38 @@ app.include_router(mova_router)
 app.include_router(titanic_router, prefix="/api")
 app.include_router(viewer_router)
 app.include_router(silicon_valley_router, prefix="/api/v1")
+
+
+@app.get("/api-login", response_class=HTMLResponse, include_in_schema=False)
+async def login_page(next: str = "/docs", error: bool = False) -> HTMLResponse:
+    return HTMLResponse(_render_login(next, error))
+
+
+@app.post("/api-login", include_in_schema=False)
+async def login_submit(
+    username: str = Form(...),
+    password: str = Form(...),
+    next: str = Form(default="/docs"),
+) -> RedirectResponse:
+    api_user = os.getenv("API_USERNAME", "")
+    api_pass = os.getenv("API_PASSWORD", "")
+    safe_next = next if next.startswith("/") and not next.startswith("//") else "/docs"
+    if not api_user or (
+        secrets.compare_digest(username.encode(), api_user.encode())
+        and secrets.compare_digest(password.encode(), api_pass.encode())
+    ):
+        token = base64.b64encode(f"{username}:{password}".encode()).decode()
+        resp = RedirectResponse(url=safe_next, status_code=303)
+        resp.set_cookie("api_auth", token, max_age=7 * 24 * 3600, httponly=True, samesite="strict", path="/")
+        return resp
+    return RedirectResponse(url=f"/api-login?next={safe_next}&error=1", status_code=303)
+
+
+@app.get("/api-logout", include_in_schema=False)
+async def logout() -> RedirectResponse:
+    resp = RedirectResponse(url="/api-login", status_code=303)
+    resp.delete_cookie("api_auth", path="/")
+    return resp
 
 
 @app.get("/")
