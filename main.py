@@ -38,6 +38,7 @@ from core.matrix.weather_reader import (
     fetch_current_weather,
     fetch_weekly_forecast,
 )
+from dispatch.adapter.inbound.api import dispatch_router
 from mova.adapter.inbound.api import mova_router
 from mova.adapter.outbound.llm.gemini_client import gemini_reply
 from mova.app.ports.output.llm_errors import LLMError
@@ -260,6 +261,7 @@ app.include_router(mova_router)
 app.include_router(titanic_router, prefix="/api")
 app.include_router(viewer_router)
 app.include_router(silicon_valley_router, prefix="/api/v1")
+app.include_router(dispatch_router, prefix="/api/v1")
 
 
 @app.get("/api-login", response_class=HTMLResponse, include_in_schema=False)
