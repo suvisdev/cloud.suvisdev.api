@@ -25,6 +25,7 @@ known-first-party = [
     "star_craft",
     "titanic", "mova", "viewer", "silicon_valley",
     "friday13th", "imitation_game", "inception", "social_network",
+    "gildle",
     "core",
 ]
 
