@@ -6,6 +6,7 @@ from core.lol.t1_mid_faker_orchestrator import get_faker_orchestrator
 from dispatch.adapter.outbound.http.n8n_gmail_outbound import N8nGmailOutbound
 from dispatch.app.ports.input.email_use_case import EmailUseCase
 from dispatch.app.use_cases.send_email_interactor import SendEmailInteractor
+from ontology.app.use_cases.hub_email_orchestrator import HubEmailOrchestrator
 
 
 def get_email_use_case() -> EmailUseCase:
@@ -16,5 +17,6 @@ def get_email_use_case() -> EmailUseCase:
         )
     return SendEmailInteractor(
         gmail=N8nGmailOutbound(webhook_url=webhook_url),
+        hub=HubEmailOrchestrator(),
         orchestrator=get_faker_orchestrator(),
     )

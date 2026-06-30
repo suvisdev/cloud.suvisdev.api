@@ -39,6 +39,7 @@ from core.matrix.weather_reader import (
     fetch_weekly_forecast,
 )
 from dispatch.adapter.inbound.api import dispatch_router
+from spam_filter.adapter.inbound.api import spam_filter_router
 from gildle.adapter.inbound.api import gildle_router
 from mova.adapter.inbound.api import mova_router
 from mova.adapter.outbound.llm.gemini_client import gemini_reply
@@ -135,6 +136,15 @@ async def lifespan(app: FastAPI):
                 "DB ?? ?? ? Mova/Viewer DB API ???. suvisdev/.env DATABASE_URL ??: %s",
                 err,
             )
+        # Ollama 모델 워밍업 — 콜드 스타트 제거(백그라운드, 기동 비차단)
+        try:
+            from core.lol.t1_mid_faker_orchestrator import get_faker_orchestrator
+
+            app.state.faker_warmup = asyncio.create_task(
+                asyncio.to_thread(get_faker_orchestrator().warmup)
+            )
+        except Exception as warm_err:
+            logger.warning("[main] Ollama 워밍업 예약 실패: %s", warm_err)
         yield
     finally:
         await dispose_engine()
@@ -264,6 +274,7 @@ app.include_router(gildle_router, prefix="/api")
 app.include_router(viewer_router)
 app.include_router(silicon_valley_router, prefix="/api/v1")
 app.include_router(dispatch_router, prefix="/api/v1")
+app.include_router(spam_filter_router, prefix="/api/v1")
 
 
 @app.get("/api-login", response_class=HTMLResponse, include_in_schema=False)

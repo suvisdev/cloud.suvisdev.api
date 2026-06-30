@@ -251,6 +251,10 @@ async def _drop_legacy_mova_users_table(conn) -> None:
 async def create_tables() -> None:
     """SQLAlchemy 2.0 방식의 테이블 일괄 생성."""
     await ensure_titanic_tables()
+    try:
+        import dispatch.adapter.outbound.orm  # noqa: F401 — DispatchAdressOrm (grid_neo_theone_base)
+    except ModuleNotFoundError:
+        logger.warning("Dispatch ORM not found, skipping.")
     import mova.adapter.outbound.orm  # noqa: F401
 
     try:
@@ -272,9 +276,13 @@ async def create_tables() -> None:
 
 
 async def ensure_titanic_tables() -> None:
-    """passengers·bookings 없으면 생성 (삭제 후 업로드 복구용)."""
+    """passengers·bookings·dispatch_adress 없으면 생성 (삭제 후 업로드 복구용)."""
     import titanic.adapter.outbound.orm.passenger_jack_trainer_orm  # noqa: F401
     import titanic.adapter.outbound.orm.passenger_rose_model_orm  # noqa: F401
+    try:
+        import dispatch.adapter.outbound.orm.adress_orm  # noqa: F401
+    except ModuleNotFoundError:
+        pass
     from core.matrix.grid_neo_theone_base import Base
 
     ok, err = ensure_mova_database()

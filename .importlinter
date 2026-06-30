@@ -1,6 +1,6 @@
 [importlinter]
 root_packages =
-    star_craft
+    ontology
     titanic
     mova
     viewer
@@ -9,16 +9,18 @@ root_packages =
     imitation_game
     inception
     social_network
+    dispatch
+    spam_filter
     core
 
 # ──────────────────────────────────────────────
-# 규칙 1: Hub(star_craft)는 Spoke를 import하지 않는다
+# 규칙 1: Hub(ontology)는 Spoke를 import하지 않는다
 # ──────────────────────────────────────────────
 [importlinter:contract:hub-independence]
-name = Hub (star_craft) must not depend on any spoke
+name = Hub (ontology) must not depend on any spoke
 type = forbidden
 source_modules =
-    star_craft
+    ontology
 forbidden_modules =
     titanic
     mova
@@ -28,6 +30,8 @@ forbidden_modules =
     imitation_game
     inception
     social_network
+    dispatch
+    spam_filter
 
 # ──────────────────────────────────────────────
 # 규칙 2: Spoke 간 직접 의존 금지 (Cross-Spoke Dependency)
@@ -44,3 +48,5 @@ modules =
     imitation_game
     inception
     social_network
+    dispatch
+    spam_filter

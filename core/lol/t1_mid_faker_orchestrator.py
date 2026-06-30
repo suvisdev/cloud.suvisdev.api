@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import httpx
+import os
 
-_OLLAMA_BASE = "http://localhost:11434"
+_OLLAMA_BASE = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 _DEFAULT_MODEL = "exaone3.5:2.4b"
+# 모델을 VRAM에 상주시켜 콜드 스타트 제거. -1 = 영구 상주.
+_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "30m")
 
 
 class FakerOrchestratorError(Exception):
@@ -24,10 +27,12 @@ class T1MidFakerOrchestrator:
         model: str = _DEFAULT_MODEL,
         base_url: str = _OLLAMA_BASE,
         timeout: float = 120.0,
+        keep_alive: str = _KEEP_ALIVE,
     ) -> None:
         self._model = model
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
+        self._keep_alive = keep_alive
 
     def is_ready(self) -> bool:
         """Ollama 서버가 응답하는지 확인한다."""
@@ -35,6 +40,22 @@ class T1MidFakerOrchestrator:
             with httpx.Client(timeout=5.0) as client:
                 r = client.get(f"{self._base_url}/api/tags")
                 return r.status_code == 200
+        except httpx.TransportError:
+            return False
+
+    def warmup(self) -> bool:
+        """모델을 미리 메모리에 올려 콜드 스타트를 제거한다. 실패해도 무시."""
+        try:
+            with httpx.Client(timeout=self._timeout) as client:
+                r = client.post(
+                    f"{self._base_url}/api/chat",
+                    json={
+                        "model": self._model,
+                        "messages": [],
+                        "keep_alive": self._keep_alive,
+                    },
+                )
+            return r.status_code == 200
         except httpx.TransportError:
             return False
 
@@ -49,7 +70,12 @@ class T1MidFakerOrchestrator:
             with httpx.Client(timeout=self._timeout) as client:
                 r = client.post(
                     f"{self._base_url}/api/chat",
-                    json={"model": self._model, "messages": messages, "stream": False},
+                    json={
+                        "model": self._model,
+                        "messages": messages,
+                        "stream": False,
+                        "keep_alive": self._keep_alive,
+                    },
                 )
         except httpx.TimeoutException as e:
             raise FakerOrchestratorError("Ollama 응답 타임아웃", status_code=504) from e
