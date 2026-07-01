@@ -28,4 +28,4 @@ class DispatchAdressOrm(Base):
     photo: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     labels: Mapped[str] = mapped_column(String(200), nullable=False, default="")
     email_label: Mapped[str] = mapped_column(String(100), nullable=False, default="")
-    email: Mapped[str] = mapped_column(String(200), index=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)

@@ -19,7 +19,9 @@ class HubEmailOrchestratorTest(unittest.TestCase):
         hub = HubEmailOrchestrator()
         event = DispatchEmailEvent(to="user@example.com", prompt="p", subject="제목")
 
-        with self.assertLogs("ontology.app.use_cases.hub_email_orchestrator", level=logging.INFO) as cm:
+        with self.assertLogs(
+            "ontology.app.use_cases.hub_email_orchestrator", level=logging.INFO
+        ) as cm:
             hub.record(event)
 
         self.assertTrue(
@@ -31,7 +33,9 @@ class HubEmailOrchestratorTest(unittest.TestCase):
         hub = HubEmailOrchestrator()
         event = DispatchEmailEvent(to="x@y.com", prompt="p", subject="중요 공지")
 
-        with self.assertLogs("ontology.app.use_cases.hub_email_orchestrator", level=logging.INFO) as cm:
+        with self.assertLogs(
+            "ontology.app.use_cases.hub_email_orchestrator", level=logging.INFO
+        ) as cm:
             hub.record(event)
 
         self.assertTrue(any("중요 공지" in line for line in cm.output))

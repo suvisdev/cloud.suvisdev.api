@@ -20,6 +20,7 @@ secrets.json
 credentials.json
 service-account*.json
 *-credentials.json
+firebase-adminsdk*.json
 .aws/credentials
 .netrc
 # 토큰이 들어간 경우만 수동으로 추가: .npmrc
