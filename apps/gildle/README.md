@@ -49,22 +49,29 @@ curl -X POST localhost:8000/api/gildle/routes \
 curl 'localhost:8000/api/gildle/map-data?mode=winter_safety'
 ```
 
-## 데이터 소스 (가정)
+## 데이터 소스
 
-- 가로수: data.go.kr "전국가로수길정보표준데이터"(서울 자치구). 시작/종료 위경도 포함.
-- 결빙구간: 한국도로교통공단 "결빙 교통사고 다발지역". `시도='서울특별시'` 필터.
+- 가로수: data.go.kr "전국가로수길정보표준데이터"(서울 자치구). 표준 스키마 컬럼
+  `도로명 / 가로수길시작·종료위도·경도 / 가로수종류 / 가로수수량 / 관리기관명`에 매핑.
+  시작/종료 좌표가 둘 다 있는 자치구(예: 영등포구)를 전제로 **구간 모델**로 적재한다.
+- 결빙구간: 한국도로교통공단 "결빙 교통사고 다발지역". `시도시군구명`이 "서울"로 시작하는
+  행만 필터. 반경 컬럼이 없어 선정기준인 **200m**를 기본값으로 쓴다.
 - 보행로 그래프: 운영은 OpenStreetMap(osmnx, `network_type='walk'`). 현재는
   `data/sample_walk_graph.json`이 그 자리를 대신한다(데모/테스트용).
 
-> **CSV 컬럼명 가정:** 실제 다운로드 헤더와 다르면 각 어댑터 상단의 `_COL_*` 상수만
-> 맞추면 된다. Kakao geocoding은 `KAKAO_API_KEY` 환경변수 + 좌표 결측 보완 fallback 전용.
-> CSV/그래프 경로는 `GILDLE_TREE_CSV` / `GILDLE_HAZARD_CSV` / `GILDLE_WALK_GRAPH`로 덮어쓴다.
+실데이터 결측치/이상값은 어댑터 경계에서 흡수한다: 수종 미인식·좌표 결측/범위이탈 행은
+제외하고, 수량 결측은 0으로 둔다(행 유지). `data/sample_*.csv`는 실제 표준 헤더를 그대로 쓴다.
+
+> **오버라이드 env:** CSV/그래프 경로는 `GILDLE_TREE_CSV` / `GILDLE_HAZARD_CSV` /
+> `GILDLE_WALK_GRAPH`, 인코딩은 `GILDLE_CSV_ENCODING`(기본 `utf-8-sig`; data.go.kr 원본이
+> cp949/euc-kr이면 지정). 헤더가 다르면 각 어댑터 상단 `_COL_*` 상수만 맞추면 된다.
+> Kakao geocoding은 `KAKAO_API_KEY` + 좌표 결측 보완 fallback 전용(가로수 import 경로).
 
 ## 테스트
 
 ```bash
 cd suvisdev
-python -m pytest apps/gildle/tests -q   # 83 passed
+python -m pytest apps/gildle/tests -q   # 92 passed
 ```
 
 TDD(Red→Green)로 도메인 → 애플리케이션 → 어댑터 → 인바운드 순으로 구현했다.

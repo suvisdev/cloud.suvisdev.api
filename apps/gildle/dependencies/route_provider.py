@@ -55,15 +55,23 @@ def _walk_graph_path() -> Path:
     return Path(os.getenv("GILDLE_WALK_GRAPH", str(_DATA_DIR / "sample_walk_graph.json")))
 
 
+def _csv_encoding() -> str:
+    # 실제 data.go.kr 파일이 cp949/euc-kr이면 GILDLE_CSV_ENCODING로 지정한다.
+    return os.getenv("GILDLE_CSV_ENCODING", "utf-8-sig")
+
+
 def get_walk_graph_source() -> SampleWalkGraphSource:
     return SampleWalkGraphSource(json_path=_walk_graph_path())
 
 
 def get_calculate_route_use_case() -> CalculateDogFriendlyRouteUseCase:
+    encoding = _csv_encoding()
     return CalculateDogFriendlyRouteInteractor(
-        tree_repository=CsvTreeSegmentRepository(csv_path=_tree_csv_path()),
+        tree_repository=CsvTreeSegmentRepository(
+            csv_path=_tree_csv_path(), encoding=encoding
+        ),
         hazard_repository=TrafficAuthorityHazardZoneRepository(
-            csv_path=_hazard_csv_path()
+            csv_path=_hazard_csv_path(), encoding=encoding
         ),
         route_graph=NetworkXRouteGraphAdapter(),
         weight_calculator=RouteWeightCalculator(),
@@ -71,10 +79,13 @@ def get_calculate_route_use_case() -> CalculateDogFriendlyRouteUseCase:
 
 
 def get_map_data_use_case() -> GetMapVisualizationDataUseCase:
+    encoding = _csv_encoding()
     return GetMapVisualizationDataInteractor(
-        tree_repository=CsvTreeSegmentRepository(csv_path=_tree_csv_path()),
+        tree_repository=CsvTreeSegmentRepository(
+            csv_path=_tree_csv_path(), encoding=encoding
+        ),
         hazard_repository=TrafficAuthorityHazardZoneRepository(
-            csv_path=_hazard_csv_path()
+            csv_path=_hazard_csv_path(), encoding=encoding
         ),
     )
 
