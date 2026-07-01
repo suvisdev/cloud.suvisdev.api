@@ -39,12 +39,12 @@ from core.matrix.weather_reader import (
     fetch_weekly_forecast,
 )
 from dispatch.adapter.inbound.api import dispatch_router
-from spam_filter.adapter.inbound.api import spam_filter_router
 from gildle.adapter.inbound.api import gildle_router
 from mova.adapter.inbound.api import mova_router
 from mova.adapter.outbound.llm.gemini_client import gemini_reply
 from mova.app.ports.output.llm_errors import LLMError
 from silicon_valley.adapter.inbound.api import silicon_valley_router
+from spam_filter.adapter.inbound.api import spam_filter_router
 from titanic.adapter.inbound.api import titanic_router
 from viewer.adapter.inbound.api import viewer_router
 from viewer.adapter.outbound.orm.user_orm import seed_viewer_if_empty
@@ -125,6 +125,15 @@ async def lifespan(app: FastAPI):
                         )
                 except Exception as tmdb_err:
                     logger.warning("[main] TMDB 카탈로그 시드 실패: %s", tmdb_err)
+                try:
+                    from mova.adapter.inbound.scheduler.market_rankings_scheduler import (
+                        run_chat_trend_scheduler,
+                    )
+
+                    app.state.rankings_scheduler = asyncio.create_task(run_chat_trend_scheduler())
+                    logger.info("[main] chat_trend 랭킹 스케줄러 시작 (6시간 주기)")
+                except Exception as sched_err:
+                    logger.warning("[main] 랭킹 스케줄러 시작 실패: %s", sched_err)
             except Exception as e:
                 logger.error(
                     "DB ???/?? ??? ?? ? DB ?? API? 503 ??: %s",
@@ -147,6 +156,13 @@ async def lifespan(app: FastAPI):
             logger.warning("[main] Ollama 워밍업 예약 실패: %s", warm_err)
         yield
     finally:
+        scheduler_task = getattr(app.state, "rankings_scheduler", None)
+        if scheduler_task is not None:
+            scheduler_task.cancel()
+            try:
+                await scheduler_task
+            except asyncio.CancelledError:
+                pass
         await dispose_engine()
 
 
@@ -219,7 +235,9 @@ class _ApiAuthMiddleware(BaseHTTPMiddleware):
     _BYPASS = {"/api-login", "/api-logout", "/favicon.ico"}
     _COOKIE = "api_auth"
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> StarletteResponse:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> StarletteResponse:
         username = os.getenv("API_USERNAME", "")
         password = os.getenv("API_PASSWORD", "")
         if not username:
@@ -297,7 +315,9 @@ async def login_submit(
     ):
         token = base64.b64encode(f"{username}:{password}".encode()).decode()
         resp = RedirectResponse(url=safe_next, status_code=303)
-        resp.set_cookie("api_auth", token, max_age=7 * 24 * 3600, httponly=True, samesite="strict", path="/")
+        resp.set_cookie(
+            "api_auth", token, max_age=7 * 24 * 3600, httponly=True, samesite="strict", path="/"
+        )
         return resp
     return RedirectResponse(url=f"/api-login?next={safe_next}&error=1", status_code=303)
 
