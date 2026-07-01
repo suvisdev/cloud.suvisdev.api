@@ -31,7 +31,11 @@ async def update_pick_feedback(
     body: PickFeedbackUpdateSchema,
     use_case: PicksUseCase = Depends(get_picks_use_case),
 ) -> PickFeedbackSchema:
-    """AI 추천에 대한 좋아요/싫어요 피드백 기록."""
+    """AI 추천에 대한 좋아요/싫어요 피드백 기록.
+
+    보안 TODO(§2 인증 선행): 현재 pick_id만으로 갱신 → 소유권 미검증(IDOR).
+    인증 도입 후 요청자 user_id == pick.user_id 확인 필요.
+    """
     dto = await use_case.update_feedback(pick_id, body.feedback)
     if not dto.updated:
         raise HTTPException(status_code=404, detail=f"Pick {pick_id} not found")

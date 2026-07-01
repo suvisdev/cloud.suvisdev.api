@@ -2,6 +2,11 @@ import logging
 
 from mova.adapter.inbound.api.schemas.studio_search_schema import MovaSearchItemSchema
 from mova.adapter.outbound.llm.chat_reply import ChatReplyService
+from mova.adapter.outbound.llm.llm_safety import (
+    INJECTION_GUARD,
+    fence_user_text,
+    sanitize_user_text,
+)
 from mova.adapter.outbound.orm.market_chat_orm import MovaChat
 
 logger = logging.getLogger(__name__)
@@ -122,13 +127,17 @@ class ChatPromptBuilder:
                 ),
             ),
             "",
+            INJECTION_GUARD,
+            "",
             "[대화]",
         ]
+        # history 도 클라이언트 제공값 → 정화
         for item in history[-6:]:
             role = item.get("role", "user")
             label = "사용자" if role == "user" else "Mova"
-            parts.append(f"{label}: {item.get('content', '')}")
-        parts.append(f"사용자: {message}")
+            parts.append(f"{label}: {sanitize_user_text(str(item.get('content', '')))}")
+        # 이번 사용자 입력은 데이터 구분자로 감싼다
+        parts.append(f"사용자: {fence_user_text(message)}")
         parts.append("JSON:")
         return "\n".join(parts)
 

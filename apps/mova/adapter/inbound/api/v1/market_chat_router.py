@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from mova.adapter.inbound.api.rate_limit import chat_rate_limit
 from mova.adapter.inbound.api.schemas.market_chat_schema import (
     MovaChatRequest,
     MovaChatResponseSchema,
@@ -30,6 +31,7 @@ async def introduce_myself() -> _MyselfResponse:
 async def chat(
     req: MovaChatRequest,
     use_case: ChatUseCase = Depends(get_chat_use_case),
+    _rate: None = Depends(chat_rate_limit),
 ) -> MovaChatResponseSchema:
     """사용자 메시지 → 의도 추출 → Gemini 추천 → picks 저장."""
     try:
