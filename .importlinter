@@ -5,17 +5,13 @@ root_packages =
     mova
     viewer
     silicon_valley
-    friday13th
-    imitation_game
-    inception
-    social_network
     dispatch
+    gildle
+    sample
     spam_filter
     core
 
-# ──────────────────────────────────────────────
-# 규칙 1: Hub(ontology)는 Spoke를 import하지 않는다
-# ──────────────────────────────────────────────
+# Rule 1: Hub (ontology) must not depend on any spoke.
 [importlinter:contract:hub-independence]
 name = Hub (ontology) must not depend on any spoke
 type = forbidden
@@ -26,16 +22,12 @@ forbidden_modules =
     mova
     viewer
     silicon_valley
-    friday13th
-    imitation_game
-    inception
-    social_network
     dispatch
+    gildle
+    sample
     spam_filter
 
-# ──────────────────────────────────────────────
-# 규칙 2: Spoke 간 직접 의존 금지 (Cross-Spoke Dependency)
-# ──────────────────────────────────────────────
+# Rule 2: Spokes must not import each other directly (star topology).
 [importlinter:contract:spoke-independence]
 name = Spokes must not import each other directly (star topology)
 type = independence
@@ -44,9 +36,27 @@ modules =
     mova
     viewer
     silicon_valley
-    friday13th
-    imitation_game
-    inception
-    social_network
     dispatch
+    gildle
+    sample
     spam_filter
+
+# Rule 3: Mova domain must stay pure (no app/adapter dependency).
+[importlinter:contract:mova-domain-independence]
+name = Mova domain must not import app or adapter
+type = forbidden
+source_modules =
+    mova.domain
+forbidden_modules =
+    mova.app
+    mova.adapter
+
+# Rule 4: Titanic domain must stay pure (hexagonal baseline, same rule).
+[importlinter:contract:titanic-domain-independence]
+name = Titanic domain must not import app or adapter
+type = forbidden
+source_modules =
+    titanic.domain
+forbidden_modules =
+    titanic.app
+    titanic.adapter
