@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -18,6 +20,18 @@ class TmdbImportRequestSchema(BaseModel):
         ge=0,
         le=5,
         description="popular 목록 페이지 수 (tmdb_id·query 없을 때)",
+    )
+
+
+class KoficImportRequestSchema(BaseModel):
+    target_date: str | None = Field(
+        None,
+        pattern=r"^\d{8}$",
+        description="집계 기준일 YYYYMMDD (없으면 전일)",
+    )
+    week_gb: Literal["0", "1", "2"] = Field(
+        "0",
+        description="0=주간(전체) · 1=주중 · 2=주말",
     )
 
 

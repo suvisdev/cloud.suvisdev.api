@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from mova.adapter.inbound.api.schemas.studio_import_schema import (
+    KoficImportRequestSchema,
     MovieImportResultSchema,
     TmdbImportRequestSchema,
 )
+from mova.adapter.outbound.http.kofic_adapter import KoficAdapterError
 from mova.adapter.outbound.http.tmdb_adapter import TmdbAdapterError
+from mova.app.dtos.market_box_office_dto import KoficImportCommand
 from mova.app.dtos.studio_import_dto import StudioImportQuery, TmdbImportCommand
 from mova.app.ports.input.import_use_case import ImportUseCase
 from mova.dependencies.import_provider import get_import_use_case
@@ -41,5 +44,19 @@ async def import_from_tmdb(
     try:
         dto = await use_case.import_tmdb(command)
     except TmdbAdapterError as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e)) from e
+    return dto.to_schema()
+
+
+@import_router.post("/kofic", response_model=MovieImportResultSchema)
+async def import_from_kofic(
+    req: KoficImportRequestSchema,
+    use_case: ImportUseCase = Depends(get_import_use_case),
+) -> MovieImportResultSchema:
+    """KOFIC 주간 박스오피스를 카탈로그에 매칭·enrich하고 box_office 랭킹으로 저장."""
+    command = KoficImportCommand(target_date=req.target_date, week_gb=req.week_gb)
+    try:
+        dto = await use_case.import_kofic_boxoffice(command)
+    except (KoficAdapterError, TmdbAdapterError) as e:
         raise HTTPException(status_code=e.status_code, detail=str(e)) from e
     return dto.to_schema()
