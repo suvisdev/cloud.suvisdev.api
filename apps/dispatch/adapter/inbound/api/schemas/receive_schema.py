@@ -5,13 +5,13 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
-class InboxReceiveSchema(BaseModel):
+class ReceiveRequestSchema(BaseModel):
     sender: str = ""
     subject: str = ""
     body: str = ""
 
 
-class InboxItemSchema(BaseModel):
+class ReceiveItemSchema(BaseModel):
     id: int
     sender: str
     subject: str

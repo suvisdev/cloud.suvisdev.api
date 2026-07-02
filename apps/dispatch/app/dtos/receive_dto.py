@@ -5,14 +5,14 @@ from datetime import datetime
 
 
 @dataclass(frozen=True)
-class InboxSaveCommand:
+class ReceiveSaveCommand:
     sender: str
     subject: str
     body: str
 
 
 @dataclass(frozen=True)
-class InboxItem:
+class ReceiveItem:
     id: int
     sender: str
     subject: str

@@ -17,7 +17,10 @@ from core.lol.t1_mid_faker_orchestrator import (  # noqa: E402
 from dispatch.app.dtos.email_dto import EmailDto  # noqa: E402
 from dispatch.app.ports.output.dispatch_errors import DispatchError  # noqa: E402
 from dispatch.app.ports.output.gmail_port import GmailPort  # noqa: E402
-from dispatch.app.use_cases.send_email_interactor import SendEmailInteractor  # noqa: E402
+from dispatch.app.use_cases.send_email_interactor import (  # noqa: E402
+    SendEmailInteractor,
+    _sanitize_body,
+)
 from ontology.app.use_cases.hub_email_orchestrator import HubEmailOrchestrator  # noqa: E402
 from ontology.domain.events.spoke_events import DispatchEmailEvent  # noqa: E402
 
@@ -73,13 +76,47 @@ class SendEmailInteractorTest(unittest.TestCase):
         self.assertEqual(dto.subject, "공지")
         self.assertEqual(dto.body, "본문")
 
-    def test_default_subject_when_none(self) -> None:
-        interactor, _, _, mock_gmail = self._make_interactor()
+    def test_llm_generates_subject_when_none(self) -> None:
+        interactor, _, mock_orc, mock_gmail = self._make_interactor()
+        mock_orc.generate.side_effect = ["생성된 본문", '"프로젝트 진행 상황 공유"']
+
+        interactor.send(to="a@b.com", prompt="p", subject=None)
+
+        _, kwargs = mock_gmail.send.call_args
+        self.assertEqual(kwargs["subject"], "프로젝트 진행 상황 공유")
+
+    def test_default_subject_when_subject_generation_fails(self) -> None:
+        interactor, _, mock_orc, mock_gmail = self._make_interactor()
+        mock_orc.generate.side_effect = [
+            "생성된 본문",
+            FakerOrchestratorError("타임아웃", status_code=504),
+        ]
 
         interactor.send(to="a@b.com", prompt="p", subject=None)
 
         _, kwargs = mock_gmail.send.call_args
         self.assertEqual(kwargs["subject"], "메일 발송")
+
+    def test_explicit_subject_skips_llm_generation(self) -> None:
+        interactor, _, mock_orc, mock_gmail = self._make_interactor()
+
+        interactor.send(to="a@b.com", prompt="p", subject="공지")
+
+        mock_orc.generate.assert_called_once()
+        _, kwargs = mock_gmail.send.call_args
+        self.assertEqual(kwargs["subject"], "공지")
+
+    def test_send_strips_placeholders_and_markdown_from_body(self) -> None:
+        raw = "[프로젝트 이름] 관련 **새 기능**이 추가됐습니다.\n## 요약\n감사합니다, [당신의 이름]"
+        interactor, _, _, mock_gmail = self._make_interactor(orc_body=raw)
+
+        interactor.send(to="a@b.com", prompt="p", subject="공지")
+
+        _, kwargs = mock_gmail.send.call_args
+        body = kwargs["body"]
+        self.assertNotIn("[", body)
+        self.assertNotIn("**", body)
+        self.assertNotIn("##", body)
 
     def test_orchestrator_error_raises_dispatch_error(self) -> None:
         _, mock_hub, mock_orc, _ = (
@@ -110,6 +147,20 @@ class SendEmailInteractorTest(unittest.TestCase):
             interactor.send(to="a@b.com", prompt="p", subject=None)
 
         mock_gmail.send.assert_not_called()
+
+
+class SanitizeBodyTest(unittest.TestCase):
+    def test_removes_bracket_placeholders(self) -> None:
+        self.assertEqual(_sanitize_body("안녕하세요 [수신자 이름]님"), "안녕하세요 님")
+
+    def test_strips_bold_markers_keeps_text(self) -> None:
+        self.assertEqual(_sanitize_body("**중요** 공지"), "중요 공지")
+
+    def test_strips_header_markers(self) -> None:
+        self.assertEqual(_sanitize_body("## 요약\n내용"), "요약\n내용")
+
+    def test_passthrough_for_clean_text(self) -> None:
+        self.assertEqual(_sanitize_body("평범한 본문입니다."), "평범한 본문입니다.")
 
 
 if __name__ == "__main__":
